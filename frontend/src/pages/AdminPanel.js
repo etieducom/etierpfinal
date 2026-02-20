@@ -14,9 +14,12 @@ const AdminPanel = () => {
   const [branches, setBranches] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [users, setUsers] = useState([]);
+  const [expenseCategories, setExpenseCategories] = useState([]);
   const [branchDialog, setBranchDialog] = useState(false);
   const [programDialog, setProgramDialog] = useState(false);
   const [userDialog, setUserDialog] = useState(false);
+  const [categoryDialog, setCategoryDialog] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
   
   const [branchForm, setBranchForm] = useState({ 
     name: '', 
