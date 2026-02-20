@@ -372,30 +372,142 @@ const AdminPanel = () => {
           <DialogHeader>
             <DialogTitle>{editingBranch ? 'Edit Branch' : 'Add New Branch'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateBranch} className="space-y-4">
+          <form onSubmit={handleCreateBranch} className="space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="text-sm font-semibold text-slate-700 mb-2">Branch Information</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Branch Name *</Label>
+                <Input
+                  value={branchForm.name}
+                  onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })}
+                  placeholder="Mumbai Branch"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Location *</Label>
+                <Input
+                  value={branchForm.location}
+                  onChange={(e) => setBranchForm({ ...branchForm, location: e.target.value })}
+                  placeholder="Andheri West"
+                  required
+                />
+              </div>
+            </div>
+            
             <div className="space-y-2">
-              <Label>Branch Name *</Label>
+              <Label>Address *</Label>
               <Input
-                value={branchForm.name}
-                onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })}
-                placeholder="Mumbai Branch"
+                value={branchForm.address}
+                onChange={(e) => setBranchForm({ ...branchForm, address: e.target.value })}
+                placeholder="Building Name, Street"
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label>Location *</Label>
-              <Input
-                value={branchForm.location}
-                onChange={(e) => setBranchForm({ ...branchForm, location: e.target.value })}
-                placeholder="Andheri, Mumbai"
-                required
-              />
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>City *</Label>
+                <Input
+                  value={branchForm.city}
+                  onChange={(e) => setBranchForm({ ...branchForm, city: e.target.value })}
+                  placeholder="Mumbai"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>State *</Label>
+                <Input
+                  value={branchForm.state}
+                  onChange={(e) => setBranchForm({ ...branchForm, state: e.target.value })}
+                  placeholder="Maharashtra"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Pincode *</Label>
+                <Input
+                  value={branchForm.pincode}
+                  onChange={(e) => setBranchForm({ ...branchForm, pincode: e.target.value })}
+                  placeholder="400058"
+                  required
+                />
+              </div>
             </div>
-            <div className="flex justify-end gap-2">
+
+            <div className="text-sm font-semibold text-slate-700 mt-4 mb-2">Branch Contact</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Branch Phone *</Label>
+                <Input
+                  value={branchForm.branch_phone}
+                  onChange={(e) => setBranchForm({ ...branchForm, branch_phone: e.target.value })}
+                  placeholder="+91 9876543210"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Branch Email *</Label>
+                <Input
+                  type="email"
+                  value={branchForm.branch_email}
+                  onChange={(e) => setBranchForm({ ...branchForm, branch_email: e.target.value })}
+                  placeholder="[email protected]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="text-sm font-semibold text-slate-700 mt-4 mb-2">Branch Owner Details</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Owner Name *</Label>
+                <Input
+                  value={branchForm.owner_name}
+                  onChange={(e) => setBranchForm({ ...branchForm, owner_name: e.target.value })}
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Owner Designation *</Label>
+                <Input
+                  value={branchForm.owner_designation}
+                  onChange={(e) => setBranchForm({ ...branchForm, owner_designation: e.target.value })}
+                  placeholder="Branch Manager"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Owner Email *</Label>
+                <Input
+                  type="email"
+                  value={branchForm.owner_email}
+                  onChange={(e) => setBranchForm({ ...branchForm, owner_email: e.target.value })}
+                  placeholder="[email protected]"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Owner Phone *</Label>
+                <Input
+                  value={branchForm.owner_phone}
+                  onChange={(e) => setBranchForm({ ...branchForm, owner_phone: e.target.value })}
+                  placeholder="+91 9876543210"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => {
                 setBranchDialog(false);
                 setEditingBranch(null);
-                setBranchForm({ name: '', location: '' });
+                setBranchForm({ 
+                  name: '', location: '', address: '', city: '', state: '', pincode: '',
+                  owner_name: '', owner_email: '', owner_phone: '', owner_designation: '',
+                  branch_phone: '', branch_email: ''
+                });
               }}>Cancel</Button>
               <Button type="submit" className="bg-slate-900 hover:bg-slate-800">
                 {editingBranch ? 'Update' : 'Create'} Branch
