@@ -8,15 +8,18 @@ import AnalyticsPage from '@/pages/AnalyticsPage';
 import PendingFollowups from '@/pages/PendingFollowups';
 import AdminPanel from '@/pages/AdminPanel';
 import ReportsPage from '@/pages/ReportsPage';
+import ExpensesPage from '@/pages/ExpensesPage';
+import EnrollmentsPage from '@/pages/EnrollmentsPage';
 import Layout from '@/components/Layout';
 import { Toaster } from '@/components/ui/sonner';
 
-const PrivateRoute = ({ children, adminOnly = false }) => {
+const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false }) => {
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
   if (!token) return <Navigate to="/login" />;
   if (adminOnly && user.role !== 'Admin') return <Navigate to="/" />;
+  if (fdaOnly && user.role !== 'Front Desk Executive' && user.role !== 'Admin') return <Navigate to="/" />;
   
   return children;
 };
@@ -32,9 +35,7 @@ function App() {
             path="/"
             element={
               <PrivateRoute>
-                <Layout>
-                  <Dashboard />
-                </Layout>
+                <Layout><Dashboard /></Layout>
               </PrivateRoute>
             }
           />
@@ -42,9 +43,7 @@ function App() {
             path="/leads"
             element={
               <PrivateRoute>
-                <Layout>
-                  <LeadsPage />
-                </Layout>
+                <Layout><LeadsPage /></Layout>
               </PrivateRoute>
             }
           />
@@ -52,9 +51,7 @@ function App() {
             path="/analytics"
             element={
               <PrivateRoute>
-                <Layout>
-                  <AnalyticsPage />
-                </Layout>
+                <Layout><AnalyticsPage /></Layout>
               </PrivateRoute>
             }
           />
@@ -62,9 +59,7 @@ function App() {
             path="/followups"
             element={
               <PrivateRoute>
-                <Layout>
-                  <PendingFollowups />
-                </Layout>
+                <Layout><PendingFollowups /></Layout>
               </PrivateRoute>
             }
           />
@@ -72,9 +67,23 @@ function App() {
             path="/reports"
             element={
               <PrivateRoute>
-                <Layout>
-                  <ReportsPage />
-                </Layout>
+                <Layout><ReportsPage /></Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <PrivateRoute fdaOnly>
+                <Layout><ExpensesPage /></Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/enrollments"
+            element={
+              <PrivateRoute fdaOnly>
+                <Layout><EnrollmentsPage /></Layout>
               </PrivateRoute>
             }
           />
@@ -82,9 +91,7 @@ function App() {
             path="/admin"
             element={
               <PrivateRoute adminOnly>
-                <Layout>
-                  <AdminPanel />
-                </Layout>
+                <Layout><AdminPanel /></Layout>
               </PrivateRoute>
             }
           />
