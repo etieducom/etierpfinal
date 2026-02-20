@@ -734,6 +734,52 @@ async def get_analytics_overview(current_user: User = Depends(get_current_user))
         "program_performance": [{"program": p["_id"], "count": p["count"]} for p in program_stats]
     }
 
+@api_router.get("/analytics/branch-wise")
+async def get_branch_wise_analytics(current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Get analytics grouped by branch - Admin only"""
+    branches = await db.branches.find({}, {"_id": 0}).to_list(100)
+    
+    branch_analytics = []
+    for branch in branches:
+        branch_id = branch["id"]
+        
+        # Total leads
+        total_leads = await db.leads.count_documents({"branch_id": branch_id})
+        
+        # Status counts
+        new_count = await db.leads.count_documents({"branch_id": branch_id, "status": "New"})
+        contacted_count = await db.leads.count_documents({"branch_id": branch_id, "status": "Contacted"})
+        demo_count = await db.leads.count_documents({"branch_id": branch_id, "status": "Demo Booked"})
+        followup_count = await db.leads.count_documents({"branch_id": branch_id, "status": "Follow-up"})
+        converted_count = await db.leads.count_documents({"branch_id": branch_id, "status": "Converted"})
+        lost_count = await db.leads.count_documents({"branch_id": branch_id, "status": "Lost"})
+        
+        # Conversion rate
+        conversion_rate = (converted_count / total_leads * 100) if total_leads > 0 else 0
+        
+        # Active counsellors
+        counsellors_count = await db.users.count_documents({"branch_id": branch_id, "role": "Counsellor"})
+        
+        branch_analytics.append({
+            "branch_id": branch_id,
+            "branch_name": branch["name"],
+            "branch_location": branch["location"],
+            "total_leads": total_leads,
+            "new_leads": new_count,
+            "contacted": contacted_count,
+            "demo_booked": demo_count,
+            "followup": followup_count,
+            "converted": converted_count,
+            "lost": lost_count,
+            "conversion_rate": round(conversion_rate, 2),
+            "active_counsellors": counsellors_count
+        })
+    
+    # Sort by total leads (descending)
+    branch_analytics.sort(key=lambda x: x["total_leads"], reverse=True)
+    
+    return branch_analytics
+
 # Reports
 @api_router.get("/reports/leads")
 async def generate_leads_report(
