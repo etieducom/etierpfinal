@@ -210,6 +210,133 @@ const Dashboard = () => {
         </Card>
       </div>
 
+      {/* Income & Expense Chart - Admin and FDE */}
+      {(user.role === 'Admin' || user.role === 'Front Desk Executive') && financialData && (
+        <Card className="border-slate-200 shadow-soft" data-testid="financial-chart">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-xl font-semibold">Monthly Income & Expenses</CardTitle>
+              <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[2024, 2025, 2026].map((year) => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpRight className="w-5 h-5 text-green-600" />
+                    <span className="text-sm text-green-700">Total Income</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-700 mt-1">
+                    ₹{financialData.total_income?.toLocaleString() || 0}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-red-50 border-red-200">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2">
+                    <ArrowDownRight className="w-5 h-5 text-red-600" />
+                    <span className="text-sm text-red-700">Total Expenses</span>
+                  </div>
+                  <p className="text-2xl font-bold text-red-700 mt-1">
+                    ₹{financialData.total_expenses?.toLocaleString() || 0}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm text-blue-700">Net Profit</span>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-700 mt-1">
+                    ₹{((financialData.total_income || 0) - (financialData.total_expenses || 0)).toLocaleString()}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={financialData.monthly_data || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="month_name" stroke="#64748B" />
+                <YAxis stroke="#64748B" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                <Legend />
+                <Bar dataKey="income" name="Income" fill="#10B981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expenses" name="Expenses" fill="#EF4444" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Branch-wise Financial - Admin Only */}
+      {user.role === 'Admin' && branchFinancials.length > 0 && (
+        <Card className="border-slate-200 shadow-soft" data-testid="branch-financials">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">Branch-wise Financial Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Branch</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Enrollments</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Total Income</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Total Expenses</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Net Profit</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {branchFinancials.map((branch) => (
+                    <tr key={branch.branch_id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div>
+                          <p className="font-semibold text-sm">{branch.branch_name}</p>
+                          <p className="text-xs text-slate-500">{branch.branch_location}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center justify-center w-12 h-8 rounded-md bg-slate-100 font-semibold text-sm">
+                          {branch.enrollments_count}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center justify-center px-3 h-8 rounded-md bg-green-50 text-green-700 font-semibold text-sm">
+                          ₹{branch.total_income?.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="inline-flex items-center justify-center px-3 h-8 rounded-md bg-red-50 text-red-700 font-semibold text-sm">
+                          ₹{branch.total_expenses?.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center justify-center px-3 h-8 rounded-md font-semibold text-sm ${
+                          branch.net_profit >= 0 ? 'bg-blue-50 text-blue-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          ₹{branch.net_profit?.toLocaleString()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Branch-wise Analytics - Admin Only */}
       {user.role === 'Admin' && branchAnalytics.length > 0 && (
         <Card className="border-slate-200 shadow-soft">
