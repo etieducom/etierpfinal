@@ -582,51 +582,132 @@ const AdminPanel = () => {
           <DialogHeader>
             <DialogTitle>Add New User</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateUser} className="space-y-4">
+          <form onSubmit={handleCreateUser} className="space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="text-sm font-semibold text-slate-700 mb-2">Basic Information</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Full Name *</Label>
+                <Input
+                  value={userForm.name}
+                  onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  value={userForm.email}
+                  onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                  placeholder="[email protected]"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Password *</Label>
+                <Input
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Date of Birth</Label>
+                <Input
+                  type="date"
+                  value={userForm.date_of_birth}
+                  onChange={(e) => setUserForm({ ...userForm, date_of_birth: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="text-sm font-semibold text-slate-700 mt-4 mb-2">Contact Details</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Phone *</Label>
+                <Input
+                  value={userForm.phone}
+                  onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
+                  placeholder="+91 9876543210"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Alternate Phone</Label>
+                <Input
+                  value={userForm.alternate_phone}
+                  onChange={(e) => setUserForm({ ...userForm, alternate_phone: e.target.value })}
+                  placeholder="+91 9876543210"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label>Name *</Label>
+              <Label>Address</Label>
               <Input
-                value={userForm.name}
-                onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                placeholder="John Doe"
-                required
+                value={userForm.address}
+                onChange={(e) => setUserForm({ ...userForm, address: e.target.value })}
+                placeholder="Complete address"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Email *</Label>
-              <Input
-                type="email"
-                value={userForm.email}
-                onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                placeholder="[email protected]"
-                required
-              />
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>City</Label>
+                <Input
+                  value={userForm.city}
+                  onChange={(e) => setUserForm({ ...userForm, city: e.target.value })}
+                  placeholder="Mumbai"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>State</Label>
+                <Input
+                  value={userForm.state}
+                  onChange={(e) => setUserForm({ ...userForm, state: e.target.value })}
+                  placeholder="Maharashtra"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Pincode</Label>
+                <Input
+                  value={userForm.pincode}
+                  onChange={(e) => setUserForm({ ...userForm, pincode: e.target.value })}
+                  placeholder="400058"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Password *</Label>
-              <Input
-                type="password"
-                value={userForm.password}
-                onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                placeholder="••••••••"
-                required
-              />
+
+            <div className="text-sm font-semibold text-slate-700 mt-4 mb-2">Role & Branch</div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Role *</Label>
+                <Select value={userForm.role} onValueChange={(value) => setUserForm({ ...userForm, role: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Counsellor">Counsellor</SelectItem>
+                    <SelectItem value="Front Desk Executive">Front Desk Executive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Designation</Label>
+                <Input
+                  value={userForm.designation}
+                  onChange={(e) => setUserForm({ ...userForm, designation: e.target.value })}
+                  placeholder="Senior Counsellor"
+                />
+              </div>
             </div>
+
             <div className="space-y-2">
-              <Label>Role *</Label>
-              <Select value={userForm.role} onValueChange={(value) => setUserForm({ ...userForm, role: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Counsellor">Counsellor</SelectItem>
-                  <SelectItem value="Front Desk Executive">Front Desk Executive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Branch</Label>
+              <Label>Branch {userForm.role !== 'Admin' && '*'}</Label>
               <Select value={userForm.branch_id} onValueChange={(value) => setUserForm({ ...userForm, branch_id: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select branch" />
@@ -638,7 +719,18 @@ const AdminPanel = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end gap-2">
+
+            <div className="space-y-2">
+              <Label>Photo URL (Optional)</Label>
+              <Input
+                value={userForm.photo_url}
+                onChange={(e) => setUserForm({ ...userForm, photo_url: e.target.value })}
+                placeholder="https://example.com/photo.jpg or upload below"
+              />
+              <p className="text-xs text-slate-500">You can paste image URL or upload a file</p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setUserDialog(false)}>Cancel</Button>
               <Button type="submit" className="bg-slate-900 hover:bg-slate-800">Create User</Button>
             </div>
