@@ -191,10 +191,11 @@ const AdminPanel = () => {
       </div>
 
       <Tabs defaultValue="branches" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="branches">Branches</TabsTrigger>
           <TabsTrigger value="programs">Programs</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="expense-categories" data-testid="expense-categories-tab">Expense Categories</TabsTrigger>
         </TabsList>
 
         <TabsContent value="branches" className="space-y-4">
