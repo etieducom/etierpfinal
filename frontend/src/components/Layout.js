@@ -36,6 +36,8 @@ const Layout = ({ children }) => {
     { icon: Bell, label: 'Pending Follow-ups', path: '/followups', show: user.role !== 'Front Desk Executive', badge: pendingCount },
     { icon: BarChart3, label: 'Analytics', path: '/analytics', show: true },
     { icon: FileText, label: 'Reports', path: '/reports', show: true },
+    { icon: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>, label: 'Expenses', path: '/expenses', show: user.role === 'Front Desk Executive' || user.role === 'Admin' },
+    { icon: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>, label: 'Enrollments', path: '/enrollments', show: user.role === 'Front Desk Executive' || user.role === 'Admin' },
     { icon: Settings, label: 'Admin Panel', path: '/admin', show: user.role === 'Admin' },
   ].filter(item => item.show);
 
