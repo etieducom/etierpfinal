@@ -96,6 +96,14 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/resources"
+            element={
+              <PrivateRoute>
+                <Layout><ResourcesPage /></Layout>
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </div>
     </BrowserRouter>
