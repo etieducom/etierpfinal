@@ -54,6 +54,17 @@ class FollowUpStatus(str, Enum):
     COMPLETED = "Completed"
     CANCELLED = "Cancelled"
 
+class PaymentMode(str, Enum):
+    CASH = "Cash"
+    CARD = "Card"
+    UPI = "UPI"
+    NET_BANKING = "Net Banking"
+    CHEQUE = "Cheque"
+
+class PaymentPlanType(str, Enum):
+    ONE_TIME = "One-time"
+    INSTALLMENTS = "Installments"
+
 # Models
 class Branch(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -227,6 +238,132 @@ class FollowUp(BaseModel):
     created_by_name: Optional[str] = None
     lead_name: Optional[str] = None
     lead_number: Optional[str] = None
+
+# Expense Management
+class ExpenseCategory(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ExpenseCategoryCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class Expense(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    branch_id: str
+    category_id: str
+    category_name: Optional[str] = None
+    name: str
+    amount: float
+    payment_mode: PaymentMode
+    expense_date: date
+    remarks: Optional[str] = None
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ExpenseCreate(BaseModel):
+    category_id: str
+    name: str
+    amount: float
+    payment_mode: PaymentMode
+    expense_date: str
+    remarks: Optional[str] = None
+
+# Enrollment Management
+class Enrollment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    lead_id: str
+    branch_id: str
+    student_name: str
+    email: str
+    phone: str
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    
+    # Academic Info
+    highest_qualification: Optional[str] = None
+    institution_name: Optional[str] = None
+    passing_year: Optional[str] = None
+    percentage: Optional[float] = None
+    
+    # Program Info
+    program_id: str
+    program_name: str
+    fee_quoted: float
+    discount_percent: Optional[float] = None
+    final_fee: float
+    
+    enrollment_date: date
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class EnrollmentCreate(BaseModel):
+    lead_id: str
+    student_name: str
+    email: EmailStr
+    phone: str
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    highest_qualification: Optional[str] = None
+    institution_name: Optional[str] = None
+    passing_year: Optional[str] = None
+    percentage: Optional[float] = None
+    program_id: str
+    fee_quoted: float
+    discount_percent: Optional[float] = None
+    enrollment_date: str
+
+# Payment Management
+class PaymentPlan(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    enrollment_id: str
+    plan_type: PaymentPlanType
+    total_amount: float
+    installments_count: Optional[int] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Payment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    enrollment_id: str
+    payment_plan_id: str
+    amount: float
+    payment_mode: PaymentMode
+    payment_date: date
+    installment_number: Optional[int] = None
+    remarks: Optional[str] = None
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PaymentCreate(BaseModel):
+    enrollment_id: str
+    payment_plan_id: str
+    amount: float
+    payment_mode: PaymentMode
+    payment_date: str
+    installment_number: Optional[int] = None
+    remarks: Optional[str] = None
+
+class PaymentPlanCreate(BaseModel):
+    enrollment_id: str
+    plan_type: PaymentPlanType
+    total_amount: float
+    installments_count: Optional[int] = None
+    installments: Optional[List[dict]] = None
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
