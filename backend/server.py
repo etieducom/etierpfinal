@@ -1202,11 +1202,17 @@ async def create_payment(payment: PaymentCreate, current_user: User = Depends(ge
     if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK]:
         raise HTTPException(status_code=403, detail="Only Front Desk Executive can record payments")
     
+    # Get enrollment to get branch_id
+    enrollment = await db.enrollments.find_one({"id": payment.enrollment_id}, {"_id": 0})
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+    
     payment_data = payment.model_dump()
     payment_data.pop('payment_date', None)  # Remove to avoid duplicate argument
     
     new_payment = Payment(
         **payment_data,
+        branch_id=enrollment.get('branch_id', current_user.branch_id or 'default'),
         payment_date=datetime.fromisoformat(payment.payment_date).date(),
         created_by=current_user.id
     )
