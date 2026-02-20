@@ -1034,8 +1034,11 @@ async def create_expense(expense: ExpenseCreate, current_user: User = Depends(ge
     if not category:
         raise HTTPException(status_code=404, detail="Expense category not found")
     
+    expense_data = expense.model_dump()
+    expense_data.pop('expense_date', None)  # Remove to avoid duplicate argument
+    
     new_expense = Expense(
-        **expense.model_dump(),
+        **expense_data,
         branch_id=current_user.branch_id or "admin",
         category_name=category['name'],
         created_by=current_user.id,
@@ -1090,8 +1093,11 @@ async def create_enrollment(enrollment: EnrollmentCreate, current_user: User = D
     discount_amount = (enrollment.fee_quoted * (enrollment.discount_percent or 0)) / 100
     final_fee = enrollment.fee_quoted - discount_amount
     
+    enrollment_data = enrollment.model_dump()
+    enrollment_data.pop('enrollment_date', None)  # Remove to avoid duplicate argument
+    
     new_enrollment = Enrollment(
-        **enrollment.model_dump(),
+        **enrollment_data,
         branch_id=current_user.branch_id or lead["branch_id"],
         program_name=program['name'],
         final_fee=final_fee,
