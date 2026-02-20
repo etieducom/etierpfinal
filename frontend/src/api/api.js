@@ -72,6 +72,7 @@ export const followupAPI = {
 
 export const analyticsAPI = {
   getOverview: () => api.get('/analytics/overview'),
+  getBranchWise: () => api.get('/analytics/branch-wise'),
 };
 
 export const reportsAPI = {
