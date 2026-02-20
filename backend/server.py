@@ -979,6 +979,266 @@ async def generate_leads_report(
     
     return leads
 
+# Expense Category Management (Admin)
+@api_router.post("/admin/expense-categories", response_model=ExpenseCategory)
+async def create_expense_category(category: ExpenseCategoryCreate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    new_category = ExpenseCategory(**category.model_dump())
+    category_dict = new_category.model_dump()
+    category_dict['created_at'] = category_dict['created_at'].isoformat()
+    
+    await db.expense_categories.insert_one(category_dict)
+    return new_category
+
+@api_router.get("/expense-categories", response_model=List[ExpenseCategory])
+async def get_expense_categories(current_user: User = Depends(get_current_user)):
+    categories = await db.expense_categories.find({}, {"_id": 0}).to_list(1000)
+    for cat in categories:
+        if isinstance(cat.get('created_at'), str):
+            cat['created_at'] = datetime.fromisoformat(cat['created_at'])
+    return [ExpenseCategory(**c) for c in categories]
+
+# Expense Management (FDA)
+@api_router.post("/expenses", response_model=Expense)
+async def create_expense(expense: ExpenseCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK]:
+        raise HTTPException(status_code=403, detail="Only Front Desk Executive can add expenses")
+    
+    if not current_user.branch_id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=400, detail="User must be assigned to a branch")
+    
+    category = await db.expense_categories.find_one({"id": expense.category_id}, {"_id": 0})
+    if not category:
+        raise HTTPException(status_code=404, detail="Expense category not found")
+    
+    new_expense = Expense(
+        **expense.model_dump(),
+        branch_id=current_user.branch_id or "admin",
+        category_name=category['name'],
+        created_by=current_user.id,
+        expense_date=datetime.fromisoformat(expense.expense_date).date()
+    )
+    expense_dict = new_expense.model_dump()
+    expense_dict['created_at'] = expense_dict['created_at'].isoformat()
+    expense_dict['expense_date'] = expense_dict['expense_date'].isoformat()
+    
+    await db.expenses.insert_one(expense_dict)
+    return new_expense
+
+@api_router.get("/expenses", response_model=List[Expense])
+async def get_expenses(current_user: User = Depends(get_current_user)):
+    query = {}
+    if current_user.role != UserRole.ADMIN:
+        query["branch_id"] = current_user.branch_id
+    
+    expenses = await db.expenses.find(query, {"_id": 0}).sort("expense_date", -1).to_list(1000)
+    for exp in expenses:
+        if isinstance(exp.get('created_at'), str):
+            exp['created_at'] = datetime.fromisoformat(exp['created_at'])
+        if isinstance(exp.get('expense_date'), str):
+            exp['expense_date'] = datetime.fromisoformat(exp['expense_date']).date()
+    return [Expense(**e) for e in expenses]
+
+# Enrollment Management (FDA)
+@api_router.get("/leads/converted")
+async def get_converted_leads(current_user: User = Depends(get_current_user)):
+    """Get converted leads for enrollment - FDA sees only their branch"""
+    query = {"status": LeadStatus.CONVERTED}
+    
+    if current_user.role != UserRole.ADMIN:
+        query["branch_id"] = current_user.branch_id
+    
+    # Check if already enrolled
+    enrolled_lead_ids = await db.enrollments.find({}, {"lead_id": 1, "_id": 0}).to_list(1000)
+    enrolled_ids = [e["lead_id"] for e in enrolled_lead_ids]
+    
+    query["id"] = {"$nin": enrolled_ids}
+    
+    leads = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    for lead in leads:
+        if isinstance(lead.get('created_at'), str):
+            lead['created_at'] = datetime.fromisoformat(lead['created_at'])
+        if isinstance(lead.get('updated_at'), str):
+            lead['updated_at'] = datetime.fromisoformat(lead['updated_at'])
+    return leads
+
+@api_router.post("/enrollments", response_model=Enrollment)
+async def create_enrollment(enrollment: EnrollmentCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK]:
+        raise HTTPException(status_code=403, detail="Only Front Desk Executive can create enrollments")
+    
+    # Verify lead exists and is converted
+    lead = await db.leads.find_one({"id": enrollment.lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    if lead["status"] != LeadStatus.CONVERTED:
+        raise HTTPException(status_code=400, detail="Only converted leads can be enrolled")
+    
+    # Check if already enrolled
+    existing = await db.enrollments.find_one({"lead_id": enrollment.lead_id}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Lead already enrolled")
+    
+    # Get program details
+    program = await db.programs.find_one({"id": enrollment.program_id}, {"_id": 0})
+    if not program:
+        raise HTTPException(status_code=404, detail="Program not found")
+    
+    # Calculate final fee
+    discount_amount = (enrollment.fee_quoted * (enrollment.discount_percent or 0)) / 100
+    final_fee = enrollment.fee_quoted - discount_amount
+    
+    new_enrollment = Enrollment(
+        **enrollment.model_dump(),
+        branch_id=current_user.branch_id or lead["branch_id"],
+        program_name=program['name'],
+        final_fee=final_fee,
+        enrollment_date=datetime.fromisoformat(enrollment.enrollment_date).date(),
+        created_by=current_user.id
+    )
+    
+    enrollment_dict = new_enrollment.model_dump()
+    enrollment_dict['created_at'] = enrollment_dict['created_at'].isoformat()
+    enrollment_dict['enrollment_date'] = enrollment_dict['enrollment_date'].isoformat()
+    
+    await db.enrollments.insert_one(enrollment_dict)
+    return new_enrollment
+
+@api_router.get("/enrollments", response_model=List[Enrollment])
+async def get_enrollments(current_user: User = Depends(get_current_user)):
+    query = {}
+    if current_user.role != UserRole.ADMIN:
+        query["branch_id"] = current_user.branch_id
+    
+    enrollments = await db.enrollments.find(query, {"_id": 0}).sort("enrollment_date", -1).to_list(1000)
+    for enr in enrollments:
+        if isinstance(enr.get('created_at'), str):
+            enr['created_at'] = datetime.fromisoformat(enr['created_at'])
+        if isinstance(enr.get('enrollment_date'), str):
+            enr['enrollment_date'] = datetime.fromisoformat(enr['enrollment_date']).date()
+    return [Enrollment(**e) for e in enrollments]
+
+# Payment Plan Management
+@api_router.post("/payment-plans", response_model=PaymentPlan)
+async def create_payment_plan(plan: PaymentPlanCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    # Check if enrollment exists
+    enrollment = await db.enrollments.find_one({"id": plan.enrollment_id}, {"_id": 0})
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+    
+    # Check if payment plan already exists
+    existing_plan = await db.payment_plans.find_one({"enrollment_id": plan.enrollment_id}, {"_id": 0})
+    if existing_plan:
+        raise HTTPException(status_code=400, detail="Payment plan already exists for this enrollment")
+    
+    new_plan = PaymentPlan(
+        enrollment_id=plan.enrollment_id,
+        plan_type=plan.plan_type,
+        total_amount=plan.total_amount,
+        installments_count=plan.installments_count if plan.plan_type == PaymentPlanType.INSTALLMENTS else None
+    )
+    
+    plan_dict = new_plan.model_dump()
+    plan_dict['created_at'] = plan_dict['created_at'].isoformat()
+    
+    await db.payment_plans.insert_one(plan_dict)
+    
+    # If installments, create installment schedule
+    if plan.plan_type == PaymentPlanType.INSTALLMENTS and plan.installments:
+        for inst in plan.installments:
+            await db.installment_schedule.insert_one({
+                "id": str(uuid.uuid4()),
+                "payment_plan_id": new_plan.id,
+                "enrollment_id": plan.enrollment_id,
+                "installment_number": inst["installment_number"],
+                "amount": inst["amount"],
+                "due_date": inst["due_date"],
+                "status": "Pending"
+            })
+    
+    return new_plan
+
+# Payment Recording
+@api_router.post("/payments", response_model=Payment)
+async def create_payment(payment: PaymentCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK]:
+        raise HTTPException(status_code=403, detail="Only Front Desk Executive can record payments")
+    
+    new_payment = Payment(
+        **payment.model_dump(),
+        payment_date=datetime.fromisoformat(payment.payment_date).date(),
+        created_by=current_user.id
+    )
+    
+    payment_dict = new_payment.model_dump()
+    payment_dict['created_at'] = payment_dict['created_at'].isoformat()
+    payment_dict['payment_date'] = payment_dict['payment_date'].isoformat()
+    
+    await db.payments.insert_one(payment_dict)
+    
+    # Update installment status if applicable
+    if payment.installment_number:
+        await db.installment_schedule.update_one(
+            {
+                "payment_plan_id": payment.payment_plan_id,
+                "installment_number": payment.installment_number
+            },
+            {"$set": {"status": "Paid", "paid_date": payment.payment_date}}
+        )
+    
+    return new_payment
+
+@api_router.get("/enrollments/{enrollment_id}/payments")
+async def get_enrollment_payments(enrollment_id: str, current_user: User = Depends(get_current_user)):
+    payments = await db.payments.find({"enrollment_id": enrollment_id}, {"_id": 0}).sort("payment_date", -1).to_list(1000)
+    for pay in payments:
+        if isinstance(pay.get('created_at'), str):
+            pay['created_at'] = datetime.fromisoformat(pay['created_at'])
+        if isinstance(pay.get('payment_date'), str):
+            pay['payment_date'] = datetime.fromisoformat(pay['payment_date']).date()
+    return payments
+
+@api_router.get("/enrollments/{enrollment_id}/payment-plan")
+async def get_enrollment_payment_plan(enrollment_id: str, current_user: User = Depends(get_current_user)):
+    plan = await db.payment_plans.find_one({"enrollment_id": enrollment_id}, {"_id": 0})
+    if not plan:
+        return None
+    
+    if isinstance(plan.get('created_at'), str):
+        plan['created_at'] = datetime.fromisoformat(plan['created_at'])
+    
+    # Get installment schedule if applicable
+    if plan.get('plan_type') == PaymentPlanType.INSTALLMENTS:
+        schedule = await db.installment_schedule.find({"payment_plan_id": plan['id']}, {"_id": 0}).to_list(1000)
+        plan['installments'] = schedule
+    
+    return plan
+
+@api_router.get("/payments/{payment_id}/receipt")
+async def generate_receipt(payment_id: str, current_user: User = Depends(get_current_user)):
+    """Generate payment receipt"""
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    enrollment = await db.enrollments.find_one({"id": payment['enrollment_id']}, {"_id": 0})
+    
+    receipt_data = {
+        "receipt_id": payment_id[:8].upper(),
+        "payment_date": payment['payment_date'],
+        "student_name": enrollment['student_name'],
+        "program": enrollment['program_name'],
+        "amount": payment['amount'],
+        "payment_mode": payment['payment_mode'],
+        "installment_number": payment.get('installment_number'),
+        "remarks": payment.get('remarks', '')
+    }
+    
+    return receipt_data
+
 app.include_router(api_router)
 
 app.add_middleware(
