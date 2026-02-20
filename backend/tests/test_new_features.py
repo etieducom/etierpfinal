@@ -42,45 +42,42 @@ def api_client(auth_token):
 class TestPaymentReceiptWithBranchInfo:
     """Test payment receipt generation includes branch details and receipt_number"""
     
-    def test_payment_has_branch_id_and_receipt_number(self, api_client):
-        """Test that payments include branch_id and receipt_number fields"""
+    def test_new_payment_has_branch_id_and_receipt_number(self, api_client):
+        """Test that NEW payments include branch_id and receipt_number fields"""
         # Get enrollments
         enrollments = api_client.get(f"{BASE_URL}/api/enrollments").json()
         if not enrollments:
             pytest.skip("No enrollments available")
         
         enrollment_id = enrollments[0]["id"]
-        payments = api_client.get(f"{BASE_URL}/api/enrollments/{enrollment_id}/payments").json()
         
-        if not payments:
-            # Create a test payment if none exist
-            plan_response = api_client.get(f"{BASE_URL}/api/enrollments/{enrollment_id}/payment-plan")
-            plan = plan_response.json()
-            
-            if not plan:
-                plan_data = {
-                    "enrollment_id": enrollment_id,
-                    "plan_type": "One-time",
-                    "total_amount": enrollments[0]["final_fee"]
-                }
-                plan_response = api_client.post(f"{BASE_URL}/api/payment-plans", json=plan_data)
-                plan = plan_response.json()
-            
-            payment_data = {
+        # Get or create payment plan
+        plan_response = api_client.get(f"{BASE_URL}/api/enrollments/{enrollment_id}/payment-plan")
+        plan = plan_response.json()
+        
+        if not plan:
+            plan_data = {
                 "enrollment_id": enrollment_id,
-                "payment_plan_id": plan["id"],
-                "amount": 1000.0,
-                "payment_mode": "Cash",
-                "payment_date": date.today().isoformat(),
-                "remarks": "TEST_Payment for branch_id check"
+                "plan_type": "One-time",
+                "total_amount": enrollments[0]["final_fee"]
             }
-            response = api_client.post(f"{BASE_URL}/api/payments", json=payment_data)
-            assert response.status_code == 200
-            payment = response.json()
-        else:
-            payment = payments[0]
+            plan_response = api_client.post(f"{BASE_URL}/api/payment-plans", json=plan_data)
+            plan = plan_response.json()
         
-        # Verify payment has branch_id and receipt_number
+        # Create a NEW payment (to ensure it has the new fields)
+        payment_data = {
+            "enrollment_id": enrollment_id,
+            "payment_plan_id": plan["id"],
+            "amount": 100.0,
+            "payment_mode": "Cash",
+            "payment_date": date.today().isoformat(),
+            "remarks": f"TEST_New_payment_branch_check_{datetime.now().strftime('%H%M%S')}"
+        }
+        response = api_client.post(f"{BASE_URL}/api/payments", json=payment_data)
+        assert response.status_code == 200
+        payment = response.json()
+        
+        # Verify NEW payment has branch_id and receipt_number
         print(f"Payment ID: {payment.get('id')}")
         print(f"Branch ID: {payment.get('branch_id')}")
         print(f"Receipt Number: {payment.get('receipt_number')}")
@@ -92,7 +89,7 @@ class TestPaymentReceiptWithBranchInfo:
         assert payment["receipt_number"] is not None, "Payment receipt_number should not be None"
         assert payment["receipt_number"].startswith("RCP-"), "Receipt number should start with 'RCP-'"
         
-        print("Payment correctly includes branch_id and receipt_number")
+        print("New payment correctly includes branch_id and receipt_number")
     
     def test_receipt_api_returns_complete_data(self, api_client):
         """Test receipt endpoint returns complete receipt data with institute header"""
