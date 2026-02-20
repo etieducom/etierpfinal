@@ -341,13 +341,40 @@ class Payment(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     enrollment_id: str
     payment_plan_id: str
+    branch_id: str
     amount: float
     payment_mode: PaymentMode
     payment_date: date
     installment_number: Optional[int] = None
     remarks: Optional[str] = None
+    receipt_number: str = Field(default_factory=lambda: f"RCP-{str(uuid.uuid4())[:8].upper()}")
     created_by: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Marketing Resources Model
+class ResourceType(str, Enum):
+    BROCHURE = "Brochure"
+    CREATIVE = "Creative"
+    VIDEO = "Video"
+    DOCUMENT = "Document"
+
+class MarketingResource(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: Optional[str] = None
+    resource_type: ResourceType
+    file_url: Optional[str] = None
+    video_link: Optional[str] = None
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class MarketingResourceCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    resource_type: ResourceType
+    file_url: Optional[str] = None
+    video_link: Optional[str] = None
 
 class PaymentCreate(BaseModel):
     enrollment_id: str
