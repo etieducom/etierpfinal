@@ -65,6 +65,30 @@ The user, representing a training institute named "ETI Educom", requested a full
   - [x] View payment history per enrollment
 - [x] Navigation updates for FDE role
 
+### Phase 6: Financial Analytics & Resources (COMPLETE - December 20, 2026)
+- [x] Payment Branch Tracking
+  - [x] Each payment uniquely recorded with branch_id
+  - [x] Auto-generated receipt_number (RCP-XXXXXXXX format)
+- [x] Receipt Generation
+  - [x] Printable receipt with institute logo/header
+  - [x] Student details, program, amount, payment mode
+  - [x] Print button using window.print()
+- [x] Enrolled Students Display Enhancement
+  - [x] Shows contact info (phone, email)
+  - [x] Payment status badges (Paid/Partial/Pending)
+  - [x] Paid amount vs total fee display
+- [x] Admin/FDE Dashboard Financial Charts
+  - [x] Monthly Income & Expenses bar chart
+  - [x] Year selector for historical data
+  - [x] Summary cards: Total Income, Total Expenses, Net Profit
+- [x] Super Admin Branch-wise Financial Summary
+  - [x] Table showing all branches with income, expenses, net profit
+  - [x] Enrollments count per branch
+- [x] Marketing Resources Section
+  - [x] Admin can upload brochures, creatives, video links
+  - [x] Accessible to all users (Counsellor, FDE, Admin)
+  - [x] Filter by type (Brochure, Creative, Video, Document)
+
 ## Pending/Backlog
 
 ### P0 - High Priority
