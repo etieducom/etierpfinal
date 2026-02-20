@@ -500,9 +500,9 @@ class TestPaymentReceipt:
         assert response.status_code == 200
         
         receipt = response.json()
-        assert "receipt_id" in receipt
+        assert "receipt_number" in receipt, f"Receipt should have receipt_number field, got: {receipt.keys()}"
         assert "amount" in receipt
-        print(f"Generated receipt: {receipt['receipt_id']} for ₹{receipt['amount']}")
+        print(f"Generated receipt: {receipt['receipt_number']} for ₹{receipt['amount']}")
         return receipt
 
 
