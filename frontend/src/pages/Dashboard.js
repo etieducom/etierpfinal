@@ -30,7 +30,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedYear]);
 
   const fetchData = async () => {
     try {
@@ -41,7 +41,12 @@ const Dashboard = () => {
       
       if (user.role === 'Admin') {
         promises.push(analyticsAPI.getBranchWise());
-      } else if (user.role !== 'Admin') {
+        promises.push(analyticsAPI.getMonthlyFinancial(selectedYear));
+        promises.push(analyticsAPI.getBranchWiseFinancial());
+      } else if (user.role === 'Front Desk Executive') {
+        promises.push(analyticsAPI.getMonthlyFinancial(selectedYear));
+        promises.push(null); // placeholder
+      } else {
         promises.push(followupAPI.getPendingCount());
       }
       
@@ -51,6 +56,10 @@ const Dashboard = () => {
       
       if (user.role === 'Admin') {
         setBranchAnalytics(results[2].data);
+        setFinancialData(results[3].data);
+        setBranchFinancials(results[4].data);
+      } else if (user.role === 'Front Desk Executive') {
+        setFinancialData(results[2].data);
       } else if (results[2]) {
         setPendingCount(results[2].data.count);
       }
