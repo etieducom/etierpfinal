@@ -897,9 +897,9 @@ async def get_analytics_overview(current_user: User = Depends(get_current_user))
     total_leads = await db.leads.count_documents(query)
     
     status_counts = {}
-    for status in LeadStatus:
-        count = await db.leads.count_documents({**query, "status": status.value})
-        status_counts[status.value] = count
+    for lead_status in LeadStatus:
+        count = await db.leads.count_documents({**query, "status": lead_status.value})
+        status_counts[lead_status.value] = count
     
     pipeline = [
         {"$match": query},
