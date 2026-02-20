@@ -815,6 +815,46 @@ const AdminPanel = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Expense Category Dialog */}
+      <Dialog open={categoryDialog} onOpenChange={setCategoryDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Expense Category</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateCategory} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Category Name *</Label>
+              <Input
+                value={categoryForm.name}
+                onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                placeholder="Office Supplies, Rent, Utilities..."
+                required
+                data-testid="category-name-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <textarea
+                className="w-full min-h-20 px-3 py-2 border border-slate-200 rounded-md"
+                value={categoryForm.description}
+                onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                placeholder="Brief description of this expense category..."
+                data-testid="category-description-input"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => {
+                setCategoryDialog(false);
+                setCategoryForm({ name: '', description: '' });
+              }}>Cancel</Button>
+              <Button type="submit" className="bg-slate-900 hover:bg-slate-800" data-testid="save-category-btn">
+                Create Category
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
