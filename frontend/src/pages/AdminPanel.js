@@ -61,14 +61,16 @@ const AdminPanel = () => {
 
   const fetchData = async () => {
     try {
-      const [branchRes, programRes, userRes] = await Promise.all([
+      const [branchRes, programRes, userRes, categoryRes] = await Promise.all([
         adminAPI.getBranches(),
         adminAPI.getPrograms(),
         adminAPI.getUsers(),
+        expenseAPI.getCategories(),
       ]);
       setBranches(branchRes.data);
       setPrograms(programRes.data);
       setUsers(userRes.data);
+      setExpenseCategories(categoryRes.data);
     } catch (error) {
       toast.error('Failed to fetch data');
     }
