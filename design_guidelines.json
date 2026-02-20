@@ -1,0 +1,149 @@
+{
+  "brand_identity": {
+    "name": "ETI Educom",
+    "mission": "Empowering Education Counselors with Precision Tools",
+    "aesthetic": "Swiss Professional & High-Density Functional",
+    "theme_mode": "light",
+    "archetype": "The Performance Pro (Educational Adaptation)"
+  },
+  "typography": {
+    "font_family_heading": "Manrope, sans-serif",
+    "font_family_body": "Public Sans, sans-serif",
+    "scale": {
+      "h1": "text-4xl font-bold tracking-tight lg:text-5xl",
+      "h2": "text-3xl font-semibold tracking-tight first:mt-0",
+      "h3": "text-2xl font-semibold tracking-tight",
+      "p": "leading-7 [&:not(:first-child)]:mt-6"
+    },
+    "rules": [
+      "Headings (h1-h3) must use Manrope with tight tracking (-0.02em).",
+      "Body text must use Public Sans for maximum legibility in dense tables.",
+      "Labels and overlines must be uppercase, tracking-widest, and text-xs."
+    ]
+  },
+  "colors": {
+    "primary": {
+      "DEFAULT": "#0F172A",
+      "foreground": "#F8FAFC"
+    },
+    "secondary": {
+      "DEFAULT": "#F1F5F9",
+      "foreground": "#0F172A"
+    },
+    "accent": {
+      "DEFAULT": "#3B82F6",
+      "foreground": "#FFFFFF"
+    },
+    "background": "#FFFFFF",
+    "surface": "#F8FAFC",
+    "border": "#E2E8F0",
+    "status": {
+      "new": "#3B82F6",
+      "contacted": "#8B5CF6",
+      "demo_booked": "#F59E0B",
+      "converted": "#10B981",
+      "lost": "#EF4444",
+      "follow_up": "#06B6D4"
+    },
+    "gradients": {
+      "primary": "from-slate-900 to-slate-800",
+      "subtle": "from-slate-50 to-slate-100"
+    }
+  },
+  "layout_strategy": {
+    "dashboard": {
+      "type": "bento_grid_dense",
+      "columns": "grid-cols-1 md:grid-cols-4 lg:grid-cols-12",
+      "gap": "gap-4",
+      "widgets": {
+        "summary_card": "col-span-1 md:col-span-2 lg:col-span-3 row-span-1",
+        "main_chart": "col-span-1 md:col-span-4 lg:col-span-8 row-span-2",
+        "list_feed": "col-span-1 md:col-span-4 lg:col-span-4 row-span-2"
+      }
+    },
+    "lead_table": {
+      "style": "floating_rows",
+      "density": "compact",
+      "row_hover": "hover:bg-slate-50 hover:scale-[1.002] transition-all duration-200 ease-out cursor-pointer"
+    }
+  },
+  "component_guidelines": {
+    "buttons": {
+      "primary": "bg-slate-900 text-white hover:bg-slate-800 rounded-md shadow-sm h-10 px-4 py-2",
+      "secondary": "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-md h-10 px-4 py-2",
+      "ghost": "hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-md"
+    },
+    "cards": {
+      "default": "bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300",
+      "interactive": "group relative overflow-hidden bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition-all duration-300"
+    },
+    "inputs": {
+      "default": "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "badges": {
+      "base": "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2",
+      "outline": "text-foreground"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "bg-white/80 backdrop-blur-xl border-b border-white/20",
+    "noise_texture": "before:fixed before:inset-0 before:z-[-1] before:bg-[url('https://grainy-gradients.vercel.app/noise.svg')] before:opacity-[0.03]",
+    "shadows": {
+      "soft": "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
+      "lifted": "shadow-[0_8px_24px_rgba(0,0,0,0.08)]"
+    }
+  },
+  "assets": {
+    "login_background": {
+      "url": "https://images.unsplash.com/photo-1590601842130-d011682e97fc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NjZ8MHwxfHNlYXJjaHw0fHxtb2Rlcm4lMjBvZmZpY2UlMjBlZHVjYXRpb24lMjBicmlnaHR8ZW58MHx8fHwxNzcxNTk2NjA3fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Modern office workspace with laptop"
+    },
+    "program_icons": {
+      "programming": {
+        "url": "https://images.unsplash.com/photo-1753998943619-b9cd910887e5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDR8MHwxfHNlYXJjaHwzfHxwcm9ncmFtbWluZyUyMGNvZGUlMjBzY3JlZW58ZW58MHx8fHwxNzcxNTk2NjA5fDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Programming Code Screen"
+      },
+      "data_science": {
+        "url": "https://images.unsplash.com/photo-1758691736545-5c33b6255dca?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA4Mzl8MHwxfHNlYXJjaHwzfHxkYXRhJTIwYW5hbHlzaXMlMjBjaGFydHMlMjBzY3JlZW58ZW58MHx8fHwxNzcxNTk2NjEwfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Data Analysis Charts"
+      },
+      "marketing": {
+        "url": "https://images.unsplash.com/photo-1676119633019-be66d5c4bc4c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwzfHxkaWdpdGFsJTIwbWFya2V0aW5nJTIwbWVldGluZ3xlbnwwfHx8fDE3NzE1OTY2MTF8MA&ixlib=rb-4.1.0&q=85",
+        "alt": "Digital Marketing Strategy"
+      }
+    },
+    "avatars": [
+      "https://images.unsplash.com/photo-1758518731468-98e90ffd7430?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDJ8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGRpdmVyc2V8ZW58MHx8fHwxNzcxNTMzOTYwfDA&ixlib=rb-4.1.0&q=85",
+      "https://images.pexels.com/photos/33871730/pexels-photo-33871730.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "https://images.pexels.com/photos/9489396/pexels-photo-9489396.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    ]
+  },
+  "universal_guidelines": [
+    "DO NOT use 'Inter' font for headings. Use Manrope.",
+    "DO NOT use teal (#1B93A4) for any UI element.",
+    "Use 'sonner' for toast notifications.",
+    "All interactive elements must have 'data-testid'.",
+    "Lead Management Table must use 'TanStack Table' (react-table) logic with customized UI.",
+    "Use 'Recharts' for analytics.",
+    "Forms must use 'react-hook-form' with 'zod' validation.",
+    "Ensure 3:1 contrast ratio for all text.",
+    "Do NOT use gradients for text.",
+    "Add 'dark:bg-slate-950' and 'dark:text-slate-50' support even if light mode is default."
+  ],
+  "libraries": {
+    "charts": "recharts",
+    "forms": "react-hook-form + zod",
+    "table": "@tanstack/react-table",
+    "date": "date-fns",
+    "icons": "lucide-react",
+    "toast": "sonner"
+  },
+  "instructions_to_main_agent": [
+    "1. Setup the typography first in tailwind.config.js.",
+    "2. Create a 'Layout' component that handles the Sidebar and Topbar structure.",
+    "3. Build the Dashboard using the Bento Grid strategy defined above.",
+    "4. Implement the Lead Management Table with sorting, filtering, and pagination.",
+    "5. Use the provided image URLs for the Login page and Course thumbnails.",
+    "6. Ensure all API calls to MSG91 are mocked or handled via a service layer."
+  ]
+}
