@@ -1048,7 +1048,8 @@ const AdminPanel = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Admin">Super Admin</SelectItem>
+                    <SelectItem value="Branch Admin">Branch Admin</SelectItem>
                     <SelectItem value="Counsellor">Counsellor</SelectItem>
                     <SelectItem value="Front Desk Executive">Front Desk Executive</SelectItem>
                   </SelectContent>
