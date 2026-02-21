@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet, GraduationCap, Globe, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet, GraduationCap, Globe, ClipboardList, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -40,6 +40,8 @@ const Layout = ({ children }) => {
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/', show: true },
     { icon: Users, label: 'Leads', path: '/leads', show: true },
+    // Tasks - For all non-Super Admin users
+    { icon: CheckSquare, label: 'Tasks', path: '/tasks', show: isBranchAdmin || isCounsellor || isFDE },
     // Pending Follow-ups - For Counsellors and Branch Admins only
     { icon: Bell, label: 'Pending Follow-ups', path: '/followups', show: isCounsellor || isBranchAdmin, badge: pendingCount },
     { icon: BarChart3, label: 'Analytics', path: '/analytics', show: true },
