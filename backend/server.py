@@ -1338,6 +1338,14 @@ async def create_enrollment(enrollment: EnrollmentCreate, current_user: User = D
     enrollment_dict['enrollment_date'] = enrollment_dict['enrollment_date'].isoformat()
     
     await db.enrollments.insert_one(enrollment_dict)
+    
+    # Send WhatsApp notification for enrollment confirmation
+    await send_whatsapp_notification(
+        new_enrollment.phone,
+        "enrollment_confirmed",
+        {"name": new_enrollment.student_name, "program": new_enrollment.program_name}
+    )
+    
     return new_enrollment
 
 @api_router.get("/enrollments", response_model=List[Enrollment])
