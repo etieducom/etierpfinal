@@ -172,4 +172,18 @@ export const examsAPI = {
   updateBookingStatus: (id, status) => api.put(`/exam-bookings/${id}/status`, null, { params: { status } }),
 };
 
+export const quizAPI = {
+  // Admin endpoints
+  getAll: () => api.get('/quiz-exams'),
+  getDetails: (id) => api.get(`/quiz-exams/${id}`),
+  create: (data) => api.post('/quiz-exams', data),
+  update: (id, data) => api.put(`/quiz-exams/${id}`, data),
+  delete: (id) => api.delete(`/quiz-exams/${id}`),
+  getAttempts: (examId) => api.get('/quiz-attempts', { params: examId ? { exam_id: examId } : {} }),
+  // Public endpoints (no auth required for students)
+  getPublicQuiz: (id) => axios.get(`${API_URL}/api/public/quiz/${id}`),
+  startAttempt: (id, data) => axios.post(`${API_URL}/api/public/quiz/${id}/start`, data),
+  submitAttempt: (attemptId, data) => axios.post(`${API_URL}/api/public/quiz/attempt/${attemptId}/submit`, data),
+};
+
 export default api;
