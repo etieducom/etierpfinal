@@ -74,6 +74,46 @@ const AllPaymentsPage = () => {
     });
   };
 
+  const handleDelete = async (paymentId) => {
+    if (!window.confirm('Are you sure you want to delete this payment?')) return;
+    
+    try {
+      await paymentAPI.deletePayment(paymentId);
+      toast.success('Payment deleted successfully');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete payment');
+    }
+  };
+
+  const handleEdit = (payment) => {
+    setEditingPayment(payment);
+    setEditForm({
+      amount: payment.amount?.toString() || '',
+      payment_mode: payment.payment_mode || '',
+      payment_date: payment.payment_date ? payment.payment_date.split('T')[0] : '',
+      remarks: payment.remarks || ''
+    });
+    setEditDialog(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await paymentAPI.updatePayment(editingPayment.id, {
+        amount: parseFloat(editForm.amount),
+        payment_mode: editForm.payment_mode,
+        payment_date: editForm.payment_date,
+        remarks: editForm.remarks
+      });
+      toast.success('Payment updated successfully');
+      setEditDialog(false);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update payment');
+    }
+  };
+
   const totalAmount = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
   const getPaymentModeColor = (mode) => {
