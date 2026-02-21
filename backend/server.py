@@ -1630,8 +1630,8 @@ async def delete_expense(expense_id: str, current_user: User = Depends(get_curre
 # Enrollment Management (FDA)
 @api_router.post("/enrollments", response_model=Enrollment)
 async def create_enrollment(enrollment: EnrollmentCreate, current_user: User = Depends(get_current_user)):
-    if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK]:
-        raise HTTPException(status_code=403, detail="Only Front Desk Executive can create enrollments")
+    if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Front Desk Executive or Branch Admin can create enrollments")
     
     # Verify lead exists and is converted
     lead = await db.leads.find_one({"id": enrollment.lead_id}, {"_id": 0})
@@ -1655,12 +1655,17 @@ async def create_enrollment(enrollment: EnrollmentCreate, current_user: User = D
     discount_amount = (enrollment.fee_quoted * (enrollment.discount_percent or 0)) / 100
     final_fee = enrollment.fee_quoted - discount_amount
     
+    # Generate custom enrollment ID
+    branch_id = current_user.branch_id or lead["branch_id"]
+    custom_enrollment_id = await generate_custom_id(branch_id, "E")
+    
     enrollment_data = enrollment.model_dump()
     enrollment_data.pop('enrollment_date', None)  # Remove to avoid duplicate argument
     
     new_enrollment = Enrollment(
         **enrollment_data,
-        branch_id=current_user.branch_id or lead["branch_id"],
+        enrollment_id=custom_enrollment_id,
+        branch_id=branch_id,
         program_name=program['name'],
         final_fee=final_fee,
         enrollment_date=datetime.fromisoformat(enrollment.enrollment_date).date(),
