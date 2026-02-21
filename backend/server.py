@@ -290,6 +290,10 @@ class Lead(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     counsellor_id: str
+    # Demo booking fields
+    demo_date: Optional[str] = None
+    demo_time: Optional[str] = None
+    trainer_name: Optional[str] = None
     # Soft delete fields
     is_deleted: bool = False
     deleted_at: Optional[datetime] = None
