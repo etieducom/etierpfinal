@@ -81,7 +81,7 @@ const Layout = ({ children }) => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top Bar */}
-      <header className="glassmorphism sticky top-0 z-50 h-16 flex items-center justify-between px-6 border-b border-slate-200">
+      <header className="glassmorphism sticky top-0 z-50 h-16 flex items-center justify-between px-6 border-b border-slate-200 bg-white">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -90,7 +90,8 @@ const Layout = ({ children }) => {
           >
             {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
-          <h1 className="text-2xl font-bold tracking-tight">ETI Educom - Branch Management</h1>
+          <img src={ETI_LOGO} alt="ETI Educom" className="h-10 object-contain" />
+          <span className="text-lg font-semibold text-slate-700 hidden md:block">Branch Management System</span>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right hidden sm:block">
