@@ -76,12 +76,17 @@ class Branch(BaseModel):
     city: str
     state: str
     pincode: str
+    state_code: Optional[str] = None  # Auto-generated: first 2 chars of state
+    city_code: Optional[str] = None   # Auto-generated: first 3 chars of city
     owner_name: str
     owner_email: EmailStr
     owner_phone: str
     owner_designation: str
     branch_phone: str
     branch_email: EmailStr
+    lead_counter: int = 0      # For custom ID generation
+    enrollment_counter: int = 0
+    receipt_counter: int = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class BranchCreate(BaseModel):
