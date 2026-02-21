@@ -2972,13 +2972,16 @@ async def create_quiz_exam(exam: QuizExamCreate, current_user: User = Depends(re
 @api_router.get("/quiz-exams")
 async def get_quiz_exams(current_user: User = Depends(get_current_user)):
     """Get all quiz exams - for Admin/FDE"""
-    exams = await db.quiz_exams.find({"is_active": True}, {"_id": 0, "questions": 0}).to_list(100)
+    exams = await db.quiz_exams.find({"is_active": True}, {"_id": 0}).to_list(100)
     for exam in exams:
         if isinstance(exam.get('created_at'), str):
             exam['created_at'] = datetime.fromisoformat(exam['created_at'])
         # Add attempt count
         attempts = await db.quiz_attempts.count_documents({"exam_id": exam['id']})
         exam['total_attempts'] = attempts
+        # Count questions and remove the actual questions list
+        exam['total_questions'] = len(exam.get('questions', []))
+        exam.pop('questions', None)
     return exams
 
 @api_router.get("/quiz-exams/{exam_id}")
