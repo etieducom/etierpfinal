@@ -813,19 +813,50 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     
     return updated_lead_obj
 
+class LeadDeleteRequest(BaseModel):
+    reason: Optional[str] = None
+
 @api_router.delete("/leads/{lead_id}")
-async def delete_lead(lead_id: str, current_user: User = Depends(get_current_user)):
+async def delete_lead(lead_id: str, delete_request: Optional[LeadDeleteRequest] = None, current_user: User = Depends(get_current_user)):
+    """Soft delete a lead - only the counsellor who created it can delete"""
     lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     
-    if current_user.role != UserRole.ADMIN and lead.get('branch_id') != current_user.branch_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if lead.get('is_deleted'):
+        raise HTTPException(status_code=400, detail="Lead is already deleted")
     
-    result = await db.leads.delete_one({"id": lead_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Lead not found")
+    # Only the counsellor who created the lead or Admin can delete
+    if current_user.role != UserRole.ADMIN and lead.get('counsellor_id') != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the counsellor who created this lead can delete it")
+    
+    # Soft delete - mark as deleted instead of removing
+    await db.leads.update_one(
+        {"id": lead_id},
+        {"$set": {
+            "is_deleted": True,
+            "deleted_at": datetime.now(timezone.utc).isoformat(),
+            "deleted_by": current_user.id,
+            "deleted_by_name": current_user.name,
+            "deletion_reason": delete_request.reason if delete_request else None
+        }}
+    )
     return {"message": "Lead deleted successfully"}
+
+@api_router.get("/leads/deleted", response_model=List[Lead])
+async def get_deleted_leads(current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Get all soft-deleted leads - Admin only"""
+    query = {"is_deleted": True}
+    
+    leads = await db.leads.find(query, {"_id": 0}).sort("deleted_at", -1).to_list(1000)
+    for lead in leads:
+        if isinstance(lead.get('created_at'), str):
+            lead['created_at'] = datetime.fromisoformat(lead['created_at'])
+        if isinstance(lead.get('updated_at'), str):
+            lead['updated_at'] = datetime.fromisoformat(lead['updated_at'])
+        if isinstance(lead.get('deleted_at'), str):
+            lead['deleted_at'] = datetime.fromisoformat(lead['deleted_at'])
+    return [Lead(**lead) for lead in leads]
 
 # Follow-up Management
 @api_router.post("/followups", response_model=FollowUp)
