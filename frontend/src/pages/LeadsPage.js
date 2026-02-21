@@ -609,6 +609,56 @@ const LeadsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Demo Booked Dialog */}
+      <Dialog open={demoDialog} onOpenChange={setDemoDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Book Demo Session</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Demo Date *</Label>
+              <Input
+                type="date"
+                value={demoForm.demo_date}
+                onChange={(e) => setDemoForm({...demoForm, demo_date: e.target.value})}
+                data-testid="demo-date-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Demo Time *</Label>
+              <Input
+                type="time"
+                value={demoForm.demo_time}
+                onChange={(e) => setDemoForm({...demoForm, demo_time: e.target.value})}
+                data-testid="demo-time-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Trainer Name *</Label>
+              <Input
+                value={demoForm.trainer_name}
+                onChange={(e) => setDemoForm({...demoForm, trainer_name: e.target.value})}
+                placeholder="Enter trainer name"
+                data-testid="demo-trainer-input"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDemoDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDemoBooking}
+                className="bg-amber-600 hover:bg-amber-700"
+                data-testid="confirm-demo-button"
+              >
+                Book Demo
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
