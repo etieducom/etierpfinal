@@ -98,30 +98,29 @@ class TestLeadSources:
         print("SUCCESS: Duplicate lead source creation correctly rejected")
     
     def test_delete_lead_source(self, headers):
-        """Test deleting a lead source"""
+        """Test deleting (soft delete) a lead source"""
         # First create a source to delete
+        import uuid
+        unique_id = str(uuid.uuid4())[:8]
         test_source = {
-            "name": "TEST_ToDelete_Source",
+            "name": f"TEST_ToDelete_Source_{unique_id}",
             "description": "Source to be deleted"
         }
         create_response = requests.post(f"{BASE_URL}/api/admin/lead-sources", json=test_source, headers=headers)
-        if create_response.status_code == 400:
-            # Already exists, find and delete
-            sources_response = requests.get(f"{BASE_URL}/api/lead-sources", headers=headers)
-            sources = sources_response.json()
-            source_id = None
-            for s in sources:
-                if s['name'] == test_source['name']:
-                    source_id = s['id']
-                    break
-        else:
-            assert create_response.status_code == 200
-            source_id = create_response.json()["id"]
+        assert create_response.status_code == 200, f"Failed to create test source: {create_response.text}"
+        source_id = create_response.json()["id"]
         
-        # Delete the source
+        # Delete the source (soft delete - sets is_active=False)
         delete_response = requests.delete(f"{BASE_URL}/api/admin/lead-sources/{source_id}", headers=headers)
         assert delete_response.status_code == 200, f"Failed to delete lead source: {delete_response.text}"
-        print(f"SUCCESS: Deleted lead source with id: {source_id}")
+        print(f"SUCCESS: Soft deleted lead source with id: {source_id}")
+        
+        # Verify it's not returned in active sources list (since soft delete sets is_active=False)
+        sources_response = requests.get(f"{BASE_URL}/api/lead-sources", headers=headers)
+        sources = sources_response.json()
+        active_source_ids = [s['id'] for s in sources if s.get('is_active', True)]
+        assert source_id not in active_source_ids, "Soft deleted source should not appear in active sources"
+        print("SUCCESS: Soft deleted source not in active sources list")
 
 
 class TestExpenseCategories:
