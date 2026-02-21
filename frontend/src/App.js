@@ -15,6 +15,8 @@ import AllPaymentsPage from '@/pages/AllPaymentsPage';
 import PendingPaymentsPage from '@/pages/PendingPaymentsPage';
 import DeletedLeadsPage from '@/pages/DeletedLeadsPage';
 import StudentsPage from '@/pages/StudentsPage';
+import InternationalExamsPage from '@/pages/InternationalExamsPage';
+import ManageExamsPage from '@/pages/ManageExamsPage';
 import Layout from '@/components/Layout';
 import { Toaster } from '@/components/ui/sonner';
 
