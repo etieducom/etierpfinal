@@ -921,8 +921,12 @@ async def create_lead(lead: LeadCreate, current_user: User = Depends(get_current
     if not branch_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=400, detail="User must be assigned to a branch")
     
+    # Generate custom lead ID
+    custom_lead_id = await generate_custom_id(branch_id or "default", "L")
+    
     new_lead = Lead(
         **lead.model_dump(),
+        lead_id=custom_lead_id,
         branch_id=branch_id or "default",
         counsellor_id=current_user.id,
         program_name=program['name']
