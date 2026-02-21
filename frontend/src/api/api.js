@@ -127,6 +127,8 @@ export const paymentAPI = {
   generateReceipt: (paymentId) => api.get(`/payments/${paymentId}/receipt`),
   getAllPayments: (params = {}) => api.get('/payments/all', { params }),
   getPendingPayments: (params = {}) => api.get('/payments/pending', { params }),
+  deletePayment: (id) => api.delete(`/payments/${id}`),
+  updatePayment: (id, data) => api.put(`/payments/${id}`, data),
 };
 
 export const deletedLeadsAPI = {
