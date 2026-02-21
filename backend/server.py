@@ -1303,10 +1303,24 @@ async def create_payment(payment: PaymentCreate, current_user: User = Depends(ge
     if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK]:
         raise HTTPException(status_code=403, detail="Only Front Desk Executive can record payments")
     
-    # Get enrollment to get branch_id
+    # Get enrollment to get branch_id and validate payment amount
     enrollment = await db.enrollments.find_one({"id": payment.enrollment_id}, {"_id": 0})
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")
+    
+    # Calculate total paid so far
+    existing_payments = await db.payments.find({"enrollment_id": payment.enrollment_id}, {"_id": 0, "amount": 1}).to_list(1000)
+    total_paid = sum(p.get('amount', 0) for p in existing_payments)
+    
+    # Check if payment exceeds remaining fee
+    final_fee = enrollment.get('final_fee', 0)
+    remaining_fee = final_fee - total_paid
+    
+    if payment.amount > remaining_fee:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Payment amount (₹{payment.amount}) exceeds remaining fee (₹{remaining_fee}). Total fee: ₹{final_fee}, Already paid: ₹{total_paid}"
+        )
     
     payment_data = payment.model_dump()
     payment_data.pop('payment_date', None)  # Remove to avoid duplicate argument
