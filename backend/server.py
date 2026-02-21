@@ -267,6 +267,10 @@ class LeadUpdate(BaseModel):
     payment_plan: Optional[str] = None
     lead_source: Optional[str] = None
     status: Optional[LeadStatus] = None
+    # Demo booking fields
+    demo_date: Optional[str] = None
+    demo_time: Optional[str] = None
+    trainer_name: Optional[str] = None
 
 class Lead(BaseModel):
     model_config = ConfigDict(extra="ignore")
