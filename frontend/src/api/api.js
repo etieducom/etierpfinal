@@ -46,6 +46,7 @@ export const adminAPI = {
   deleteProgram: (id) => api.delete(`/admin/programs/${id}`),
   createUser: (data) => api.post('/admin/users', data),
   getUsers: () => api.get('/admin/users'),
+  getBranchUsers: () => api.get('/branch/users'),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
   changeUserPassword: (id, data) => api.put(`/admin/users/${id}/password`, data),
   updateUserStatus: (id, data) => api.put(`/admin/users/${id}/status`, data),
