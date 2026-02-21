@@ -212,12 +212,42 @@ const LeadsPage = () => {
   };
 
   const handleStatusChange = async (leadId, newStatus) => {
+    // If changing to Demo Booked, show popup to collect demo details
+    if (newStatus === 'Demo Booked') {
+      setDemoLeadId(leadId);
+      setDemoForm({ demo_date: '', demo_time: '', trainer_name: '' });
+      setDemoDialog(true);
+      return;
+    }
+    
     try {
       await leadsAPI.update(leadId, { status: newStatus });
       toast.success('Status updated! WhatsApp message sent.');
       fetchLeads();
     } catch (error) {
       toast.error('Failed to update status');
+    }
+  };
+
+  const handleDemoBooking = async () => {
+    if (!demoForm.demo_date || !demoForm.demo_time || !demoForm.trainer_name) {
+      toast.error('Please fill all demo details');
+      return;
+    }
+    
+    try {
+      await leadsAPI.update(demoLeadId, { 
+        status: 'Demo Booked',
+        demo_date: demoForm.demo_date,
+        demo_time: demoForm.demo_time,
+        trainer_name: demoForm.trainer_name
+      });
+      toast.success('Demo booked successfully! WhatsApp notification sent.');
+      setDemoDialog(false);
+      setDemoForm({ demo_date: '', demo_time: '', trainer_name: '' });
+      fetchLeads();
+    } catch (error) {
+      toast.error('Failed to book demo');
     }
   };
 
