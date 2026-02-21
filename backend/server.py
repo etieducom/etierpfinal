@@ -925,7 +925,7 @@ async def send_whatsapp_template(phone_number: str, body_value: str, settings: W
 
 async def send_whatsapp_message(phone_number: str, message_text: str, lead_name: str):
     """Send WhatsApp message via MSG91 API (legacy text-based)"""
-    MSG91_KEY = "354230AManBGHBNB694046f8P1"  # Your MSG91 auth key
+    MSG91_KEY = os.environ.get('MSG91_AUTH_KEY', '')
     
     if not MSG91_KEY:
         logging.warning("MSG91_AUTH_KEY not configured. Skipping WhatsApp message.")
