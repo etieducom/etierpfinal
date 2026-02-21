@@ -1747,8 +1747,8 @@ async def create_payment_plan(plan: PaymentPlanCreate, current_user: User = Depe
 # Payment Recording
 @api_router.post("/payments", response_model=Payment)
 async def create_payment(payment: PaymentCreate, current_user: User = Depends(get_current_user)):
-    if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK]:
-        raise HTTPException(status_code=403, detail="Only Front Desk Executive can record payments")
+    if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Front Desk Executive or Branch Admin can record payments")
     
     # Get enrollment to get branch_id and validate payment amount
     enrollment = await db.enrollments.find_one({"id": payment.enrollment_id}, {"_id": 0})
@@ -1769,12 +1769,17 @@ async def create_payment(payment: PaymentCreate, current_user: User = Depends(ge
             detail=f"Payment amount (₹{payment.amount}) exceeds remaining fee (₹{remaining_fee}). Total fee: ₹{final_fee}, Already paid: ₹{total_paid}"
         )
     
+    # Generate custom receipt number
+    branch_id = enrollment.get('branch_id', current_user.branch_id or 'default')
+    custom_receipt_id = await generate_custom_id(branch_id, "R")
+    
     payment_data = payment.model_dump()
     payment_data.pop('payment_date', None)  # Remove to avoid duplicate argument
     
     new_payment = Payment(
         **payment_data,
-        branch_id=enrollment.get('branch_id', current_user.branch_id or 'default'),
+        receipt_number=custom_receipt_id or f"RCP-{str(uuid.uuid4())[:8].upper()}",
+        branch_id=branch_id,
         payment_date=datetime.fromisoformat(payment.payment_date).date(),
         created_by=current_user.id
     )
