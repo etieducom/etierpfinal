@@ -170,18 +170,26 @@ const LeadsPage = () => {
       fee_quoted: lead.fee_quoted?.toString() || '',
       discount_percent: lead.discount_percent?.toString() || '',
     });
+    setValue('lead_source', lead.lead_source);
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this lead?')) return;
+  const handleDelete = async (id, lead) => {
+    // Check if the current user is the owner or admin
+    if (user.role !== 'Admin' && lead.counsellor_id !== user.id) {
+      toast.error('Only the counsellor who created this lead can delete it');
+      return;
+    }
+    
+    const reason = window.prompt('Please enter a reason for deleting this lead:');
+    if (reason === null) return; // User cancelled
 
     try {
-      await leadsAPI.delete(id);
+      await leadsAPI.delete(id, { reason });
       toast.success('Lead deleted successfully');
       fetchLeads();
     } catch (error) {
-      toast.error('Failed to delete lead');
+      toast.error(error.response?.data?.detail || 'Failed to delete lead');
     }
   };
 
