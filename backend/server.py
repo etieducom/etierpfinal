@@ -476,9 +476,62 @@ def require_role(allowed_roles: List[UserRole]):
         return current_user
     return role_checker
 
+async def get_whatsapp_settings():
+    """Get WhatsApp notification settings"""
+    settings = await db.whatsapp_settings.find_one({}, {"_id": 0})
+    if not settings:
+        # Create default settings
+        default_settings = WhatsAppSettings().model_dump()
+        default_settings['updated_at'] = default_settings['updated_at'].isoformat()
+        await db.whatsapp_settings.insert_one(default_settings)
+        return WhatsAppSettings()
+    if isinstance(settings.get('updated_at'), str):
+        settings['updated_at'] = datetime.fromisoformat(settings['updated_at'])
+    return WhatsAppSettings(**settings)
+
+async def send_whatsapp_notification(phone_number: str, notification_type: str, template_data: dict):
+    """Send WhatsApp notification if enabled"""
+    settings = await get_whatsapp_settings()
+    
+    if not settings.enabled:
+        logging.info("WhatsApp notifications are disabled")
+        return {"success": False, "reason": "Notifications disabled"}
+    
+    # Check if specific notification type is enabled
+    type_mapping = {
+        "lead_added": settings.notify_lead_added,
+        "demo_booked": settings.notify_demo_booked,
+        "demo_completed": settings.notify_demo_completed,
+        "enrollment_confirmed": settings.notify_enrollment_confirmed,
+        "payment_received": settings.notify_payment_received,
+        "installment_reminder": settings.notify_installment_reminder
+    }
+    
+    if not type_mapping.get(notification_type, False):
+        logging.info(f"WhatsApp notification type '{notification_type}' is disabled")
+        return {"success": False, "reason": f"Notification type '{notification_type}' disabled"}
+    
+    # Build message based on type
+    messages = {
+        "lead_added": f"Hi {template_data.get('name', '')}, Thank you for your interest in ETI Educom! Our counsellor will contact you shortly.",
+        "demo_booked": f"Hi {template_data.get('name', '')}, Your demo has been scheduled for {template_data.get('date', '')}. We look forward to seeing you!",
+        "demo_completed": f"Hi {template_data.get('name', '')}, Thank you for attending the demo at ETI Educom! We hope you found it informative.",
+        "enrollment_confirmed": f"Congratulations {template_data.get('name', '')}! Your enrollment for {template_data.get('program', '')} at ETI Educom is confirmed. Welcome aboard!",
+        "payment_received": f"Hi {template_data.get('name', '')}, We have received your payment of ₹{template_data.get('amount', 0):,.0f}. Thank you!",
+        "installment_reminder": f"Hi {template_data.get('name', '')}, This is a reminder that your installment of ₹{template_data.get('amount', 0):,.0f} is due on {template_data.get('due_date', '')}."
+    }
+    
+    message = messages.get(notification_type, "")
+    if not message:
+        return {"success": False, "reason": "Unknown notification type"}
+    
+    return await send_whatsapp_message(phone_number, message, template_data.get('name', ''))
+
 async def send_whatsapp_message(phone_number: str, message_text: str, lead_name: str):
     """Send WhatsApp message via MSG91 API"""
-    if not MSG91_AUTH_KEY:
+    MSG91_KEY = "354230AManBGHBNB694046f8P1"  # Your MSG91 auth key
+    
+    if not MSG91_KEY:
         logging.warning("MSG91_AUTH_KEY not configured. Skipping WhatsApp message.")
         return {"success": False, "error": "MSG91_AUTH_KEY not configured"}
     
@@ -486,21 +539,37 @@ async def send_whatsapp_message(phone_number: str, message_text: str, lead_name:
         url = "https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/"
         
         headers = {
-            "authkey": MSG91_AUTH_KEY,
+            "authkey": MSG91_KEY,
             "Content-Type": "application/json"
         }
         
+        # Format phone number (ensure it has country code)
+        formatted_phone = phone_number.strip()
+        if not formatted_phone.startswith('+'):
+            if not formatted_phone.startswith('91'):
+                formatted_phone = '91' + formatted_phone
+        formatted_phone = formatted_phone.replace('+', '')
+        
         payload = {
-            "messaging_product": "whatsapp",
-            "to": phone_number,
-            "type": "text",
-            "text": {
-                "body": message_text
-            }
+            "integrated_number": "919876543210",  # Replace with your MSG91 registered number
+            "content_type": "text",
+            "payload": {
+                "messaging_product": "whatsapp",
+                "type": "text",
+                "text": {
+                    "body": message_text
+                }
+            },
+            "recipients": [
+                {
+                    "mobiles": formatted_phone,
+                    "name": lead_name
+                }
+            ]
         }
         
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.post(url, headers=headers, json=payload)
             
             if response.status_code == 200:
                 logging.info(f"WhatsApp message sent successfully to {phone_number}")
