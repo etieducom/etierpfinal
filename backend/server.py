@@ -151,6 +151,7 @@ class User(BaseModel):
     date_of_birth: Optional[str] = None
     designation: Optional[str] = None
     photo_url: Optional[str] = None
+    is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserResponse(BaseModel):
@@ -168,6 +169,70 @@ class UserResponse(BaseModel):
     date_of_birth: Optional[str] = None
     designation: Optional[str] = None
     photo_url: Optional[str] = None
+    is_active: Optional[bool] = True
+
+class PasswordChange(BaseModel):
+    current_password: Optional[str] = None  # Required for self-change
+    new_password: str
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool
+
+# Task Management
+class TaskStatus(str, Enum):
+    PENDING = "Pending"
+    IN_PROGRESS = "In Progress"
+    COMPLETED = "Completed"
+
+class Task(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: Optional[str] = None
+    assigned_by: str
+    assigned_by_name: str
+    assigned_to: str
+    assigned_to_name: str
+    branch_id: str
+    status: TaskStatus = TaskStatus.PENDING
+    priority: str = "Normal"  # Low, Normal, High, Urgent
+    due_date: Optional[str] = None
+    completed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class TaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    assigned_to: str
+    priority: str = "Normal"
+    due_date: Optional[str] = None
+
+# International Exams
+class InternationalExam(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+    price: float
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ExamBooking(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    booking_id: Optional[str] = None  # Custom ID like PBPTKX0001
+    student_name: str
+    student_phone: str
+    student_email: Optional[str] = None
+    exam_id: str
+    exam_name: str
+    exam_price: float
+    branch_id: str
+    status: str = "Pending"  # Pending, Confirmed, Completed, Cancelled
+    exam_date: Optional[str] = None
+    notes: Optional[str] = None
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Token(BaseModel):
     access_token: str
