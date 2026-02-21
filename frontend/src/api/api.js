@@ -94,9 +94,16 @@ export const reportsAPI = {
 
 export const expenseAPI = {
   createCategory: (data) => api.post('/admin/expense-categories', data),
+  deleteCategory: (id) => api.delete(`/admin/expense-categories/${id}`),
   getCategories: () => api.get('/expense-categories'),
   createExpense: (data) => api.post('/expenses', data),
   getExpenses: () => api.get('/expenses'),
+};
+
+export const leadSourceAPI = {
+  getAll: () => api.get('/lead-sources'),
+  create: (data) => api.post('/admin/lead-sources', data),
+  delete: (id) => api.delete(`/admin/lead-sources/${id}`),
 };
 
 export const enrollmentAPI = {
@@ -111,6 +118,12 @@ export const paymentAPI = {
   createPaymentPlan: (data) => api.post('/payment-plans', data),
   createPayment: (data) => api.post('/payments', data),
   generateReceipt: (paymentId) => api.get(`/payments/${paymentId}/receipt`),
+  getAllPayments: (params = {}) => api.get('/payments/all', { params }),
+  getPendingPayments: (params = {}) => api.get('/payments/pending', { params }),
+};
+
+export const deletedLeadsAPI = {
+  getDeleted: () => api.get('/leads/deleted'),
 };
 
 export default api;
