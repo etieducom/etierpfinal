@@ -297,24 +297,23 @@ const EnrollmentsPage = () => {
         <div class="amount-section">
           <div class="amount-row">
             <span class="label">Amount Paid:</span>
-            <span class="amount">₹${receiptData?.amount?.toLocaleString('en-IN') || '0'}</span>
+            <span class="amount">Rs.${receiptData?.amount?.toLocaleString('en-IN') || '0'}</span>
           </div>
-          <p class="amount-words">(Rupees ${receiptData?.amount ? numberToWords(receiptData.amount) : 'Zero'} Only)</p>
         </div>
         
         <div class="fee-summary">
           <table>
             <tr>
               <td>Total Course Fee:</td>
-              <td>₹${receiptData?.total_fee?.toLocaleString('en-IN') || '0'}</td>
+              <td>Rs.${receiptData?.total_fee?.toLocaleString('en-IN') || '0'}</td>
             </tr>
             <tr>
               <td>Total Paid (Till Date):</td>
-              <td>₹${receiptData?.total_paid?.toLocaleString('en-IN') || '0'}</td>
+              <td>Rs.${receiptData?.total_paid?.toLocaleString('en-IN') || '0'}</td>
             </tr>
             <tr class="balance">
               <td>Balance Due:</td>
-              <td>₹${((receiptData?.total_fee || 0) - (receiptData?.total_paid || 0)).toLocaleString('en-IN')}</td>
+              <td>Rs.${((receiptData?.total_fee || 0) - (receiptData?.total_paid || 0)).toLocaleString('en-IN')}</td>
             </tr>
           </table>
         </div>
@@ -338,18 +337,16 @@ const EnrollmentsPage = () => {
         <ol>
           <li>Fees once paid are non-refundable and non-transferable under any circumstances.</li>
           <li>Certificate will be issued only after full fee payment, required attendance, and successful course completion.</li>
-          <li>ETI Educom™ provides placement assistance only. Job placement is not guaranteed.</li>
+          <li>ETI Educom provides placement assistance only. Job placement is not guaranteed.</li>
           <li>Students must follow institute rules and code of conduct. Violation may lead to termination without refund.</li>
         </ol>
       </div>
     `;
     
-    printWindow.document.write('<html><head><title>Fee Receipt - ETI Educom</title>');
-    printWindow.document.write('<style>');
-    printWindow.document.write(\`
+    const cssStyles = `
       @page { size: A4; margin: 10mm; }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Arial', sans-serif; font-size: 11px; line-height: 1.4; }
+      body { font-family: Arial, sans-serif; font-size: 11px; line-height: 1.4; }
       
       .receipt-copy {
         border: 2px solid #1a1a2e;
@@ -405,7 +402,6 @@ const EnrollmentsPage = () => {
       .amount-row { display: flex; justify-content: center; align-items: center; gap: 15px; }
       .amount-row .label { color: #ccc; font-size: 11px; }
       .amount { font-size: 22px; font-weight: bold; }
-      .amount-words { font-size: 10px; color: #aaa; margin-top: 5px; font-style: italic; }
       
       .fee-summary {
         margin: 10px 0;
@@ -464,20 +460,10 @@ const EnrollmentsPage = () => {
         margin: 15px 0;
         position: relative;
       }
-      .divider::after {
-        content: '✂ Cut Here';
-        position: absolute;
-        top: -8px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: white;
-        padding: 0 10px;
-        font-size: 9px;
-        color: #999;
-      }
-    \`);
-    printWindow.document.write('</style>');
-    printWindow.document.write('<script>function numberToWords(num){var a=["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];var b=["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];if(num===0)return "Zero";if(num<20)return a[num];if(num<100)return b[Math.floor(num/10)]+(num%10?" "+a[num%10]:"");if(num<1000)return a[Math.floor(num/100)]+" Hundred"+(num%100?" and "+numberToWords(num%100):"");if(num<100000)return numberToWords(Math.floor(num/1000))+" Thousand"+(num%1000?" "+numberToWords(num%1000):"");if(num<10000000)return numberToWords(Math.floor(num/100000))+" Lakh"+(num%100000?" "+numberToWords(num%100000):"");return numberToWords(Math.floor(num/10000000))+" Crore"+(num%10000000?" "+numberToWords(num%10000000):"");}</script>');
+    `;
+    
+    printWindow.document.write('<html><head><title>Fee Receipt - ETI Educom</title>');
+    printWindow.document.write('<style>' + cssStyles + '</style>');
     printWindow.document.write('</head><body>');
     
     // Student Copy
