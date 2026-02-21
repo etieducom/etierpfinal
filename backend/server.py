@@ -859,21 +859,6 @@ async def delete_lead(lead_id: str, delete_request: Optional[LeadDeleteRequest] 
     )
     return {"message": "Lead deleted successfully"}
 
-@api_router.get("/leads/deleted", response_model=List[Lead])
-async def get_deleted_leads(current_user: User = Depends(require_role([UserRole.ADMIN]))):
-    """Get all soft-deleted leads - Admin only"""
-    query = {"is_deleted": True}
-    
-    leads = await db.leads.find(query, {"_id": 0}).sort("deleted_at", -1).to_list(1000)
-    for lead in leads:
-        if isinstance(lead.get('created_at'), str):
-            lead['created_at'] = datetime.fromisoformat(lead['created_at'])
-        if isinstance(lead.get('updated_at'), str):
-            lead['updated_at'] = datetime.fromisoformat(lead['updated_at'])
-        if isinstance(lead.get('deleted_at'), str):
-            lead['deleted_at'] = datetime.fromisoformat(lead['deleted_at'])
-    return [Lead(**lead) for lead in leads]
-
 # Follow-up Management
 @api_router.post("/followups", response_model=FollowUp)
 async def create_followup(followup: FollowUpCreate, current_user: User = Depends(get_current_user)):
