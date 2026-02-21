@@ -156,4 +156,19 @@ export const notificationsAPI = {
   markAsRead: (id) => api.put(`/notifications/${id}/read`),
 };
 
+export const tasksAPI = {
+  getAll: () => api.get('/tasks'),
+  create: (data) => api.post('/tasks', data),
+  updateStatus: (id, status) => api.put(`/tasks/${id}/status`, null, { params: { status } }),
+};
+
+export const examsAPI = {
+  getTypes: () => api.get('/admin/exams'),
+  createType: (data) => api.post('/admin/exams', data),
+  deleteType: (id) => api.delete(`/admin/exams/${id}`),
+  getBookings: () => api.get('/exam-bookings'),
+  createBooking: (data) => api.post('/exam-bookings', data),
+  updateBookingStatus: (id, status) => api.put(`/exam-bookings/${id}/status`, null, { params: { status } }),
+};
+
 export default api;
