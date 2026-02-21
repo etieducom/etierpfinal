@@ -295,6 +295,29 @@ class ExpenseCreate(BaseModel):
     expense_date: str
     remarks: Optional[str] = None
 
+# WhatsApp Notification Settings
+class WhatsAppSettings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    enabled: bool = True
+    notify_lead_added: bool = True
+    notify_demo_booked: bool = True
+    notify_demo_completed: bool = True
+    notify_enrollment_confirmed: bool = True
+    notify_payment_received: bool = True
+    notify_installment_reminder: bool = True
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_by: Optional[str] = None
+
+class WhatsAppSettingsUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    notify_lead_added: Optional[bool] = None
+    notify_demo_booked: Optional[bool] = None
+    notify_demo_completed: Optional[bool] = None
+    notify_enrollment_confirmed: Optional[bool] = None
+    notify_payment_received: Optional[bool] = None
+    notify_installment_reminder: Optional[bool] = None
+
 # Enrollment Management
 class Enrollment(BaseModel):
     model_config = ConfigDict(extra="ignore")
