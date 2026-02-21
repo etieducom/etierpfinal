@@ -52,6 +52,7 @@ const LeadsPage = () => {
   const [leads, setLeads] = useState([]);
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [programs, setPrograms] = useState([]);
+  const [leadSources, setLeadSources] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -62,6 +63,8 @@ const LeadsPage = () => {
   const [followupNote, setFollowupNote] = useState('');
   const [followupDate, setFollowupDate] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('');
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const {
     register,
@@ -83,13 +86,14 @@ const LeadsPage = () => {
 
   const fetchData = async () => {
     try {
-      const { adminAPI } = await import('@/api/api');
-      const [leadsRes, programsRes] = await Promise.all([
+      const [leadsRes, programsRes, sourcesRes] = await Promise.all([
         leadsAPI.getAll({}),
-        adminAPI.getPrograms()
+        adminAPI.getPrograms(),
+        leadSourceAPI.getAll()
       ]);
       setLeads(leadsRes.data);
       setPrograms(programsRes.data);
+      setLeadSources(sourcesRes.data);
     } catch (error) {
       toast.error('Failed to fetch data');
     } finally {
