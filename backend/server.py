@@ -2931,6 +2931,245 @@ async def update_branch_exam_counter(branch_id: str):
     )
     return result.get('exam_counter', 1) if result else 1
 
+# ============ Quiz-Based Exams Endpoints ============
+
+@api_router.post("/quiz-exams")
+async def create_quiz_exam(exam: QuizExamCreate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Create a new quiz exam - Super Admin only"""
+    # Validate questions (max 100)
+    if len(exam.questions) > 100:
+        raise HTTPException(status_code=400, detail="Maximum 100 questions allowed")
+    
+    # Convert question dicts to QuizQuestion objects
+    questions = []
+    for i, q in enumerate(exam.questions, 1):
+        questions.append(QuizQuestion(
+            question_number=i,
+            question_text=q.get('question_text', ''),
+            option_a=q.get('option_a', ''),
+            option_b=q.get('option_b', ''),
+            option_c=q.get('option_c', ''),
+            option_d=q.get('option_d', ''),
+            correct_answer=q.get('correct_answer', 'A').upper()
+        ))
+    
+    new_exam = QuizExam(
+        name=exam.name,
+        description=exam.description,
+        duration_minutes=exam.duration_minutes,
+        pass_percentage=exam.pass_percentage,
+        questions=questions,
+        created_by=current_user.id
+    )
+    
+    exam_dict = new_exam.model_dump()
+    exam_dict['created_at'] = exam_dict['created_at'].isoformat()
+    exam_dict['questions'] = [q.model_dump() for q in questions]
+    
+    await db.quiz_exams.insert_one(exam_dict)
+    return {"message": "Quiz exam created successfully", "exam_id": new_exam.id}
+
+@api_router.get("/quiz-exams")
+async def get_quiz_exams(current_user: User = Depends(get_current_user)):
+    """Get all quiz exams - for Admin/FDE"""
+    exams = await db.quiz_exams.find({"is_active": True}, {"_id": 0, "questions": 0}).to_list(100)
+    for exam in exams:
+        if isinstance(exam.get('created_at'), str):
+            exam['created_at'] = datetime.fromisoformat(exam['created_at'])
+        # Add attempt count
+        attempts = await db.quiz_attempts.count_documents({"exam_id": exam['id']})
+        exam['total_attempts'] = attempts
+    return exams
+
+@api_router.get("/quiz-exams/{exam_id}")
+async def get_quiz_exam_details(exam_id: str, current_user: User = Depends(get_current_user)):
+    """Get full quiz exam with questions - Admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only Super Admin can view exam details")
+    
+    exam = await db.quiz_exams.find_one({"id": exam_id}, {"_id": 0})
+    if not exam:
+        raise HTTPException(status_code=404, detail="Quiz exam not found")
+    return exam
+
+@api_router.put("/quiz-exams/{exam_id}")
+async def update_quiz_exam(exam_id: str, exam: QuizExamCreate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Update a quiz exam - Super Admin only"""
+    existing = await db.quiz_exams.find_one({"id": exam_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Quiz exam not found")
+    
+    # Convert question dicts to QuizQuestion objects
+    questions = []
+    for i, q in enumerate(exam.questions, 1):
+        questions.append({
+            "question_number": i,
+            "question_text": q.get('question_text', ''),
+            "option_a": q.get('option_a', ''),
+            "option_b": q.get('option_b', ''),
+            "option_c": q.get('option_c', ''),
+            "option_d": q.get('option_d', ''),
+            "correct_answer": q.get('correct_answer', 'A').upper()
+        })
+    
+    await db.quiz_exams.update_one(
+        {"id": exam_id},
+        {"$set": {
+            "name": exam.name,
+            "description": exam.description,
+            "duration_minutes": exam.duration_minutes,
+            "pass_percentage": exam.pass_percentage,
+            "questions": questions
+        }}
+    )
+    return {"message": "Quiz exam updated successfully"}
+
+@api_router.delete("/quiz-exams/{exam_id}")
+async def delete_quiz_exam(exam_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Delete (deactivate) a quiz exam"""
+    result = await db.quiz_exams.update_one({"id": exam_id}, {"$set": {"is_active": False}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Quiz exam not found")
+    return {"message": "Quiz exam deleted successfully"}
+
+# Public endpoints for students to take exams
+@api_router.get("/public/quiz/{exam_id}")
+async def get_public_quiz(exam_id: str):
+    """Get quiz exam for students (without correct answers)"""
+    exam = await db.quiz_exams.find_one({"id": exam_id, "is_active": True}, {"_id": 0})
+    if not exam:
+        raise HTTPException(status_code=404, detail="Quiz exam not found or inactive")
+    
+    # Remove correct answers from questions
+    questions_for_student = []
+    for q in exam.get('questions', []):
+        questions_for_student.append({
+            "question_number": q.get('question_number'),
+            "question_text": q.get('question_text'),
+            "option_a": q.get('option_a'),
+            "option_b": q.get('option_b'),
+            "option_c": q.get('option_c'),
+            "option_d": q.get('option_d')
+            # No correct_answer field
+        })
+    
+    return {
+        "id": exam['id'],
+        "name": exam['name'],
+        "description": exam.get('description'),
+        "duration_minutes": exam.get('duration_minutes', 30),
+        "total_questions": len(questions_for_student),
+        "questions": questions_for_student
+    }
+
+@api_router.post("/public/quiz/{exam_id}/start")
+async def start_quiz_attempt(exam_id: str, data: QuizAttemptCreate):
+    """Start a quiz attempt - student enters enrollment number"""
+    exam = await db.quiz_exams.find_one({"id": exam_id, "is_active": True}, {"_id": 0})
+    if not exam:
+        raise HTTPException(status_code=404, detail="Quiz exam not found or inactive")
+    
+    # Verify enrollment number exists
+    enrollment = await db.enrollments.find_one(
+        {"enrollment_id": data.enrollment_number},
+        {"_id": 0, "student_name": 1}
+    )
+    if not enrollment:
+        # Also check by custom enrollment ID format
+        enrollment = await db.enrollments.find_one(
+            {"id": data.enrollment_number},
+            {"_id": 0, "student_name": 1}
+        )
+    
+    student_name = enrollment.get('student_name') if enrollment else None
+    
+    # Create new attempt
+    attempt = QuizAttempt(
+        exam_id=exam_id,
+        exam_name=exam['name'],
+        enrollment_number=data.enrollment_number,
+        student_name=student_name,
+        total_questions=len(exam.get('questions', []))
+    )
+    
+    attempt_dict = attempt.model_dump()
+    attempt_dict['started_at'] = attempt_dict['started_at'].isoformat()
+    
+    await db.quiz_attempts.insert_one(attempt_dict)
+    return {"attempt_id": attempt.id, "student_name": student_name}
+
+@api_router.post("/public/quiz/attempt/{attempt_id}/submit")
+async def submit_quiz_attempt(attempt_id: str, submission: QuizAttemptSubmit):
+    """Submit quiz answers and get result"""
+    attempt = await db.quiz_attempts.find_one({"id": attempt_id}, {"_id": 0})
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Attempt not found")
+    
+    if attempt.get('completed_at'):
+        raise HTTPException(status_code=400, detail="This attempt has already been submitted")
+    
+    # Get exam to check answers
+    exam = await db.quiz_exams.find_one({"id": attempt['exam_id']}, {"_id": 0})
+    if not exam:
+        raise HTTPException(status_code=404, detail="Quiz exam not found")
+    
+    # Calculate score
+    correct_count = 0
+    questions = exam.get('questions', [])
+    for q in questions:
+        q_num = str(q['question_number'])
+        student_answer = submission.answers.get(q_num, '').upper()
+        if student_answer == q['correct_answer'].upper():
+            correct_count += 1
+    
+    total_questions = len(questions)
+    percentage = (correct_count / total_questions * 100) if total_questions > 0 else 0
+    passed = percentage >= exam.get('pass_percentage', 60)
+    
+    # Calculate time taken
+    started_at = attempt.get('started_at')
+    if isinstance(started_at, str):
+        started_at = datetime.fromisoformat(started_at)
+    time_taken = int((datetime.now(timezone.utc) - started_at).total_seconds())
+    
+    # Update attempt
+    await db.quiz_attempts.update_one(
+        {"id": attempt_id},
+        {"$set": {
+            "answers": submission.answers,
+            "score": correct_count,
+            "total_questions": total_questions,
+            "percentage": round(percentage, 1),
+            "passed": passed,
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "time_taken_seconds": time_taken
+        }}
+    )
+    
+    return {
+        "score": correct_count,
+        "total_questions": total_questions,
+        "percentage": round(percentage, 1),
+        "passed": passed,
+        "result": "PASS" if passed else "FAIL",
+        "time_taken_seconds": time_taken
+    }
+
+@api_router.get("/quiz-attempts")
+async def get_quiz_attempts(exam_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    """Get all quiz attempts - Admin/FDE can see all"""
+    query = {}
+    if exam_id:
+        query["exam_id"] = exam_id
+    
+    attempts = await db.quiz_attempts.find(query, {"_id": 0}).sort("started_at", -1).to_list(1000)
+    for a in attempts:
+        if isinstance(a.get('started_at'), str):
+            a['started_at'] = datetime.fromisoformat(a['started_at'])
+        if isinstance(a.get('completed_at'), str):
+            a['completed_at'] = datetime.fromisoformat(a['completed_at'])
+    return attempts
+
 app.include_router(api_router)
 
 app.add_middleware(
