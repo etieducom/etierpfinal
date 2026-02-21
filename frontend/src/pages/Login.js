@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 
+const ETI_LOGO = 'https://customer-assets.emergentagent.com/job_4e0bdddc-c844-4374-a91a-dfbddecb14b1/artifacts/4ane8ulw_eti%20.png';
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -36,10 +38,13 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
-      <Card className="w-full max-w-md shadow-xl border-0">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur">
         <CardHeader className="text-center pb-2">
-          <CardTitle className="text-2xl font-bold text-slate-900">ETI Educom</CardTitle>
+          <div className="flex justify-center mb-4">
+            <img src={ETI_LOGO} alt="ETI Educom" className="h-20 object-contain" />
+          </div>
+          <CardTitle className="text-xl font-bold text-slate-900">Branch Management System</CardTitle>
           <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent>
@@ -73,7 +78,7 @@ const Login = () => {
             <Button
               type="submit"
               data-testid="submit-button"
-              className="w-full bg-slate-900 hover:bg-slate-800"
+              className="w-full bg-blue-600 hover:bg-blue-700"
               disabled={loading}
             >
               {loading ? 'Signing in...' : 'Sign In'}
