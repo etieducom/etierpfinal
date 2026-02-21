@@ -375,13 +375,29 @@ class ExpenseCreate(BaseModel):
     remarks: Optional[str] = None
 
 # WhatsApp Notification Settings
+class WhatsAppTemplate(BaseModel):
+    template_name: str
+    template_namespace: str
+    variables: List[str] = []  # List of variable names like ["student_name", "program_name", "amount"]
+
 class WhatsAppSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     enabled: bool = True
     integrated_number: str = "918728054145"  # Your MSG91 registered WhatsApp number
-    template_name: str = "crmwelcome"  # Default template name
-    template_namespace: str = "73fda5e9_77e9_445f_82ac_9c2e532b32f4"
+    # Default template settings
+    default_template_name: str = "crmwelcome"
+    default_template_namespace: str = "73fda5e9_77e9_445f_82ac_9c2e532b32f4"
+    # Per-event template configuration
+    templates: dict = Field(default_factory=lambda: {
+        "lead_added": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
+        "demo_booked": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
+        "demo_completed": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
+        "enrollment_confirmed": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
+        "payment_received": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
+        "installment_reminder": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]}
+    })
+    # Event toggles
     notify_lead_added: bool = True
     notify_demo_booked: bool = True
     notify_demo_completed: bool = True
@@ -394,8 +410,9 @@ class WhatsAppSettings(BaseModel):
 class WhatsAppSettingsUpdate(BaseModel):
     enabled: Optional[bool] = None
     integrated_number: Optional[str] = None
-    template_name: Optional[str] = None
-    template_namespace: Optional[str] = None
+    default_template_name: Optional[str] = None
+    default_template_namespace: Optional[str] = None
+    templates: Optional[dict] = None
     notify_lead_added: Optional[bool] = None
     notify_demo_booked: Optional[bool] = None
     notify_demo_completed: Optional[bool] = None
