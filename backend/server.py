@@ -37,7 +37,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 class UserRole(str, Enum):
-    ADMIN = "Admin"
+    ADMIN = "Admin"  # Super Admin - full access to all branches
+    BRANCH_ADMIN = "Branch Admin"  # Branch Admin - full access to their branch only
     COUNSELLOR = "Counsellor"
     FRONT_DESK = "Front Desk Executive"
 
