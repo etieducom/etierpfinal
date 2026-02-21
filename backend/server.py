@@ -1295,20 +1295,24 @@ async def generate_report(
                 "as": "enrollment"
             }},
             {"$unwind": "$enrollment"},
+            {"$addFields": {
+                "total_amount_safe": {"$ifNull": ["$total_amount", 0]},
+                "paid_amount_safe": {"$ifNull": ["$paid_amount", 0]}
+            }},
             {"$project": {
                 "_id": 0,
                 "student_name": "$enrollment.student_name",
-                "student_phone": "$enrollment.student_phone",
+                "student_phone": {"$ifNull": ["$enrollment.phone", "$enrollment.student_phone"]},
                 "program_name": "$enrollment.program_name",
-                "total_amount": "$total_amount",
-                "paid_amount": "$paid_amount",
-                "remaining": {"$subtract": ["$total_amount", "$paid_amount"]},
-                "payment_type": 1,
-                "installment_count": 1
+                "total_amount": "$total_amount_safe",
+                "paid_amount": "$paid_amount_safe",
+                "remaining": {"$subtract": ["$total_amount_safe", "$paid_amount_safe"]},
+                "payment_type": "$plan_type",
+                "installment_count": "$installments_count"
             }}
         ]
         payment_plans = await db.payment_plans.aggregate(pipeline).to_list(10000)
-        pending = [p for p in payment_plans if p.get('remaining', 0) > 0]
+        pending = [p for p in payment_plans if (p.get('remaining') or 0) > 0]
         
         writer.writerow(['Student Name', 'Phone', 'Program', 'Total Amount', 'Paid Amount', 'Remaining', 'Payment Type'])
         for p in pending:
