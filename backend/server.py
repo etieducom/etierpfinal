@@ -353,9 +353,16 @@ class PushNotificationCreate(BaseModel):
     notification_type: str = "general"
 
 # Enrollment Management
+class EnrollmentStatus(str, Enum):
+    ACTIVE = "Active"
+    COMPLETED = "Completed"
+    CANCELLED = "Cancelled"
+    DROPPED = "Dropped"
+
 class Enrollment(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    enrollment_id: Optional[str] = None  # Custom ID: PBPTKE0001
     lead_id: str
     branch_id: str
     student_name: str
@@ -381,9 +388,17 @@ class Enrollment(BaseModel):
     discount_percent: Optional[float] = None
     final_fee: float
     
+    # Status
+    status: EnrollmentStatus = EnrollmentStatus.ACTIVE
+    payment_status: str = "Pending"  # Pending, Partial, Paid
+    total_paid: float = 0
+    
     enrollment_date: date
     created_by: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    cancelled_at: Optional[datetime] = None
+    cancelled_by: Optional[str] = None
+    cancellation_reason: Optional[str] = None
 
 class EnrollmentCreate(BaseModel):
     lead_id: str
