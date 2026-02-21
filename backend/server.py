@@ -1388,6 +1388,16 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
     if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN] and lead.get('branch_id') != current_user.branch_id:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Check if lead is converted and enrolled - if so, block all updates
+    if lead.get('status') == 'Converted':
+        # Check if there's an enrollment for this lead
+        enrollment = await db.enrollments.find_one({"lead_id": lead_id}, {"_id": 0})
+        if enrollment:
+            raise HTTPException(
+                status_code=400, 
+                detail="This lead has been converted and enrolled. No further changes are allowed."
+            )
+    
     old_status = lead.get('status')
     
     update_data = {k: v for k, v in lead_update.model_dump(exclude_unset=True).items() if v is not None}
