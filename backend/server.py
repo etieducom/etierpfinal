@@ -1456,6 +1456,13 @@ async def create_payment(payment: PaymentCreate, current_user: User = Depends(ge
             {"$set": {"status": "Paid", "paid_date": payment.payment_date}}
         )
     
+    # Send WhatsApp notification for payment received
+    await send_whatsapp_notification(
+        enrollment.get('phone', ''),
+        "payment_received",
+        {"name": enrollment.get('student_name', ''), "amount": new_payment.amount}
+    )
+    
     return new_payment
 
 @api_router.get("/enrollments/{enrollment_id}/payments")
