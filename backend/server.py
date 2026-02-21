@@ -798,7 +798,11 @@ async def send_whatsapp_notification(phone_number: str, event_type: str, templat
 async def send_whatsapp_template_with_config(phone_number: str, template_name: str, namespace: str, 
                                               integrated_number: str, components: dict):
     """Send WhatsApp message via MSG91 Template API with full configuration"""
-    MSG91_KEY = "354230AManBGHBNB694046f8P1"
+    MSG91_KEY = os.environ.get('MSG91_AUTH_KEY', '')
+    
+    if not MSG91_KEY:
+        logging.warning("MSG91_AUTH_KEY not configured. Skipping WhatsApp message.")
+        return {"success": False, "error": "MSG91_AUTH_KEY not configured"}
     
     try:
         url = "https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/"
