@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminAPI, expenseAPI, leadSourceAPI } from '@/api/api';
+import { adminAPI, expenseAPI, leadSourceAPI, whatsappAPI } from '@/api/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Building, Users, BookOpen, Wallet, Trash2, Link } from 'lucide-react';
+import { Plus, Building, Users, BookOpen, Wallet, Trash2, Link, MessageSquare } from 'lucide-react';
 
 const AdminPanel = () => {
   const [branches, setBranches] = useState([]);
@@ -16,6 +17,16 @@ const AdminPanel = () => {
   const [users, setUsers] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [leadSources, setLeadSources] = useState([]);
+  const [whatsappSettings, setWhatsappSettings] = useState({
+    enabled: true,
+    notify_lead_added: true,
+    notify_demo_booked: true,
+    notify_demo_completed: true,
+    notify_enrollment_confirmed: true,
+    notify_payment_received: true,
+    notify_installment_reminder: true
+  });
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
   const [branchDialog, setBranchDialog] = useState(false);
   const [programDialog, setProgramDialog] = useState(false);
   const [userDialog, setUserDialog] = useState(false);
@@ -60,6 +71,7 @@ const AdminPanel = () => {
 
   useEffect(() => {
     fetchData();
+    fetchWhatsAppSettings();
   }, []);
 
   const fetchData = async () => {
@@ -78,6 +90,29 @@ const AdminPanel = () => {
       setLeadSources(sourcesRes.data);
     } catch (error) {
       toast.error('Failed to fetch data');
+    }
+  };
+
+  const fetchWhatsAppSettings = async () => {
+    try {
+      const response = await whatsappAPI.getSettings();
+      setWhatsappSettings(response.data);
+    } catch (error) {
+      console.error('Failed to fetch WhatsApp settings');
+    }
+  };
+
+  const handleWhatsAppSettingChange = async (key, value) => {
+    setWhatsappLoading(true);
+    try {
+      const updatedSettings = { ...whatsappSettings, [key]: value };
+      await whatsappAPI.updateSettings(updatedSettings);
+      setWhatsappSettings(updatedSettings);
+      toast.success('WhatsApp settings updated');
+    } catch (error) {
+      toast.error('Failed to update WhatsApp settings');
+    } finally {
+      setWhatsappLoading(false);
     }
   };
 
