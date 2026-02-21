@@ -1,89 +1,93 @@
 <analysis>**original_problem_statement:**
-The user, representing a training institute named ETI Educom, requested a full-fledged lead management and institute management system.
+The user, representing ETI Educom, requires a comprehensive institute management system. Initial requirements included lead management, multi-role access (Super Admin, Counsellor, FDE), user/branch/program management, enrollments, payments with receipts, expense tracking, and a resource repository.
 
-**PRODUCT REQUIREMENTS:**
--   **Lead Management:**
-    -   Capture leads with details: name, numbers, address, email, program, fee, payment plan, and source (which should be definable by the super admin).
-    -   Manage lead statuses and track follow-ups.
-    -   Soft-delete leads with a reason, viewable in a Deleted Leads section. Only a Branch Admin can delete a lead from their branch.
--   **Role-Based Access Control (RBAC):**
-    -   **Super Admin:** Full access. Manages branches, programs, users, expense categories, and lead sources. Views aggregated cross-branch analytics. Manages WhatsApp notification settings.
-    -   **Branch Admin:** Manages a single branch. Can view all data for their branch, manage leads (including deletion), manage expenses, and view branch-specific reports. Cannot see an Admin Panel.
-    -   **Counsellor:** Can add/manage leads and follow-ups for their assigned branch. Cannot delete leads.
-    -   **Front Desk Executive (FDE):** Manages expenses and enrollments/payments for their branch.
--   **User and Branch Management:** Admin can perform full CRUD on branches and users.
--   **Program & Source Management:** Admin can perform full CRUD on programs and lead sources.
--   **Enrollment and Payments:**
-    -   FDE enrolls converted leads.
-    -   System handles one-time and installment payments, preventing over-payment.
-    -   Generate and print receipts for each payment.
-    -   Dedicated pages for viewing all payments and pending installment payments with comprehensive filters.
--   **Expense Management:** FDEs record branch expenses; Admins define categories, and Branch Admins can delete expenses for their branch.
--   **Dashboard & Analytics:**
-    -   **Super Admin:** Branch-wise comparison dashboard (leads, enrollments, income) to identify performance.
-    -   **Branch Admin:** Dashboard showing key metrics for their own branch.
--   **Resource Sharing:** A central repository where Super Admin can upload marketing/learning materials (brochures, videos, etc.) for all users to access.
--   **WhatsApp Integration (MSG91):**
-    -   System to send automated notifications for: lead creation, demo booking, demo completion, enrollment confirmation, and payment receipts.
-    -   Send payment reminders for upcoming installments.
-    -   Super Admin can enable/disable these notifications globally.
+This has since evolved to include:
+-   **New Branch Admin Role:** Manages a single branch with specific permissions (e.g., deleting leads/payments/expenses for their branch only).
+-   **Advanced Dashboards & Reports:** Role-specific dashboards and branch-filtered reports for Super Admin and Branch Admin.
+-   **Configurable WhatsApp (MSG91) Integration:** Super Admin must be able to configure templates, variables, and enable/disable notifications for various events (lead creation, demo booking, enrollment, payment).
+-   **Custom ID Generation:** Unique, formatted IDs for Leads, Enrollments, and Receipts based on branch state and city (e.g., ).
+-   **Enhanced User Management:** Super Admin can change user passwords, activate/deactivate users, and delete users.
+-   **Task Management System:** Branch Admins can assign tasks to users within their branch, and users can update the task status.
+-   **International Exams Module:** A separate module for booking international exams, with pricing managed by the Super Admin.
+-   **Student Management:** A dedicated page to view all enrolled students, their payment status, and course details. Branch Admins can cancel/drop enrollments.
+-   **Push Notifications:** Super Admin to all users, and Branch Admins to their branch staff.
+-   **UI/UX:** A corporate-style login page.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack application with a FastAPI backend, React frontend, and MongoDB. The system includes a multi-role architecture (Super Admin, Counsellor, FDE), user/branch/program management, lead management with soft-deletes, enrollment processing, payment tracking with receipt generation, expense management, and a marketing resources repository. Role-based dashboards with financial charts have been implemented. The backend logic for a new Branch Admin role and a comprehensive, configurable MSG91 WhatsApp integration has been added, but the corresponding frontend UI and logic are not yet complete.
+A full-stack application with a FastAPI backend, React frontend, and MongoDB. The system supports multiple roles (Super Admin, Branch Admin, Counsellor, FDE). Core modules for lead management, enrollment, payments, expenses, and a resource library are functional.
+
+Recent work has added significant backend infrastructure and frontend UI for:
+-   A new Branch Admin role with corresponding permissions.
+-   Role-specific dashboards and navigation.
+-   Enhanced user management in the Admin Panel (status toggle, password change, delete).
+-   A new Students page to display enrolled student details.
+-   A new Tasks page for task management.
+-   A new International Exams module (backend models/endpoints and frontend UI shells).
+-   An advanced UI for WhatsApp template configuration in the Admin Panel.
+-   A redesigned, simplified corporate login page.
+-   Backend logic for custom ID generation, though not fully integrated into all creation flows.
 
 **Last working item**:
-- **Last item agent was working:** The agent was implementing a major feature request to introduce a **Branch Admin** role, overhaul the dashboards for Super Admin and Branch Admin, and integrate a comprehensive, configurable **WhatsApp notification system using MSG91**. The agent successfully added the  role to the backend enum, created a  model, and updated numerous API endpoints (, , ) to check notification settings and trigger messages. Backend logic for role-based data access and actions (e.g., only Branch Admin can delete leads) was also added.
+- **Last item agent was working:** The agent was responding to the user's request (message #334) to implement three features: a full task management system, a simplified login page, and advanced WhatsApp template settings for the Super Admin. The agent created the , updated the navigation and routing, simplified the  component, and completely replaced the old WhatsApp settings UI in  with a new, advanced configuration interface.
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
 - **Which testing method agent to use?** both
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-There are no known bugs. The current work is a large, unfinished feature implementation.
+- **Issue 1: Advanced WhatsApp Settings UI is not connected to the backend (P0)**
+  - **Description:** The new UI in  allows the Super Admin to set template names, namespaces, and body variables. However, the backend  function in  still uses a hardcoded, simpler logic and does not read or utilize these new advanced settings from the  model.
+  - **Next debug checklist:**
+    - Modify the  function in .
+    - Make it fetch the  for the specific event.
+    - Dynamically construct the MSG91 API payload using the , , , and  from the settings.
+    - Implement a way to substitute variables (e.g., , ) in the  with actual data before sending.
+  - **Why fix this issue and what will be achieved with the fix?** To make the WhatsApp integration fully configurable by the Super Admin as requested.
+  - **Status:** NOT STARTED
 
 **In progress Task List**:
-- **Task 1: Complete Frontend for New RBAC and WhatsApp Features (P0)**
-    - **Where to resume:** The backend changes for the Branch Admin role and WhatsApp notifications are in place. The next step is to build the frontend UI to support them.
-        1.  **Update :** Implement the logic to render different side navigation menus based on the user's role (Super Admin, Branch Admin, Counsellor, FDE). The user explicitly requested Branch Admins not see the Admin Panel link.
-        2.  **Update :** Refactor the component to display two distinct views:
-            -   **For Super Admin:** A branch-wise comparison of leads, enrollments, and income, with performance analysis.
-            -   **For Branch Admin:** The existing dashboard, but scoped only to their branch's data.
-        3.  **Update :** Modify the delete functionality to ensure only Branch Admins can delete leads, while Counsellors cannot.
-        4.  **Create WhatsApp Settings UI:** Create a new component/tab in the  for the Super Admin to enable/disable the different types of WhatsApp notifications.
-        5.  **Create Reports Page for Super/Branch Admin:** Implement the  to allow generating reports (Income, Expense, Leads, Enrollments) with a branch filter for the Super Admin and scoped to the current branch for the Branch Admin.
-    - **What will be achieved with this?** This will complete the new RBAC structure, provide role-specific dashboards and controls, and make the WhatsApp notification system configurable.
-    - **Status:** IN PROGRESS
-    - **Should Test frontend/backend/both after fix?** both
-    - **Blocked on something:** No.
+- **Task 1: Complete and Verify Task Management Feature (P0)**
+  - **Where to resume:** The frontend UI () has been created. The backend models and API endpoints () also exist. The next step is to connect the frontend to the backend.
+  - **Actions:**
+    1.  Implement API calls in  to fetch tasks.
+    2.  Build the UI for Branch Admins to create and assign tasks.
+    3.  Build the UI for users to view their assigned tasks and update their status (e.g., Pending, Completed).
+    4.  Thoroughly test the end-to-end flow.
+  - **What will be achieved with this?** A fully functional task management system as requested by the user.
+  - **Status:** IN PROGRESS
+  - **Should Test frontend/backend/both after fix?** both
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - **Task 1: Payment/Expense Deletion (P1):** Implement the functionality for Branch Admins to edit or delete payments and expenses recorded for their branch. The backend endpoints need to be created and secured, and the UI updated.
-    - **Task 2: WhatsApp Payment Reminders (P1):** Implement the logic to send automated WhatsApp reminders for upcoming payment installments. This will require a background task or a new API endpoint that can be triggered periodically.
+  - **P1: Complete International Exams Module:** The backend and frontend shells exist. Wire them together to allow Admins to create exams/prices and other users to book them.
+  - **P1: Implement Push Notification System:** Create the frontend UI for sending and viewing notifications. The backend models and endpoints are already in place.
+  - **P1: Enforce Payment Constraints:** Add backend validation to ensure the sum of installments for an enrollment does not exceed the total course fee.
+  - **P2: Add Demo Booking Fields:** When a Counsellor changes a lead's status to Demo Booked, the UI should prompt them to enter a demo date, time, and trainer name. These fields need to be saved to the lead document.
+  - **P2: Finish Custom ID Integration:** Ensure the new custom ID format () is correctly generated and saved for all new Leads, Enrollments, and Receipts. The logic exists but needs to be applied consistently across all creation endpoints.
 - **Future Tasks:**
-    - **Refactor :** The main backend file is a monolith. It should be broken down into a standard FastAPI project structure (routers, models, services) for better maintainability.
-    - **Global State Management:** Introduce a state management library like Zustand or Redux Toolkit to manage user state (role, branch) and avoid prop-drilling.
+  - **Refactor :** Decompose the monolithic FastAPI application into a structured project with routers, models, and services for better maintainability.
+  - **Global State Management:** Introduce a library like Zustand or Redux Toolkit to manage global state (user role, branch) and reduce prop-drilling.
 
 **Completed work in this session**
-- **FDE Feature Set:** Completed the entire flow for Front Desk Executives, including expense tracking, student enrollment from converted leads, and multi-step payment recording.
-- **Advanced Payment Management:** Created dedicated pages (, ) with comprehensive filtering and data display.
-- **Receipt Generation:** Implemented printable receipts for all payments.
-- **Soft Deletes & Ownership:** Implemented soft-deletes for leads and ownership checks, with a  to view them.
-- **Lead Source Management:** Super Admins can now dynamically create/delete Lead Sources, which are then available in the lead creation form.
-- **Advanced Analytics:** Implemented branch-wise income/expense charts on the dashboard.
-- **Resource Repository:** Created a page for Super Admins to upload marketing materials.
-- **Backend for Branch Admin & WhatsApp:** Laid the entire backend foundation for the next set of features, including new models, API endpoints, and business logic in .
+- **Branch Admin Role & UI:** Implemented frontend UI and backend logic for the Branch Admin role, including role-specific navigation and dashboards.
+- **Payment & Expense Deletion:** Enabled Branch Admins to delete payments and expenses for their branch.
+- **Enhanced User Management:** Added UI and connected backend endpoints for Super Admins to delete users, change passwords, and toggle user active/inactive status in the .
+- **Corporate Login Page:** Redesigned the login page to be a simple, centered dialog.
+- **Student Management Page:** Created the  to list enrolled students and their details.
+- **Advanced WhatsApp Settings UI:** Built a new UI in  for Super Admin to configure WhatsApp templates, variables, and event triggers.
+- **Task Management UI:** Created the initial  component and added it to navigation.
+- **Backend Foundation:** Created models and API endpoints for Tasks, International Exams, and Push Notifications.
 
 **Earlier issues found/mentioned but not fixed**
-- None.
+- The core functionality of the WhatsApp integration remains incomplete. While the UI has been built and rebuilt multiple times, the backend logic to use the advanced template configuration has not been implemented. This is a recurring request from the user that is not yet fully delivered.
 
 **Known issue recurrence from previous fork**
-- **Issue recurrence in previous fork:**  after modifying backend Pydantic models with new required fields.
+- **Issue recurrence in previous fork:** .
 - **Recurrence count:** High.
-- **Status:** RESOLVED (historically), but **HIGH RISK** for the next agent.
-  **Note:** The last agent made significant changes to the  and  models and added new models like . The next agent must be prepared to write a  migration script to update existing database documents to avoid API failures if this error occurs.
+- **Status:** RESOLVED (historically), but **HIGH RISK**.
+  **Note:** The agent has made extensive changes to , , , and  models, and added several new ones. Any further model changes without a corresponding data migration script are highly likely to cause API failures.
 
 **Code Architecture**
 
@@ -97,61 +101,78 @@ There are no known bugs. The current work is a large, unfinished feature impleme
 **key DB schema**
 - **users:** 
 - **leads:** 
-- **payments:** 
+- **enrollments:** 
+- **branches:** 
 - **whatsapp_settings:** 
-- **lead_sources:** 
-- (Other models: , , , , )
+- **tasks:** 
+- **international_exams:** 
+- **exam_bookings:** 
+- **push_notifications:** 
 
 **changes in tech stack**
-- **MSG91 Integration:**  library is now used in  to call the MSG91 API.
+- No new technologies, but the  library usage for MSG91 is becoming more complex.
 
 **All files of reference**
-- : Heavily modified. Contains all new backend logic for the Branch Admin role, WhatsApp integration, and updated API security. This is the most critical file.
-- : Needs to be updated to render role-specific navigation.
-- : Needs to be refactored for the Super Admin vs. Branch Admin views.
-- : Needs a new UI for managing WhatsApp settings.
-- : The delete logic needs to be updated to respect the new role permissions.
-- : Contains all frontend routes.
-- : Contains all API helper functions. Has been updated with placeholders for new endpoints.
+- : The most critical file. It contains all backend logic and has grown extremely large and complex.
+- : Heavily modified to include advanced user management and WhatsApp settings.
+- : New file for the task management feature.
+- : New file for viewing enrolled students.
+- : Updated with a new simplified design.
+- : Updated with many new functions for the new features.
+- : Updated with new routes for Tasks, Students, and Exams.
+- : Updated with new navigation links.
+
+**Areas that need refactoring**:
+- : Urgently needs to be broken down into smaller, manageable modules (e.g., routers, services, models). Its current size makes it extremely difficult and risky to modify.
+- : This component is now over 1000 lines long and handles users, branches, programs, sources, exams, and WhatsApp settings. It should be split into multiple sub-components.
+
+**key api endpoints**
+- User Management: , , 
+- Task Management: , , 
+- International Exams: , , 
+- Students/Enrollments: , 
+- Push Notifications: , 
 
 **Critical Info for New Agent**
-- **Start with the Frontend:** The immediate task is to implement the frontend UI for the recently added backend features (Branch Admin role, dashboards, WhatsApp settings). The backend work is mostly done, but the frontend is untouched for this last request.
-- **Manual Database Migrations:** If you modify any Pydantic model in , you will likely cause . Be prepared to write and run a one-time Python script with  to update existing documents in the database to match the new schema.
-- **MSG91 Integration:** The backend logic is in place. You need to build the frontend settings page for the Admin and then thoroughly test the end-to-end notification flow for all specified events. The auth key is .
-- **Role-Based Logic is Key:** Pay close attention to the user's requirements for what each role can see and do. The new  role has very specific permissions that differ from the Super Admin and Counsellor.
+- **Prioritize User Requests:** The user provides frequent, detailed feedback and new requirements. The highest priority is to complete the features from the last interaction: Task Management and the Advanced WhatsApp integration.
+- **Fragile Backend:** The  file is a monolith and is very fragile. Be extremely careful when making changes. Adding a single field to a Pydantic model can break the API without a data migration. Test thoroughly after any change.
+- **Incremental Implementation:** Do not attempt to implement all pending features at once. Tackle one task at a time (e.g., 1. Task Management, 2. WhatsApp logic, 3. Exams module), test it, and then move to the next.
 
 **documents and test reports created in this job**
 - 
-- Test reports from the  are in . The last one passed successfully before the latest batch of changes.
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **User (Msg 322):** Submitted a very large feature request including:
-    1.  New Branch Admin role with specific permissions.
-    2.  Overhauled Super Admin dashboard for branch performance comparison.
-    3.  Role-specific report generation.
-    4.  Branch Admin ability to delete leads/payments/expenses.
-    5.  A comprehensive, configurable WhatsApp notification system for multiple events.
-- **Agent (Msg 323):** Summarized the request and created a plan.
-- **User (Msg 325):** Approved the plan with yes go ahead with these.
-- **Agent (Msg 326 - 387):** Began implementing the backend portion of the request, modifying  extensively to add the new models, roles, API endpoints, and business logic for WhatsApp integration and the Branch Admin role. The work is mid-flight and focused entirely on the backend.
+1.  **User (Msg #238):** Requested a massive list of features: user password changes (self and admin), user active/inactive status, user deletion, push notifications, task management, installment limits, demo booking fields, and an International Exams module.
+2.  **Agent (Msg #239):** Proposed a phased plan to implement the features.
+3.  **User (Msg #241):** Approved the plan and provided clarification on the exams module.
+4.  **Agent (Msg #242 - #332):** Implemented a large portion of the backend and frontend for the user management and exams module, including a major refactor of . Ran the testing agent.
+5.  **User (Msg #334):** Provided new instructions: implement the task management feature, simplify the login page, and add advanced WhatsApp template settings.
+6.  **Agent (Msg #335):** Confirmed understanding of the new tasks.
+7.  **Agent (Msg #336 - #358):** Implemented the new requests: created , simplified , and completely overhauled the WhatsApp settings UI in . The work is mid-flight and untested.
 
 **Project Health Check:**
-- **Broken:** The UI is misaligned with the backend roles. A user with the new  role would not see the correct UI. The dashboard and navigation are not yet role-aware as per the latest requirements.
-- **Mocked:** The UI for WhatsApp notification settings does not exist.
+- **Broken:**
+    -   The Advanced WhatsApp Settings UI in the frontend is disconnected from the backend  logic.
+- **Mocked:**
+    -   The  and  are primarily UI shells; the client-side logic to interact with the backend is not fully implemented.
+    -   The Push Notification feature has backend endpoints but no corresponding UI.
 
 **3rd Party Integrations**
+- **MSG91 (WhatsApp API):** Backend integration is IN PROGRESS. The core sending function needs to be updated to support the new advanced template configurations. Auth Key: .
 - **Recharts:** Used for dashboard charts.
-- **MSG91 (WhatsApp API):** Backend integration is IN PROGRESS. Auth Key: .
 
 **Testing status**
-- **Testing agent used after significant changes:** YES (but not for the latest batch of in-progress changes)
+- **Testing agent used after significant changes:** YES, but several major features have been added since the last test run.
 - **Troubleshoot agent used after agent stuck in loop:** NO
 - **Test files created:** []
-- **Known regressions:** None, but the latest changes are untested.
+- **Known regressions:** None, but the latest features are completely untested.
 
 **Credentials to test flow:**
 - **Super Admin:**  / 
-- **Branch Admin / Counsellor / FDE:** These users must be created by the Super Admin via the Admin Panel. You will need to create a **Branch Admin** user to test the new role-specific functionality.
+- **Branch Admin / Counsellor / FDE:** Must be created by the Super Admin via the Admin Panel. You will need to create a **Branch Admin** and other roles to test the full application.
 
 **What agent forgot to execute**
-- The agent was in the middle of executing a large task. It has not forgotten anything, but the frontend implementation for the latest user request (message 322) has not yet started.</analysis>
+- The agent has not yet connected the new advanced WhatsApp settings UI to the backend sending logic.
+- The constraint to prevent installment payments from exceeding the total course fee has not been implemented.
+- The UI to capture demo booking details (date, time, trainer) has not been added to the lead management flow.</analysis>
