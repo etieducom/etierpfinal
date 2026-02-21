@@ -251,6 +251,21 @@ class ExpenseCategoryCreate(BaseModel):
     name: str
     description: Optional[str] = None
 
+# Lead Source Management (Admin configurable)
+class LeadSource(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class LeadSourceCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+
 class Expense(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
