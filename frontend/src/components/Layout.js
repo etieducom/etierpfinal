@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -20,7 +20,7 @@ const Layout = ({ children }) => {
   const isCounsellor = user.role === 'Counsellor';
 
   useEffect(() => {
-    // Only Counsellors need pending followup count (not Admin, not FDE)
+    // Only Counsellors and Branch Admins need pending followup count
     if (isCounsellor || isBranchAdmin) {
       fetchPendingCount();
       const interval = setInterval(fetchPendingCount, 60000);
@@ -44,6 +44,8 @@ const Layout = ({ children }) => {
     { icon: Bell, label: 'Pending Follow-ups', path: '/followups', show: isCounsellor || isBranchAdmin, badge: pendingCount },
     { icon: BarChart3, label: 'Analytics', path: '/analytics', show: true },
     { icon: FileText, label: 'Reports', path: '/reports', show: true },
+    // Students - For Branch Admin and FDE
+    { icon: GraduationCap, label: 'Students', path: '/students', show: isBranchAdmin || isFDE },
     // Expenses - For Branch Admin and FDE
     { icon: Wallet, label: 'Expenses', path: '/expenses', show: isBranchAdmin || isFDE },
     // Enrollments - For Branch Admin and FDE
