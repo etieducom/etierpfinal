@@ -110,6 +110,22 @@ function App() {
             }
           />
           <Route
+            path="/international-exams"
+            element={
+              <PrivateRoute>
+                <Layout><InternationalExamsPage /></Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/manage-exams"
+            element={
+              <PrivateRoute>
+                <Layout><ManageExamsPage /></Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/admin"
             element={
               <PrivateRoute adminOnly>
