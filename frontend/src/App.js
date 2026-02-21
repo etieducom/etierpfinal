@@ -11,6 +11,9 @@ import ReportsPage from '@/pages/ReportsPage';
 import ExpensesPage from '@/pages/ExpensesPage';
 import EnrollmentsPage from '@/pages/EnrollmentsPage';
 import ResourcesPage from '@/pages/ResourcesPage';
+import AllPaymentsPage from '@/pages/AllPaymentsPage';
+import PendingPaymentsPage from '@/pages/PendingPaymentsPage';
+import DeletedLeadsPage from '@/pages/DeletedLeadsPage';
 import Layout from '@/components/Layout';
 import { Toaster } from '@/components/ui/sonner';
 
