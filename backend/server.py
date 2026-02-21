@@ -927,7 +927,11 @@ class LeadDeleteRequest(BaseModel):
 
 @api_router.delete("/leads/{lead_id}")
 async def delete_lead(lead_id: str, delete_request: Optional[LeadDeleteRequest] = None, current_user: User = Depends(get_current_user)):
-    """Soft delete a lead - only the counsellor who created it can delete"""
+    """Soft delete a lead - only Branch Admin or Super Admin can delete"""
+    # Only Branch Admin or Super Admin can delete leads
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Branch Admin can delete leads")
+    
     lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -935,9 +939,9 @@ async def delete_lead(lead_id: str, delete_request: Optional[LeadDeleteRequest] 
     if lead.get('is_deleted'):
         raise HTTPException(status_code=400, detail="Lead is already deleted")
     
-    # Only the counsellor who created the lead or Admin can delete
-    if current_user.role != UserRole.ADMIN and lead.get('counsellor_id') != current_user.id:
-        raise HTTPException(status_code=403, detail="Only the counsellor who created this lead can delete it")
+    # Branch Admin can only delete leads from their branch
+    if current_user.role == UserRole.BRANCH_ADMIN and lead.get('branch_id') != current_user.branch_id:
+        raise HTTPException(status_code=403, detail="You can only delete leads from your branch")
     
     # Soft delete - mark as deleted instead of removing
     await db.leads.update_one(
