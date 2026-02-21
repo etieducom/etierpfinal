@@ -305,6 +305,9 @@ class WhatsAppSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     enabled: bool = True
+    integrated_number: str = "918728054145"  # Your MSG91 registered WhatsApp number
+    template_name: str = "crmwelcome"  # Default template name
+    template_namespace: str = "73fda5e9_77e9_445f_82ac_9c2e532b32f4"
     notify_lead_added: bool = True
     notify_demo_booked: bool = True
     notify_demo_completed: bool = True
@@ -316,12 +319,38 @@ class WhatsAppSettings(BaseModel):
 
 class WhatsAppSettingsUpdate(BaseModel):
     enabled: Optional[bool] = None
+    integrated_number: Optional[str] = None
+    template_name: Optional[str] = None
+    template_namespace: Optional[str] = None
     notify_lead_added: Optional[bool] = None
     notify_demo_booked: Optional[bool] = None
     notify_demo_completed: Optional[bool] = None
     notify_enrollment_confirmed: Optional[bool] = None
     notify_payment_received: Optional[bool] = None
     notify_installment_reminder: Optional[bool] = None
+
+# Push Notifications
+class PushNotification(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    sender_id: str
+    sender_name: str
+    sender_role: str
+    recipient_ids: List[str]  # List of user IDs
+    recipient_role: Optional[str] = None  # Target role if sending to all of a role
+    branch_id: Optional[str] = None
+    title: str
+    message: str
+    notification_type: str = "general"  # general, task, reminder
+    is_read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PushNotificationCreate(BaseModel):
+    recipient_ids: Optional[List[str]] = None
+    recipient_role: Optional[str] = None  # Send to all users of this role
+    title: str
+    message: str
+    notification_type: str = "general"
 
 # Enrollment Management
 class Enrollment(BaseModel):
