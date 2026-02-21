@@ -196,6 +196,20 @@ All high-priority features completed.
 - POST /api/admin/resources (Super Admin only)
 - DELETE /api/admin/resources/{id} (Super Admin only)
 
+### Quiz Exams
+- GET /api/quiz-exams - List all active quizzes
+- POST /api/quiz-exams - Create quiz (Super Admin only)
+- GET /api/quiz-exams/{id} - Get quiz with all details (Super Admin only)
+- PUT /api/quiz-exams/{id} - Update quiz (Super Admin only)
+- DELETE /api/quiz-exams/{id} - Delete quiz (Super Admin only)
+- GET /api/quiz-attempts - List all attempts
+- GET /api/public/quiz/{id} - Public quiz (no auth, correct answers hidden)
+- POST /api/public/quiz/{id}/start - Start quiz attempt
+- POST /api/public/quiz/attempt/{id}/submit - Submit quiz answers
+
+### Branch-Specific
+- GET /api/branch/users - Get users in current user's branch (for task assignment)
+
 ## Test Credentials
 - Super Admin: admin@eti.com / admin123
 - Branch Admin (test): test_branch_admin_iter4@eti.com / test123
