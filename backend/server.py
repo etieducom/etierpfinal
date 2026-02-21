@@ -857,9 +857,13 @@ async def get_converted_leads(current_user: User = Depends(get_current_user)):
 
 # Deleted Leads - must be before /leads/{lead_id}
 @api_router.get("/leads/deleted", response_model=List[Lead])
-async def get_deleted_leads(current_user: User = Depends(require_role([UserRole.ADMIN]))):
-    """Get all soft-deleted leads - Admin only"""
+async def get_deleted_leads(current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.BRANCH_ADMIN]))):
+    """Get soft-deleted leads - Super Admin sees all, Branch Admin sees only their branch"""
     query = {"is_deleted": True}
+    
+    # Branch Admin can only see deleted leads from their branch
+    if current_user.role == UserRole.BRANCH_ADMIN:
+        query["branch_id"] = current_user.branch_id
     
     leads = await db.leads.find(query, {"_id": 0}).sort("deleted_at", -1).to_list(1000)
     for lead in leads:
