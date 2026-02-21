@@ -1957,6 +1957,26 @@ async def delete_expense(expense_id: str, current_user: User = Depends(get_curre
     await db.expenses.delete_one({"id": expense_id})
     return {"message": "Expense deleted successfully"}
 
+# File Upload for Student Photos
+@api_router.post("/upload/image")
+async def upload_image(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    """Upload student photo or document image and return base64 data URL"""
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="Only image files are allowed")
+    
+    # Read file content
+    content = await file.read()
+    
+    # Check file size (max 5MB)
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size must be less than 5MB")
+    
+    # Convert to base64 data URL
+    base64_data = base64.b64encode(content).decode('utf-8')
+    data_url = f"data:{file.content_type};base64,{base64_data}"
+    
+    return {"url": data_url, "filename": file.filename}
+
 # Enrollment Management (FDA)
 @api_router.post("/enrollments", response_model=Enrollment)
 async def create_enrollment(enrollment: EnrollmentCreate, current_user: User = Depends(get_current_user)):
