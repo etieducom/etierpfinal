@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { analyticsAPI, leadsAPI, followupAPI } from '@/api/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, TrendingUp, CheckCircle, XCircle, Bell, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle, XCircle, Bell, DollarSign, ArrowUpRight, ArrowDownRight, Building, Award, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
@@ -24,9 +25,13 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [financialData, setFinancialData] = useState(null);
   const [branchFinancials, setBranchFinancials] = useState([]);
+  const [superAdminData, setSuperAdminData] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  const isSuperAdmin = user.role === 'Admin';
+  const isBranchAdmin = user.role === 'Branch Admin';
 
   useEffect(() => {
     fetchData();
@@ -39,13 +44,13 @@ const Dashboard = () => {
         leadsAPI.getAll({}),
       ];
       
-      if (user.role === 'Admin') {
+      if (isSuperAdmin) {
+        promises.push(analyticsAPI.getSuperAdminDashboard());
         promises.push(analyticsAPI.getBranchWise());
         promises.push(analyticsAPI.getMonthlyFinancial(selectedYear));
-        promises.push(analyticsAPI.getBranchWiseFinancial());
-      } else if (user.role === 'Front Desk Executive') {
+      } else if (isBranchAdmin || user.role === 'Front Desk Executive') {
         promises.push(analyticsAPI.getMonthlyFinancial(selectedYear));
-        promises.push(null); // placeholder
+        promises.push(null);
       } else {
         promises.push(followupAPI.getPendingCount());
       }
@@ -54,11 +59,11 @@ const Dashboard = () => {
       setAnalytics(results[0].data);
       setRecentLeads(results[1].data.slice(0, 5));
       
-      if (user.role === 'Admin') {
-        setBranchAnalytics(results[2].data);
-        setFinancialData(results[3].data);
-        setBranchFinancials(results[4].data);
-      } else if (user.role === 'Front Desk Executive') {
+      if (isSuperAdmin) {
+        setSuperAdminData(results[2].data);
+        setBranchAnalytics(results[3].data);
+        setFinancialData(results[4].data);
+      } else if (isBranchAdmin || user.role === 'Front Desk Executive') {
         setFinancialData(results[2].data);
       } else if (results[2]) {
         setPendingCount(results[2].data.count);
@@ -67,6 +72,17 @@ const Dashboard = () => {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getPerformanceBadge = (performance) => {
+    switch (performance) {
+      case 'outperforming':
+        return <Badge className="bg-green-100 text-green-700"><Award className="w-3 h-3 mr-1" /> Outperforming</Badge>;
+      case 'underperforming':
+        return <Badge className="bg-red-100 text-red-700"><AlertTriangle className="w-3 h-3 mr-1" /> Needs Attention</Badge>;
+      default:
+        return <Badge className="bg-slate-100 text-slate-700">Average</Badge>;
     }
   };
 
