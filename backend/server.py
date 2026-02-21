@@ -583,6 +583,8 @@ class EnrollmentCreate(BaseModel):
     fee_quoted: float
     discount_percent: Optional[float] = None
     enrollment_date: str
+    student_photo_url: Optional[str] = None
+    aadhar_photo_url: Optional[str] = None
 
 # Payment Management
 class PaymentPlan(BaseModel):
