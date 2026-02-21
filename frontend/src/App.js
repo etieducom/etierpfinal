@@ -176,6 +176,16 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/quiz-exams"
+            element={
+              <PrivateRoute>
+                <Layout><QuizExamsPage /></Layout>
+              </PrivateRoute>
+            }
+          />
+          {/* Public exam route - no auth required */}
+          <Route path="/exam/:examId" element={<PublicExamPage />} />
         </Routes>
       </div>
     </BrowserRouter>
