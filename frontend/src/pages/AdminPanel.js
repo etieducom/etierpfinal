@@ -947,6 +947,46 @@ const AdminPanel = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Lead Source Dialog */}
+      <Dialog open={leadSourceDialog} onOpenChange={setLeadSourceDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Lead Source</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateLeadSource} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Source Name *</Label>
+              <Input
+                value={leadSourceForm.name}
+                onChange={(e) => setLeadSourceForm({ ...leadSourceForm, name: e.target.value })}
+                placeholder="Google, Facebook, Referral, Walk-in..."
+                required
+                data-testid="lead-source-name-input"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <textarea
+                className="w-full min-h-20 px-3 py-2 border border-slate-200 rounded-md"
+                value={leadSourceForm.description}
+                onChange={(e) => setLeadSourceForm({ ...leadSourceForm, description: e.target.value })}
+                placeholder="Brief description of this lead source..."
+                data-testid="lead-source-description-input"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => {
+                setLeadSourceDialog(false);
+                setLeadSourceForm({ name: '', description: '' });
+              }}>Cancel</Button>
+              <Button type="submit" className="bg-slate-900 hover:bg-slate-800" data-testid="save-lead-source-btn">
+                Create Lead Source
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
