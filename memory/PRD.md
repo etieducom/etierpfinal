@@ -119,23 +119,18 @@ The user, representing a training institute named "ETI Educom", requested a full
 
 ## Pending/Backlog
 
-### P0 - High Priority
-- [ ] MSG91 WhatsApp Integration verification
-  - Backend logic exists (send_whatsapp_notification function)
-  - AUTH KEY: 354230AManBGHBNB694046f8P1
-  - Integrated number needs to be configured in MSG91 dashboard
+### P0 - High Priority (None currently)
+All high-priority features completed.
 
 ### P1 - Medium Priority
-- [ ] Branch Admin - Payment/Expense deletion
-  - Backend endpoints exist (DELETE /api/payments/{id}, DELETE /api/expenses/{id})
-  - Frontend UI needs implementation
-- [ ] WhatsApp Payment Reminders (automated)
-  - Need background task or scheduled endpoint
-- [ ] Reports Page enhancement
-  - Add more filters (date range, branch, counsellor)
-  - Branch filter for Super Admin
+- [ ] Demo Booking Fields - When lead status changes to "Demo Booked", prompt for demo date, time, trainer
+- [ ] Payment Installment Validation - Prevent sum of installments from exceeding total course fee
+- [ ] Push Notification System - Super Admin to all users, Branch Admin to branch staff
+- [ ] International Exams Module - Wire up backend to frontend for exam booking
 
 ### P2 - Low Priority
+- [ ] WhatsApp Fee Reminders (automated background job)
+- [ ] Birthday Wishes automation (daily job to send on student DOB)
 - [ ] Code Refactoring
   - Split server.py into routers/models/schemas
   - Add state management to frontend (Zustand/Redux)
