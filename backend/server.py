@@ -234,6 +234,58 @@ class ExamBooking(BaseModel):
     created_by: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+# Quiz-Based Exams
+class QuizQuestion(BaseModel):
+    question_number: int
+    question_text: str
+    option_a: str
+    option_b: str
+    option_c: str
+    option_d: str
+    correct_answer: str  # A, B, C, or D
+
+class QuizExam(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+    duration_minutes: int = 30  # Time limit in minutes
+    pass_percentage: int = 60  # Percentage needed to pass
+    questions: List[QuizQuestion] = []  # Up to 100 questions
+    is_active: bool = True
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class QuizExamCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    duration_minutes: int = 30
+    pass_percentage: int = 60
+    questions: List[dict] = []
+
+class QuizAttempt(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    exam_id: str
+    exam_name: str
+    enrollment_number: str  # Student enters this to take the exam
+    student_name: Optional[str] = None
+    answers: dict = {}  # {question_number: "A" or "B" or "C" or "D"}
+    score: int = 0  # Number of correct answers
+    total_questions: int = 0
+    percentage: float = 0.0
+    passed: bool = False
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    completed_at: Optional[datetime] = None
+    time_taken_seconds: Optional[int] = None
+
+class QuizAttemptCreate(BaseModel):
+    exam_id: str
+    enrollment_number: str
+
+class QuizAttemptSubmit(BaseModel):
+    answers: dict  # {question_number: "A" or "B" or "C" or "D"}
+
 class Token(BaseModel):
     access_token: str
     token_type: str
