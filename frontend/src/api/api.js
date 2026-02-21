@@ -159,6 +159,7 @@ export const studentsAPI = {
   getAll: () => api.get('/students'),
   getDetails: (id) => api.get(`/students/${id}`),
   cancelEnrollment: (id, reason) => api.put(`/students/${id}/cancel`, null, { params: { reason } }),
+  updateStatus: (id, status, reason) => api.put(`/students/${id}/status`, null, { params: { status, reason } }),
 };
 
 export const notificationsAPI = {
