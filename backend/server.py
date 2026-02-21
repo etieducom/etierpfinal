@@ -1772,6 +1772,141 @@ async def delete_resource(resource_id: str, current_user: User = Depends(require
         raise HTTPException(status_code=404, detail="Resource not found")
     return {"message": "Resource deleted successfully"}
 
+# WhatsApp Settings Management
+@api_router.get("/admin/whatsapp-settings")
+async def get_whatsapp_settings_api(current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Get WhatsApp notification settings - Super Admin only"""
+    settings = await get_whatsapp_settings()
+    return settings
+
+@api_router.put("/admin/whatsapp-settings")
+async def update_whatsapp_settings(
+    settings_update: WhatsAppSettingsUpdate, 
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """Update WhatsApp notification settings - Super Admin only"""
+    existing = await db.whatsapp_settings.find_one({}, {"_id": 0})
+    
+    update_data = {k: v for k, v in settings_update.model_dump().items() if v is not None}
+    update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
+    update_data['updated_by'] = current_user.id
+    
+    if existing:
+        await db.whatsapp_settings.update_one({}, {"$set": update_data})
+    else:
+        new_settings = WhatsAppSettings(**update_data)
+        settings_dict = new_settings.model_dump()
+        settings_dict['updated_at'] = settings_dict['updated_at'].isoformat()
+        await db.whatsapp_settings.insert_one(settings_dict)
+    
+    return {"message": "WhatsApp settings updated successfully"}
+
+# Super Admin Dashboard Analytics
+@api_router.get("/analytics/super-admin-dashboard")
+async def get_super_admin_dashboard(current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Get comprehensive dashboard data for Super Admin"""
+    branches = await db.branches.find({}, {"_id": 0}).to_list(100)
+    
+    branch_data = []
+    for branch in branches:
+        branch_id = branch["id"]
+        
+        # Leads count
+        leads_count = await db.leads.count_documents({"branch_id": branch_id, "is_deleted": {"$ne": True}})
+        
+        # Enrollments count
+        enrollments_count = await db.enrollments.count_documents({"branch_id": branch_id})
+        
+        # Total income
+        payments = await db.payments.find({"branch_id": branch_id}, {"_id": 0, "amount": 1}).to_list(10000)
+        total_income = sum(p.get('amount', 0) for p in payments)
+        
+        # Converted leads
+        converted_count = await db.leads.count_documents({"branch_id": branch_id, "status": "Converted", "is_deleted": {"$ne": True}})
+        
+        # Conversion rate
+        conversion_rate = (converted_count / leads_count * 100) if leads_count > 0 else 0
+        
+        branch_data.append({
+            "branch_id": branch_id,
+            "branch_name": branch["name"],
+            "branch_location": branch.get("location", ""),
+            "leads_count": leads_count,
+            "enrollments_count": enrollments_count,
+            "total_income": total_income,
+            "converted_count": converted_count,
+            "conversion_rate": round(conversion_rate, 1)
+        })
+    
+    # Sort by income to determine performance
+    branch_data.sort(key=lambda x: x["total_income"], reverse=True)
+    
+    # Calculate totals
+    total_leads = sum(b["leads_count"] for b in branch_data)
+    total_enrollments = sum(b["enrollments_count"] for b in branch_data)
+    total_income = sum(b["total_income"] for b in branch_data)
+    avg_income = total_income / len(branch_data) if branch_data else 0
+    
+    # Mark performance
+    for branch in branch_data:
+        if branch["total_income"] >= avg_income * 1.2:
+            branch["performance"] = "outperforming"
+        elif branch["total_income"] <= avg_income * 0.8:
+            branch["performance"] = "underperforming"
+        else:
+            branch["performance"] = "average"
+    
+    return {
+        "branches": branch_data,
+        "totals": {
+            "total_leads": total_leads,
+            "total_enrollments": total_enrollments,
+            "total_income": total_income,
+            "average_income_per_branch": avg_income
+        }
+    }
+
+# Branch Admin specific endpoints
+@api_router.delete("/payments/{payment_id}")
+async def delete_payment(payment_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a payment - Branch Admin only for their branch"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Branch Admin can delete payments")
+    
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Branch Admin can only delete payments from their branch
+    if current_user.role == UserRole.BRANCH_ADMIN and payment.get('branch_id') != current_user.branch_id:
+        raise HTTPException(status_code=403, detail="You can only delete payments from your branch")
+    
+    await db.payments.delete_one({"id": payment_id})
+    return {"message": "Payment deleted successfully"}
+
+@api_router.put("/payments/{payment_id}")
+async def update_payment(payment_id: str, payment_update: dict, current_user: User = Depends(get_current_user)):
+    """Update a payment - Branch Admin only for their branch"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Branch Admin can update payments")
+    
+    payment = await db.payments.find_one({"id": payment_id}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Branch Admin can only update payments from their branch
+    if current_user.role == UserRole.BRANCH_ADMIN and payment.get('branch_id') != current_user.branch_id:
+        raise HTTPException(status_code=403, detail="You can only update payments from your branch")
+    
+    # Only allow certain fields to be updated
+    allowed_fields = ['amount', 'payment_mode', 'payment_date', 'remarks']
+    update_data = {k: v for k, v in payment_update.items() if k in allowed_fields}
+    
+    if update_data:
+        await db.payments.update_one({"id": payment_id}, {"$set": update_data})
+    
+    return {"message": "Payment updated successfully"}
+
 app.include_router(api_router)
 
 app.add_middleware(
