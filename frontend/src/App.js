@@ -17,13 +17,20 @@ import DeletedLeadsPage from '@/pages/DeletedLeadsPage';
 import Layout from '@/components/Layout';
 import { Toaster } from '@/components/ui/sonner';
 
-const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false }) => {
+const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdminAllowed = false }) => {
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
   if (!token) return <Navigate to="/login" />;
+  
+  // Admin-only routes (Super Admin only)
   if (adminOnly && user.role !== 'Admin') return <Navigate to="/" />;
-  if (fdaOnly && user.role !== 'Front Desk Executive' && user.role !== 'Admin') return <Navigate to="/" />;
+  
+  // FDA routes - also allow Branch Admin
+  if (fdaOnly) {
+    const allowedRoles = ['Front Desk Executive', 'Admin', 'Branch Admin'];
+    if (!allowedRoles.includes(user.role)) return <Navigate to="/" />;
+  }
   
   return children;
 };
