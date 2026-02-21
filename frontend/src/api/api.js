@@ -104,6 +104,7 @@ export const expenseAPI = {
   getCategories: () => api.get('/expense-categories'),
   createExpense: (data) => api.post('/expenses', data),
   getExpenses: () => api.get('/expenses'),
+  deleteExpense: (id) => api.delete(`/expenses/${id}`),
 };
 
 export const leadSourceAPI = {
