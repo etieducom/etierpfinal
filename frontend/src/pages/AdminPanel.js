@@ -352,12 +352,13 @@ const AdminPanel = () => {
       </div>
 
       <Tabs defaultValue="branches" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="branches">Branches</TabsTrigger>
           <TabsTrigger value="programs">Programs</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="expense-categories" data-testid="expense-categories-tab">Expense Categories</TabsTrigger>
-          <TabsTrigger value="lead-sources" data-testid="lead-sources-tab">Lead Sources</TabsTrigger>
+          <TabsTrigger value="expense-categories" data-testid="expense-categories-tab">Expenses</TabsTrigger>
+          <TabsTrigger value="lead-sources" data-testid="lead-sources-tab">Sources</TabsTrigger>
+          <TabsTrigger value="exams" data-testid="exams-tab">Exams</TabsTrigger>
           <TabsTrigger value="whatsapp" data-testid="whatsapp-settings-tab">WhatsApp</TabsTrigger>
         </TabsList>
 
