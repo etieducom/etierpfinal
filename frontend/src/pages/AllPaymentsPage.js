@@ -258,6 +258,9 @@ const AllPaymentsPage = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Amount</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Mode</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Installment</th>
+                  {canModify && (
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -288,6 +291,28 @@ const AllPaymentsPage = () => {
                     <td className="px-4 py-3 text-sm">
                       {payment.installment_number ? `#${payment.installment_number}` : '-'}
                     </td>
+                    {canModify && (
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(payment)}
+                            data-testid={`edit-payment-${payment.id}`}
+                          >
+                            <Edit2 className="w-4 h-4 text-blue-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(payment.id)}
+                            data-testid={`delete-payment-${payment.id}`}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -300,6 +325,59 @@ const AllPaymentsPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Payment Dialog */}
+      <Dialog open={editDialog} onOpenChange={setEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Payment</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Amount (₹)</Label>
+              <Input
+                type="number"
+                value={editForm.amount}
+                onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Payment Mode</Label>
+              <Select value={editForm.payment_mode} onValueChange={(v) => setEditForm({ ...editForm, payment_mode: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_MODES.map((mode) => (
+                    <SelectItem key={mode} value={mode}>{mode}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Payment Date</Label>
+              <Input
+                type="date"
+                value={editForm.payment_date}
+                onChange={(e) => setEditForm({ ...editForm, payment_date: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Remarks</Label>
+              <Input
+                value={editForm.remarks}
+                onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })}
+                placeholder="Optional remarks..."
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditDialog(false)}>Cancel</Button>
+              <Button type="submit" className="bg-slate-900 hover:bg-slate-800">Update Payment</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
