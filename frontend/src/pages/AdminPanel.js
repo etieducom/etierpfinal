@@ -83,6 +83,7 @@ const AdminPanel = () => {
   useEffect(() => {
     fetchData();
     fetchWhatsAppSettings();
+    fetchExams();
   }, []);
 
   const fetchData = async () => {
@@ -113,6 +114,15 @@ const AdminPanel = () => {
     }
   };
 
+  const fetchExams = async () => {
+    try {
+      const response = await examsAPI.getTypes();
+      setInternationalExams(response.data);
+    } catch (error) {
+      console.error('Failed to fetch exams');
+    }
+  };
+
   const handleWhatsAppSettingChange = async (key, value) => {
     setWhatsappLoading(true);
     try {
@@ -124,6 +134,71 @@ const AdminPanel = () => {
       toast.error('Failed to update WhatsApp settings');
     } finally {
       setWhatsappLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    try {
+      await adminAPI.deleteUser(userId);
+      toast.success('User deleted successfully');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete user');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    try {
+      await adminAPI.changeUserPassword(selectedUser.id, { new_password: newPassword });
+      toast.success('Password changed successfully');
+      setPasswordDialog(false);
+      setNewPassword('');
+      setSelectedUser(null);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to change password');
+    }
+  };
+
+  const handleToggleUserStatus = async (user) => {
+    try {
+      await adminAPI.updateUserStatus(user.id, { is_active: !user.is_active });
+      toast.success(`User ${user.is_active ? 'deactivated' : 'activated'} successfully`);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update user status');
+    }
+  };
+
+  const handleCreateExam = async (e) => {
+    e.preventDefault();
+    try {
+      await examsAPI.createType({
+        name: examForm.name,
+        description: examForm.description,
+        price: parseFloat(examForm.price)
+      });
+      toast.success('Exam type created successfully');
+      setExamDialog(false);
+      setExamForm({ name: '', description: '', price: '' });
+      fetchExams();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to create exam');
+    }
+  };
+
+  const handleDeleteExam = async (examId) => {
+    if (!window.confirm('Are you sure you want to delete this exam type?')) return;
+    try {
+      await examsAPI.deleteType(examId);
+      toast.success('Exam type deleted successfully');
+      fetchExams();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete exam');
     }
   };
 
