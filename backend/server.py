@@ -990,7 +990,10 @@ async def upload_photo(file: bytes = None, current_user: User = Depends(get_curr
     photo_url = f"data:image/jpeg;base64,{photo_data[:100]}..."  # Truncated for demo
     
     return {"photo_url": photo_url, "message": "Photo uploaded successfully"}
+
+@api_router.delete("/admin/users/{user_id}")
 async def delete_user(user_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Delete a user - Super Admin only"""
     # Prevent deleting self
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot delete your own account")
@@ -999,6 +1002,41 @@ async def delete_user(user_id: str, current_user: User = Depends(require_role([U
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User deleted successfully"}
+
+@api_router.put("/admin/users/{user_id}/password")
+async def change_user_password(user_id: str, password_data: PasswordChange, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Change any user's password - Super Admin only"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    hashed_password = pwd_context.hash(password_data.new_password)
+    await db.users.update_one({"id": user_id}, {"$set": {"hashed_password": hashed_password}})
+    return {"message": "Password changed successfully"}
+
+@api_router.put("/admin/users/{user_id}/status")
+async def update_user_status(user_id: str, status_data: UserStatusUpdate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Mark user as active/inactive - Super Admin only"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    await db.users.update_one({"id": user_id}, {"$set": {"is_active": status_data.is_active}})
+    return {"message": f"User {'activated' if status_data.is_active else 'deactivated'} successfully"}
+
+@api_router.put("/auth/change-password")
+async def change_own_password(password_data: PasswordChange, current_user: User = Depends(get_current_user)):
+    """Change own password - requires current password"""
+    if not password_data.current_password:
+        raise HTTPException(status_code=400, detail="Current password is required")
+    
+    user = await db.users.find_one({"id": current_user.id}, {"_id": 0})
+    if not pwd_context.verify(password_data.current_password, user['hashed_password']):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    hashed_password = pwd_context.hash(password_data.new_password)
+    await db.users.update_one({"id": current_user.id}, {"$set": {"hashed_password": hashed_password}})
+    return {"message": "Password changed successfully"}
 
 # Admin - User Management
 @api_router.post("/admin/users", response_model=UserResponse)
