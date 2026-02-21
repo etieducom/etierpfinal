@@ -49,14 +49,15 @@ const TasksPage = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await adminAPI.getUsers();
-      // Filter users from same branch for Branch Admin
+      // Use getBranchUsers instead of getUsers - this works for both Admin and Branch Admin
+      const response = await adminAPI.getBranchUsers();
+      // Filter out inactive users and self
       const filteredUsers = response.data.filter(u => 
-        user.role === 'Admin' || u.branch_id === user.branch_id
+        u.is_active !== false && u.id !== user.id
       );
       setUsers(filteredUsers);
     } catch (error) {
-      console.error('Failed to fetch users');
+      console.error('Failed to fetch users:', error);
     }
   };
 
