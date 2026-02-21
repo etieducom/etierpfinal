@@ -378,47 +378,64 @@ class ExpenseCreate(BaseModel):
 class WhatsAppTemplate(BaseModel):
     template_name: str
     template_namespace: str
-    variables: List[str] = []  # List of variable names like ["student_name", "program_name", "amount"]
+    variables: List[str] = []  # List of variable names like ["name", "course", "amount"]
+
+class WhatsAppEventConfig(BaseModel):
+    enabled: bool = True
+    template_name: str = ""
+    namespace: str = ""
+    variables: List[str] = []  # Variable names for this event
 
 class WhatsAppSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     enabled: bool = True
     integrated_number: str = "918728054145"  # Your MSG91 registered WhatsApp number
-    # Default template settings
-    default_template_name: str = "crmwelcome"
-    default_template_namespace: str = "73fda5e9_77e9_445f_82ac_9c2e532b32f4"
-    # Per-event template configuration
-    templates: dict = Field(default_factory=lambda: {
-        "lead_added": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
-        "demo_booked": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
-        "demo_completed": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
-        "enrollment_confirmed": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
-        "payment_received": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]},
-        "installment_reminder": {"template_name": "crmwelcome", "namespace": "73fda5e9_77e9_445f_82ac_9c2e532b32f4", "variables": ["name"]}
+    # Per-event template configuration with specific variables
+    events: dict = Field(default_factory=lambda: {
+        "enquiry_saved": {
+            "enabled": True,
+            "template_name": "",
+            "namespace": "",
+            "variables": ["name", "course"],
+            "description": "When a new enquiry/lead is saved"
+        },
+        "demo_booked": {
+            "enabled": True,
+            "template_name": "",
+            "namespace": "",
+            "variables": ["name", "demo_date", "demo_time", "trainer"],
+            "description": "When demo is scheduled for a lead"
+        },
+        "enrollment_confirmed": {
+            "enabled": True,
+            "template_name": "",
+            "namespace": "",
+            "variables": ["name", "enrollment_number", "course"],
+            "description": "Thank you message when enrollment is confirmed"
+        },
+        "fee_reminder": {
+            "enabled": True,
+            "template_name": "",
+            "namespace": "",
+            "variables": ["name", "amount_due", "due_date"],
+            "description": "Automatic pending fee reminders"
+        },
+        "birthday_wishes": {
+            "enabled": True,
+            "template_name": "",
+            "namespace": "",
+            "variables": ["name"],
+            "description": "Birthday wishes sent on student's DOB"
+        }
     })
-    # Event toggles
-    notify_lead_added: bool = True
-    notify_demo_booked: bool = True
-    notify_demo_completed: bool = True
-    notify_enrollment_confirmed: bool = True
-    notify_payment_received: bool = True
-    notify_installment_reminder: bool = True
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_by: Optional[str] = None
 
 class WhatsAppSettingsUpdate(BaseModel):
     enabled: Optional[bool] = None
     integrated_number: Optional[str] = None
-    default_template_name: Optional[str] = None
-    default_template_namespace: Optional[str] = None
-    templates: Optional[dict] = None
-    notify_lead_added: Optional[bool] = None
-    notify_demo_booked: Optional[bool] = None
-    notify_demo_completed: Optional[bool] = None
-    notify_enrollment_confirmed: Optional[bool] = None
-    notify_payment_received: Optional[bool] = None
-    notify_installment_reminder: Optional[bool] = None
+    events: Optional[dict] = None
 
 # Push Notifications
 class PushNotification(BaseModel):
