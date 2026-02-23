@@ -4210,6 +4210,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize scheduler on app startup"""
+    # Schedule fee reminders to run daily at 9:00 AM
+    scheduler.add_job(
+        send_fee_reminders,
+        CronTrigger(hour=9, minute=0),
+        id="fee_reminders",
+        replace_existing=True
+    )
+    
+    # Schedule birthday wishes to run daily at 8:00 AM
+    scheduler.add_job(
+        send_birthday_wishes,
+        CronTrigger(hour=8, minute=0),
+        id="birthday_wishes",
+        replace_existing=True
+    )
+    
+    scheduler.start()
+    logger.info("Scheduler started - Fee reminders at 9:00 AM, Birthday wishes at 8:00 AM")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    scheduler.shutdown()
     client.close()
+    logger.info("Scheduler and database connection closed")
