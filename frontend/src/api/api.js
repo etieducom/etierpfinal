@@ -67,13 +67,6 @@ export const leadsAPI = {
   getFollowups: (id) => api.get(`/leads/${id}/followups`),
 };
 
-export const followupAPI = {
-  create: (data) => api.post('/followups', data),
-  getPending: () => api.get('/followups/pending'),
-  getPendingCount: () => api.get('/followups/pending/count'),
-  updateStatus: (id, status) => api.put(`/followups/${id}/status`, null, { params: { status } }),
-};
-
 export const uploadAPI = {
   uploadImage: (file) => {
     const formData = new FormData();
