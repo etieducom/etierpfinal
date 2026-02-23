@@ -93,7 +93,7 @@ const LeadsPage = () => {
 
   useEffect(() => {
     filterLeads();
-  }, [leads, searchTerm, statusFilter]);
+  }, [leads, searchTerm, statusFilter, dateFrom, dateTo]);
 
   const fetchData = async () => {
     try {
