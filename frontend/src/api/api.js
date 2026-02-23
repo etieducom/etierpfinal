@@ -166,6 +166,28 @@ export const notificationsAPI = {
   getAll: () => api.get('/notifications'),
   send: (data) => api.post('/notifications', data),
   markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/mark-all-read'),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+};
+
+export const followupAPI = {
+  create: (data) => api.post('/followups', data),
+  getPending: () => api.get('/followups/pending'),
+  getPendingCount: () => api.get('/followups/pending/count'),
+  updateStatus: (id, status) => api.put(`/followups/${id}/status`, null, { params: { status } }),
+  getDueSoon: () => api.get('/followups/due-soon'),
+  getOverdue: () => api.get('/followups/overdue'),
+};
+
+export const pushSubscriptionAPI = {
+  getVapidKey: () => api.get('/push-subscriptions/vapid-public-key'),
+  subscribe: (data) => api.post('/push-subscriptions', data),
+  unsubscribe: () => api.delete('/push-subscriptions'),
+};
+
+export const webhookAPI = {
+  getBranchWebhookInfo: (branchId) => api.get(`/admin/branches/${branchId}/webhook-info`),
+  regenerateWebhookKey: (branchId) => api.post(`/admin/branches/${branchId}/regenerate-webhook-key`),
 };
 
 export const tasksAPI = {
