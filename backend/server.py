@@ -4000,6 +4000,200 @@ async def verify_certificate(verification_id: str):
         }
     }
 
+# ========== FEE REMINDER AUTOMATION ==========
+async def send_fee_reminders():
+    """
+    Send WhatsApp fee reminders for pending payments.
+    Sends reminders 7 days, 5 days, 3 days, 1 day before due date, and on the due date.
+    """
+    try:
+        logger.info("Running fee reminder job...")
+        today = datetime.now(timezone.utc).date()
+        reminder_days = [7, 5, 3, 1, 0]  # Days before due date
+        
+        for days_before in reminder_days:
+            target_date = today + timedelta(days=days_before)
+            target_date_str = target_date.isoformat()
+            
+            # Find installments due on the target date
+            installments = await db.installment_schedule.find(
+                {"due_date": target_date_str, "status": {"$ne": "Paid"}},
+                {"_id": 0}
+            ).to_list(1000)
+            
+            for inst in installments:
+                payment_plan = await db.payment_plans.find_one(
+                    {"id": inst.get("payment_plan_id")},
+                    {"_id": 0}
+                )
+                if not payment_plan:
+                    continue
+                
+                enrollment = await db.enrollments.find_one(
+                    {"id": payment_plan.get("enrollment_id")},
+                    {"_id": 0}
+                )
+                if not enrollment:
+                    continue
+                
+                # Send WhatsApp reminder
+                reminder_text = f"on {target_date_str}" if days_before == 0 else f"in {days_before} day(s)"
+                await send_whatsapp_notification(
+                    enrollment.get('phone', ''),
+                    "fee_reminder",
+                    {
+                        "name": enrollment.get('student_name', ''),
+                        "amount_due": str(inst.get('amount', 0)),
+                        "due_date": target_date_str
+                    }
+                )
+                logger.info(f"Fee reminder sent to {enrollment.get('student_name')} for ₹{inst.get('amount')} due {reminder_text}")
+        
+        # Also check for one-time payments that are overdue
+        # For one-time payments, send reminder if enrollment date was 23, 25, 27, 29, or 30 days ago
+        # (Equivalent to 7, 5, 3, 1, 0 days before 30-day mark)
+        for days_since in [23, 25, 27, 29, 30]:
+            check_date = today - timedelta(days=days_since)
+            check_date_str = check_date.isoformat()
+            
+            # Find enrollments from that date with pending one-time payments
+            enrollments = await db.enrollments.find(
+                {"enrollment_date": check_date_str},
+                {"_id": 0}
+            ).to_list(1000)
+            
+            for enrollment in enrollments:
+                enrollment_id = enrollment.get('id')
+                final_fee = enrollment.get('final_fee', 0)
+                
+                # Check if it's a one-time payment plan
+                payment_plan = await db.payment_plans.find_one(
+                    {"enrollment_id": enrollment_id},
+                    {"_id": 0}
+                )
+                if payment_plan and payment_plan.get('plan_type') == 'Installments':
+                    continue  # Skip installment plans
+                
+                # Get total paid
+                payments = await db.payments.find(
+                    {"enrollment_id": enrollment_id},
+                    {"_id": 0, "amount": 1}
+                ).to_list(100)
+                total_paid = sum(p.get('amount', 0) for p in payments)
+                pending_amount = final_fee - total_paid
+                
+                if pending_amount > 0:
+                    days_left = 30 - days_since
+                    due_date_str = (today + timedelta(days=days_left)).isoformat() if days_left > 0 else today.isoformat()
+                    await send_whatsapp_notification(
+                        enrollment.get('phone', ''),
+                        "fee_reminder",
+                        {
+                            "name": enrollment.get('student_name', ''),
+                            "amount_due": str(pending_amount),
+                            "due_date": due_date_str
+                        }
+                    )
+                    logger.info(f"One-time payment reminder sent to {enrollment.get('student_name')} for ₹{pending_amount}")
+        
+        logger.info("Fee reminder job completed successfully")
+    except Exception as e:
+        logger.error(f"Error in fee reminder job: {str(e)}")
+
+async def send_birthday_wishes():
+    """
+    Send WhatsApp birthday wishes to students on their birthday.
+    """
+    try:
+        logger.info("Running birthday wishes job...")
+        today = datetime.now(timezone.utc)
+        today_month_day = today.strftime("%m-%d")  # MM-DD format
+        
+        # Find students with birthday today
+        # date_of_birth is stored as YYYY-MM-DD string
+        enrollments = await db.enrollments.find(
+            {"status": "Active"},
+            {"_id": 0}
+        ).to_list(10000)
+        
+        for enrollment in enrollments:
+            dob = enrollment.get('date_of_birth', '')
+            if not dob:
+                continue
+            
+            # Check if birthday matches today (MM-DD)
+            try:
+                dob_month_day = dob[5:10]  # Extract MM-DD from YYYY-MM-DD
+                if dob_month_day == today_month_day:
+                    await send_whatsapp_notification(
+                        enrollment.get('phone', ''),
+                        "birthday_wishes",
+                        {"name": enrollment.get('student_name', '')}
+                    )
+                    logger.info(f"Birthday wish sent to {enrollment.get('student_name')}")
+            except Exception as e:
+                logger.warning(f"Error parsing DOB for {enrollment.get('student_name')}: {e}")
+        
+        logger.info("Birthday wishes job completed successfully")
+    except Exception as e:
+        logger.error(f"Error in birthday wishes job: {str(e)}")
+
+# Initialize scheduler
+scheduler = AsyncIOScheduler()
+
+# ========== ADMIN RESET ENDPOINT ==========
+@api_router.post("/admin/reset-system")
+async def reset_system(current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """
+    Reset all system data - SUPER ADMIN ONLY.
+    This will delete ALL data from the system except the super admin account.
+    USE WITH EXTREME CAUTION!
+    """
+    try:
+        # Keep track of collections to clear
+        collections_to_clear = [
+            "leads", "followups", "enrollments", "payments", "payment_plans",
+            "installment_schedule", "expenses", "tasks", "notifications",
+            "certificate_requests", "quiz_attempts", "exam_bookings",
+            "push_subscriptions"
+        ]
+        
+        deleted_counts = {}
+        for collection_name in collections_to_clear:
+            result = await db[collection_name].delete_many({})
+            deleted_counts[collection_name] = result.deleted_count
+        
+        # Reset branch counters (don't delete branches)
+        await db.branches.update_many(
+            {},
+            {"$set": {"lead_counter": 0, "enrollment_counter": 0, "receipt_counter": 0}}
+        )
+        
+        # Delete all users except the current super admin
+        user_delete_result = await db.users.delete_many({
+            "id": {"$ne": current_user.id}
+        })
+        deleted_counts["users"] = user_delete_result.deleted_count
+        
+        logger.warning(f"SYSTEM RESET performed by {current_user.email}. Data deleted: {deleted_counts}")
+        
+        return {
+            "success": True,
+            "message": "System data has been reset successfully",
+            "deleted_records": deleted_counts,
+            "preserved": {
+                "branches": "All branches preserved with counters reset",
+                "programs": "All programs preserved",
+                "expense_categories": "All expense categories preserved",
+                "lead_sources": "All lead sources preserved",
+                "whatsapp_settings": "WhatsApp settings preserved",
+                "current_admin": current_user.email
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error during system reset: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"System reset failed: {str(e)}")
+
 app.include_router(api_router)
 
 app.add_middleware(
