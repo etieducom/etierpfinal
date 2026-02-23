@@ -881,6 +881,39 @@ const AdminPanel = () => {
             )}
           </div>
         </TabsContent>
+
+        {/* Webhooks Tab - Lead Capture Endpoints for Google Ads & Meta */}
+        <TabsContent value="webhooks" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-semibold">Lead Capture Webhooks</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Unique URLs for each branch to auto-capture leads from Google Ads, Meta (Facebook), etc.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-medium text-blue-900 mb-2">How to Use</h3>
+            <ol className="list-decimal list-inside text-sm text-blue-800 space-y-1">
+              <li>Copy the webhook URL for the desired branch</li>
+              <li>In Google Ads: Go to Lead Form Extensions → Set webhook URL</li>
+              <li>In Meta Ads: Go to Lead Ads → Instant Forms → CRM Integration → Paste URL</li>
+              <li>Leads will automatically appear in the CRM under that branch</li>
+            </ol>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {branches.map((branch) => (
+              <WebhookCard key={branch.id} branch={branch} onRefresh={fetchData} />
+            ))}
+            {branches.length === 0 && (
+              <div className="text-center py-12 text-slate-500">
+                No branches created yet. Create a branch first to get webhook URLs.
+              </div>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* Branch Dialog */}
