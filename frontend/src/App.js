@@ -20,10 +20,13 @@ import ManageExamsPage from '@/pages/ManageExamsPage';
 import TasksPage from '@/pages/TasksPage';
 import QuizExamsPage from '@/pages/QuizExamsPage';
 import PublicExamPage from '@/pages/PublicExamPage';
+import CertificateRequestPage from '@/pages/CertificateRequestPage';
+import CertificateManagementPage from '@/pages/CertificateManagementPage';
+import CertificateVerifyPage from '@/pages/CertificateVerifyPage';
 import Layout from '@/components/Layout';
 import { Toaster } from '@/components/ui/sonner';
 
-const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdminAllowed = false }) => {
+const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdminAllowed = false, certManagerAllowed = false }) => {
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
@@ -35,6 +38,12 @@ const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdmi
   // FDA routes - also allow Branch Admin
   if (fdaOnly) {
     const allowedRoles = ['Front Desk Executive', 'Admin', 'Branch Admin'];
+    if (!allowedRoles.includes(user.role)) return <Navigate to="/" />;
+  }
+  
+  // Certificate Manager routes
+  if (certManagerAllowed) {
+    const allowedRoles = ['Certificate Manager', 'Admin'];
     if (!allowedRoles.includes(user.role)) return <Navigate to="/" />;
   }
   
