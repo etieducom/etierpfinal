@@ -201,7 +201,7 @@ const PendingPaymentsPage = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Student</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Contact</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Program</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Installment</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Type</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Amount Due</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Due Date</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
@@ -210,7 +210,7 @@ const PendingPaymentsPage = () => {
               <tbody className="divide-y divide-slate-200">
                 {pendingPayments.map((payment, index) => (
                   <tr 
-                    key={`${payment.enrollment_id}-${payment.installment_number}`} 
+                    key={`${payment.enrollment_id}-${payment.installment_number || 'onetime'}-${index}`} 
                     className={`hover:bg-slate-50 ${payment.is_overdue ? 'bg-red-50' : ''}`}
                     data-testid={`pending-row-${index}`}
                   >
@@ -223,11 +223,23 @@ const PendingPaymentsPage = () => {
                       <Badge variant="outline">{payment.program_name}</Badge>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <span className="font-medium">#{payment.installment_number}</span>
-                      <span className="text-slate-500"> of {payment.total_installments}</span>
+                      {payment.type === 'installment' ? (
+                        <span>
+                          <Badge className="bg-purple-100 text-purple-700">Installment</Badge>
+                          <span className="ml-2 font-medium">#{payment.installment_number}</span>
+                          <span className="text-slate-500"> of {payment.total_installments}</span>
+                        </span>
+                      ) : (
+                        <Badge className="bg-blue-100 text-blue-700">One-Time</Badge>
+                      )}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-yellow-600">
-                      ₹{payment.amount?.toLocaleString()}
+                    <td className="px-4 py-3">
+                      <span className="font-semibold text-amber-600">₹{payment.amount?.toLocaleString()}</span>
+                      {payment.type === 'one_time' && payment.total_paid > 0 && (
+                        <p className="text-xs text-slate-500">
+                          Paid: ₹{payment.total_paid?.toLocaleString()} / ₹{payment.total_fee?.toLocaleString()}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {payment.due_date ? format(new Date(payment.due_date), 'dd MMM yyyy') : '-'}
