@@ -1029,6 +1029,95 @@ const AdminPanel = () => {
             )}
           </div>
         </TabsContent>
+
+        {/* System Settings Tab */}
+        <TabsContent value="system" className="space-y-4">
+          <h2 className="text-2xl font-semibold text-red-600">System Settings</h2>
+          
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="text-red-600 flex items-center gap-2">
+                <Trash2 className="w-5 h-5" />
+                Reset System Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-700 font-medium mb-2">⚠️ Danger Zone</p>
+                <p className="text-red-600 text-sm mb-4">
+                  This action will permanently delete ALL operational data from the system including:
+                </p>
+                <ul className="text-red-600 text-sm list-disc list-inside mb-4 space-y-1">
+                  <li>All leads and follow-ups</li>
+                  <li>All enrollments and student data</li>
+                  <li>All payments and payment plans</li>
+                  <li>All expenses</li>
+                  <li>All tasks and notifications</li>
+                  <li>All certificate requests</li>
+                  <li>All quiz attempts</li>
+                  <li>All users (except your admin account)</li>
+                </ul>
+                <p className="text-red-600 text-sm font-medium">
+                  This will preserve: Branches, Programs, Expense Categories, Lead Sources, and WhatsApp Settings.
+                </p>
+              </div>
+              
+              <Button 
+                variant="destructive" 
+                className="w-full"
+                onClick={async () => {
+                  const confirmation = window.prompt(
+                    'This action cannot be undone. Type "RESET ALL DATA" to confirm:'
+                  );
+                  if (confirmation === 'RESET ALL DATA') {
+                    try {
+                      const response = await adminAPI.resetSystem();
+                      toast.success('System data has been reset successfully');
+                      console.log('Reset results:', response.data);
+                      // Refresh data
+                      fetchData();
+                    } catch (error) {
+                      toast.error(error.response?.data?.detail || 'Failed to reset system');
+                    }
+                  } else if (confirmation !== null) {
+                    toast.error('Confirmation text did not match. Reset cancelled.');
+                  }
+                }}
+                data-testid="reset-system-btn"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Reset All System Data
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <RefreshCw className="w-5 h-5" />
+                Automated Tasks
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-700 font-medium mb-2">📅 Scheduled Jobs</p>
+                <ul className="text-slate-600 text-sm space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    <strong>Fee Reminders:</strong> Daily at 9:00 AM (7, 5, 3, 1 days before due date & on due date)
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    <strong>Birthday Wishes:</strong> Daily at 8:00 AM
+                  </li>
+                </ul>
+              </div>
+              <p className="text-slate-500 text-sm">
+                Note: WhatsApp messages will only be sent if the relevant event templates are configured in the WhatsApp Settings tab.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Branch Dialog */}
