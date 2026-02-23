@@ -117,20 +117,47 @@ The user, representing a training institute named "ETI Educom", requested a full
   - [x] Branch Admin can now see users in task dropdown
   - [x] New /api/branch/users endpoint for branch-specific users
 
+### Phase 9: Notifications & External Lead Capture (COMPLETE - December 23, 2025)
+- [x] Follow-up Alarm Notification System
+  - [x] GET /api/followups/due-soon - Returns follow-ups due within 10 minutes
+  - [x] GET /api/followups/overdue - Returns overdue follow-ups
+  - [x] NotificationCenter component with alarm sound for due-soon followups
+  - [x] In-app toast notifications for approaching follow-ups
+- [x] Branch-Specific Lead Capture Webhooks (for Google Ads & Meta)
+  - [x] POST /api/webhooks/leads/{webhook_key} - PUBLIC endpoint for external lead capture
+  - [x] GET /api/admin/branches/{branch_id}/webhook-info - Get webhook URL and instructions
+  - [x] POST /api/admin/branches/{branch_id}/regenerate-webhook-key - Regenerate webhook key
+  - [x] Admin Panel Webhooks tab showing all branches with webhook URLs
+  - [x] Sample payload display and copy-to-clipboard functionality
+- [x] Push Notifications for Task Assignment
+  - [x] Auto-create in-app notification when task is assigned
+  - [x] NotificationCenter component in header with bell icon
+  - [x] Unread count badge on notification bell
+  - [x] "Enable Push" button for browser push notification permission
+  - [x] GET /api/push-subscriptions/vapid-public-key - VAPID key for push subscription
+  - [x] POST /api/push-subscriptions - Save browser push subscription
+  - [x] DELETE /api/push-subscriptions - Remove push subscription
+  - [x] PUT /api/notifications/mark-all-read - Mark all notifications as read
+  - [x] GET /api/notifications/unread-count - Get unread notification count
+
 ## Pending/Backlog
 
 ### P0 - High Priority (None currently)
 All high-priority features completed.
 
 ### P1 - Medium Priority
+- [ ] Certificate Management System (User requested)
+  - Public form for students to request certificates
+  - Admin approval workflow for "Certificate Manager" role
+  - PDF generation with QR code verification
 - [ ] Demo Booking Fields - When lead status changes to "Demo Booked", prompt for demo date, time, trainer
 - [ ] Payment Installment Validation - Prevent sum of installments from exceeding total course fee
-- [ ] Push Notification System - Super Admin to all users, Branch Admin to branch staff
 - [ ] International Exams Module - Wire up backend to frontend for exam booking
 
 ### P2 - Low Priority
 - [ ] WhatsApp Fee Reminders (automated background job)
 - [ ] Birthday Wishes automation (daily job to send on student DOB)
+- [ ] Security Enhancement (auto-logout or session-based login)
 - [ ] Code Refactoring
   - Split server.py into routers/models/schemas
   - Add state management to frontend (Zustand/Redux)
