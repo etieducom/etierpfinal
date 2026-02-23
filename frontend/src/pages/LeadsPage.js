@@ -137,6 +137,21 @@ const LeadsPage = () => {
       filtered = filtered.filter((lead) => lead.status === statusFilter);
     }
 
+    // Date filters
+    if (dateFrom) {
+      filtered = filtered.filter((lead) => {
+        const leadDate = lead.created_at ? lead.created_at.split('T')[0] : '';
+        return leadDate >= dateFrom;
+      });
+    }
+
+    if (dateTo) {
+      filtered = filtered.filter((lead) => {
+        const leadDate = lead.created_at ? lead.created_at.split('T')[0] : '';
+        return leadDate <= dateTo;
+      });
+    }
+
     setFilteredLeads(filtered);
   };
 
