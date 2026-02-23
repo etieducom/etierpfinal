@@ -108,76 +108,103 @@ const CertificateManagementPage = () => {
     
     const ctx = canvas.getContext('2d');
     
-    // Set canvas size to match certificate dimensions (A4 landscape ratio)
-    canvas.width = 2480;  // Higher resolution for print quality
-    canvas.height = 1754;
+    // A4 Landscape dimensions at 300 DPI (3508 x 2480 pixels)
+    // Using slightly smaller for better browser compatibility
+    canvas.width = 2970;  // A4 landscape width at ~254 DPI
+    canvas.height = 2100; // A4 landscape height at ~254 DPI
+    
+    // White background first
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Load background image
     const bgImage = new Image();
+    bgImage.crossOrigin = 'anonymous';
     await new Promise((resolve) => {
       bgImage.onload = resolve;
       bgImage.onerror = () => {
         console.warn('Background image failed to load');
         resolve();
       };
-      bgImage.src = CERTIFICATE_BG_URL;
+      bgImage.src = CERTIFICATE_BG_URL + '?t=' + Date.now(); // Cache bust
     });
     
     // Draw background
     if (bgImage.complete && bgImage.naturalWidth > 0) {
       ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
     } else {
-      // Fallback - white background with blue accents
-      ctx.fillStyle = '#ffffff';
+      // Fallback - create gradient background
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#f8fafc');
+      gradient.addColorStop(1, '#e2e8f0');
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Add decorative border
+      ctx.strokeStyle = '#1a365d';
+      ctx.lineWidth = 15;
+      ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
+      ctx.strokeStyle = '#c9a227';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(70, 70, canvas.width - 140, canvas.height - 140);
     }
     
     // Load ETI Logo
     const logoImage = new Image();
+    logoImage.crossOrigin = 'anonymous';
+    let logoLoaded = false;
     await new Promise((resolve) => {
-      logoImage.onload = resolve;
-      logoImage.onerror = resolve;
-      logoImage.src = ETI_LOGO_URL;
+      logoImage.onload = () => { logoLoaded = true; resolve(); };
+      logoImage.onerror = () => resolve();
+      logoImage.src = ETI_LOGO_URL + '?t=' + Date.now(); // Cache bust
     });
     
     // Draw Logo centered at top
-    if (logoImage.complete && logoImage.naturalWidth > 0) {
-      const logoWidth = 200;
-      const logoHeight = 80;
-      ctx.drawImage(logoImage, (canvas.width - logoWidth) / 2, 100, logoWidth, logoHeight);
+    if (logoLoaded && logoImage.naturalWidth > 0) {
+      const logoWidth = 240;
+      const logoHeight = 100;
+      ctx.drawImage(logoImage, (canvas.width - logoWidth) / 2, 120, logoWidth, logoHeight);
+    } else {
+      // Fallback - text logo
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 80px "Arial", sans-serif';
+      ctx.fillStyle = '#1a365d';
+      ctx.fillText('ETI EDUCOM', canvas.width / 2, 180);
     }
     
     // ========== TITLE ==========
     ctx.textAlign = 'center';
-    ctx.font = 'italic bold 72px "Times New Roman", Georgia, serif';
+    ctx.font = 'italic bold 88px "Times New Roman", Georgia, serif';
     ctx.fillStyle = '#1a365d';
-    ctx.fillText('CERTIFICATE OF COMPLETION', canvas.width / 2, 280);
+    ctx.fillText('CERTIFICATE OF COMPLETION', canvas.width / 2, 340);
     
     // Decorative line under title
     ctx.strokeStyle = '#c9a227';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(canvas.width / 2 - 400, 310);
-    ctx.lineTo(canvas.width / 2 + 400, 310);
+    ctx.moveTo(canvas.width / 2 - 500, 380);
+    ctx.lineTo(canvas.width / 2 + 500, 380);
     ctx.stroke();
     
     // ========== BODY TEXT ==========
     // "This is to certify that"
-    ctx.font = 'italic 32px "Times New Roman", Georgia, serif';
+    ctx.font = 'italic 40px "Times New Roman", Georgia, serif';
     ctx.fillStyle = '#333333';
-    ctx.fillText('This is to certify that', canvas.width / 2, 400);
+    ctx.fillText('This is to certify that', canvas.width / 2, 500);
     
-    // Student Name (bold, larger, golden color)
-    ctx.font = 'bold 56px "Times New Roman", Georgia, serif';
+    // Student Name (bold, larger, blue color)
+    ctx.font = 'bold 72px "Times New Roman", Georgia, serif';
     ctx.fillStyle = '#1a365d';
-    ctx.fillText(certData.student_name.toUpperCase(), canvas.width / 2, 490);
+    ctx.fillText(certData.student_name.toUpperCase(), canvas.width / 2, 620);
     
     // Underline for student name
     const nameWidth = ctx.measureText(certData.student_name.toUpperCase()).width;
     ctx.strokeStyle = '#c9a227';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo((canvas.width - nameWidth) / 2 - 20, 510);
+    ctx.moveTo((canvas.width - nameWidth) / 2 - 30, 650);
+    ctx.lineTo((canvas.width + nameWidth) / 2 + 30, 650);
+    ctx.stroke();
     ctx.lineTo((canvas.width + nameWidth) / 2 + 20, 510);
     ctx.stroke();
     
