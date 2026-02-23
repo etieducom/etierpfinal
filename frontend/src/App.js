@@ -193,8 +193,18 @@ function App() {
               </PrivateRoute>
             }
           />
-          {/* Public exam route - no auth required */}
+          <Route
+            path="/certificates"
+            element={
+              <PrivateRoute certManagerAllowed>
+                <CertificateManagementPage />
+              </PrivateRoute>
+            }
+          />
+          {/* Public routes - no auth required */}
           <Route path="/exam/:examId" element={<PublicExamPage />} />
+          <Route path="/certificate-request" element={<CertificateRequestPage />} />
+          <Route path="/verify/:verificationId" element={<CertificateVerifyPage />} />
         </Routes>
       </div>
     </BrowserRouter>
