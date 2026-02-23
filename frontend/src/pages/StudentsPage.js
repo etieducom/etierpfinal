@@ -424,12 +424,23 @@ const StudentsPage = () => {
     window.print();
   };
 
-  const filteredStudents = students.filter(s => 
-    s.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.enrollment_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.phone?.includes(searchTerm) ||
-    s.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents = students.filter(s => {
+    // Text search
+    const matchesSearch = 
+      s.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.enrollment_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.phone?.includes(searchTerm) ||
+      s.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    // Date filters
+    const enrollmentDate = s.enrollment_date || s.created_at?.split('T')[0] || '';
+    if (dateFrom && enrollmentDate < dateFrom) return false;
+    if (dateTo && enrollmentDate > dateTo) return false;
+    
+    return true;
+  });
 
   const getStatusBadge = (status) => {
     switch (status) {
