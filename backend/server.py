@@ -542,6 +542,74 @@ class WebhookLeadCreate(BaseModel):
     state: Optional[str] = None
     additional_data: Optional[dict] = None  # Any extra fields from the platform
 
+# Certificate Management
+class CertificateStatus(str, Enum):
+    PENDING = "Pending"
+    APPROVED = "Approved"
+    REJECTED = "Rejected"
+    READY = "Ready"  # Downloaded/Issued
+
+class TrainingMode(str, Enum):
+    OFFLINE = "Offline"
+    ONLINE = "Online"
+    HYBRID = "Hybrid"
+
+class CertificateRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    certificate_id: Optional[str] = None  # Custom ID: ETI-2025-00001
+    enrollment_id: str
+    enrollment_number: str  # The visible enrollment number like PBPTKE0001
+    
+    # Student Info (auto-fetched from enrollment)
+    student_name: str
+    program_name: str
+    program_duration: str
+    branch_name: str
+    branch_id: str
+    
+    # Student-provided info
+    email: str
+    phone: str
+    program_start_date: str
+    program_end_date: str
+    training_mode: TrainingMode = TrainingMode.OFFLINE
+    training_hours: Optional[int] = None
+    
+    # Certificate details
+    registration_number: Optional[str] = None  # ETI-STU-XXXX
+    verification_id: Optional[str] = None  # Unique QR verification code
+    
+    # Status and workflow
+    status: CertificateStatus = CertificateStatus.PENDING
+    rejection_reason: Optional[str] = None
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    approved_at: Optional[datetime] = None
+    approved_by: Optional[str] = None
+    approved_by_name: Optional[str] = None
+    issued_at: Optional[datetime] = None  # When certificate was downloaded
+    issued_by: Optional[str] = None
+
+class CertificateRequestCreate(BaseModel):
+    enrollment_number: str  # Student enters this
+    email: str
+    phone: str
+    program_start_date: str
+    program_end_date: str
+    training_mode: TrainingMode = TrainingMode.OFFLINE
+    training_hours: Optional[int] = None
+
+class CertificateRequestUpdate(BaseModel):
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    program_start_date: Optional[str] = None
+    program_end_date: Optional[str] = None
+    training_mode: Optional[TrainingMode] = None
+    training_hours: Optional[int] = None
+    registration_number: Optional[str] = None
+
 # Enrollment Management
 class EnrollmentStatus(str, Enum):
     ACTIVE = "Active"
