@@ -56,6 +56,7 @@ function App() {
     <BrowserRouter>
       <div className="App noise-texture">
         <Toaster position="top-right" />
+        <ActivityTracker />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route
