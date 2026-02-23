@@ -458,6 +458,7 @@ const StudentsPage = () => {
       case 'Completed': return <Badge className="bg-blue-100 text-blue-700">Completed</Badge>;
       case 'Cancelled': return <Badge className="bg-red-100 text-red-700">Cancelled</Badge>;
       case 'Dropped': return <Badge className="bg-orange-100 text-orange-700">Dropped</Badge>;
+      case 'Inactive': return <Badge className="bg-gray-100 text-gray-700">Inactive</Badge>;
       default: return <Badge>{status || 'Active'}</Badge>;
     }
   };
