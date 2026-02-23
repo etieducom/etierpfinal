@@ -1,322 +1,183 @@
 <analysis>**original_problem_statement:**
-The user, ETI Educom, requires an institute management system. Initial features included lead/user/branch management, enrollments, payments, and expenses.
+The user, ETI Educom, requires a comprehensive institute management system. The initial scope included lead/user/branch management, enrollments, and payments. The project has since evolved to include numerous advanced features:
 
-The scope has since expanded significantly to include:
--   **New Roles:** Branch Admin and the newly requested Certificate Manager.
--   **Advanced Modules:**
-    -   A complete task management system.
-    -   A quiz-based exam system with public-facing exam links.
-    -   A comprehensive certificate management system with a public request form, admin approval workflow, QR code verification, and PDF generation.
--   **Configurable Integrations:**
-    -   Advanced, per-event WhatsApp (MSG91) template configuration managed by the Super Admin.
--   **UI/UX & Document Generation:**
-    -   A corporate-style login page with the company logo.
-    -   A professional, A4-printable fee receipt with dual copies (student/center).
-    -   File uploads (photo, Aadhar card) during student enrollment.
--   **Workflow Enhancements:**
-    -   A pop-up to capture demo details (date, time, trainer) when a lead's status is changed to Demo Booked.
-    -   Locking leads from being edited after they are Converted and enrolled.
-    -   Branch Admins can mark students as Dropped or Inactive.
--   **Deployment:** The user requires explicit, step-by-step instructions to deploy the entire application on their own Hostinger VPS.
--   **Security:** The user has raised concerns about the application's security, specifically regarding persistent login sessions.
+**PRODUCT REQUIREMENTS:**
+-   **Roles:** Super Admin, Branch Admin, Counsellor, FDE, and Certificate Manager.
+-   **Lead Management:**
+    -   A pop-up to capture demo details when a lead's status is changed to Demo Booked.
+    -   Leads must be locked from editing/status change after being Converted.
+    -   Converted leads should appear in a Ready to Enroll section.
+    -   Branch-specific webhook endpoints for auto-fetching leads from platforms like Google Ads and Meta.
+-   **Task & Notification System:**
+    -   A complete task management module.
+    -   In-app and browser push notifications for task assignments.
+    -   Alarm notifications for counsellors 10 minutes prior to a lead follow-up time.
+-   **Exam Module:** A quiz-based exam system with a public-facing page for students.
+-   **Certificate Management System:**
+    -   A public form for students to request certificates using their Enrollment ID.
+    -   A Certificate Manager role with a dedicated dashboard to approve/deny requests.
+    -   Automated PDF certificate generation using a specific background image and layout.
+    -   A unique QR code on each certificate for public verification.
+    -   WhatsApp notification to the student when their certificate is ready.
+-   **Financials:**
+    -   Generation of a professional, A4-printable fee receipt with dual Student Copy and Center Copy sections.
+    -   Validation to prevent payment installments from exceeding the total course fee.
+-   **Integrations:** Configurable, per-event WhatsApp (MSG91) template management.
+-   **Security:** Auto-logout after 30 minutes of inactivity.
+-   **UI/UX:**
+    -   A corporate-style login page with a company logo.
+    -   A specific, user-defined order for the sidebar navigation menu.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack FastAPI/React/MongoDB application. The system supports Super Admin, Branch Admin, Counsellor, and FDE roles. The agent has successfully implemented several key features from the user's recent requests:
--   **Dashboard & Tasks:** Fixed an issue preventing Branch Admins from seeing users in the task assignment dropdown and corrected the dashboard analytics to properly account for deleted leads.
--   **WhatsApp Integration:** The backend and frontend have been overhauled to support per-event WhatsApp template configuration (for Enquiry, Demo, Enrollment, Fee Reminder, Birthday).
--   **Quiz Module:** A complete quiz-based exam module was built, including backend models/APIs, a Super Admin management UI, and a public page for students to take exams.
--   **Deployment Fixes:** Resolved multiple deployment blockers, including removing hardcoded API keys.
--   **User-Requested Fixes:** The application title has been changed, the Emergent watermark was removed, the company logo was added, the database was cleared, and a new Super Admin was created.
--   **Deployment Guidance:** The agent provided extensive, detailed, step-by-step guides for deploying the application on a Hostinger VPS, including debugging multiple environment-specific errors with the user.
+A full-stack FastAPI/React/MongoDB application with a multi-role user system. Most of the user's core feature requests have been implemented, including a comprehensive certificate generation pipeline, a full notification and alarm system (in-app and browser push), lead-capture webhooks for external platforms, and security enhancements like auto-logout. The frontend UI has been significantly updated with new pages, components, and role-specific layouts.
 
 **Last working item**:
-- **Last item agent was working:** The agent was actively troubleshooting a  versioning error that the user encountered while trying to manually create a Super Admin user on their Hostinger VPS. After providing a fix, the user reported a new issue: auth failed when trying to log in on their deployed instance. The agent was diagnosing this as a frontend environment variable misconfiguration.
-- **Status:** IN PROGRESS
-- **Agent Testing Done:** N
-- **Which testing method agent to use?** manual testing by curl
-- **User Testing Done:** N
+-   **Last item agent was working:** The agent was addressing the user's most recent request to fix the lead management workflow. This involves three parts:
+    1.  Locking leads with a Converted status to prevent further changes.
+    2.  Creating a Ready to Enroll view/section to display these converted leads.
+    3.  Reordering the main sidebar navigation menu to the user's specification.
+    The agent had begun by inspecting .
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** frontend testing agent
+-   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: Auth Failed on User's Deployed Instance (P0)**
-  - **Description:** The user cannot log in to their deployed application at  with the correct credentials. This is a critical blocker for the user's deployment efforts. The agent suspected the  in the frontend  file was incorrect, preventing the frontend from communicating with the backend API.
-  - **Attempted fixes:** The agent provided commands to update the  file, rebuild the frontend, and verify the admin user in the database.
-  - **Next debug checklist:**
-    1.  Confirm the user has correctly updated  to .
-    2.  Confirm the user has run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. in  after updating the  file.
-    3.  Use  on the VPS to test the login endpoint directly to rule out frontend issues: {"detail":"Incorrect email or password"}.
-    4.  Check the browser's developer console (Network tab) on the user's machine for failed API requests when they try to log in.
-    5.  Check Nginx and PM2 logs for any new errors.
-  - **Why fix this issue and what will be achieved with the fix?** This will unblock the user and allow them to finally use the application on their own server.
-  - **Status:** IN PROGRESS
-  - **Is recurring issue?** Y (Part of the larger deployment struggle)
-  - **Should Test frontend/backend/both after fix?** both
-
-- **Issue 2: WhatsApp Messages Not Being Received**
-  - **Description:** The user mentioned, i added namespaces and template names for all but no message received. While the agent refactored the WhatsApp logic, they never performed an end-to-end test to confirm a message is actually sent and received via the MSG91 API after the changes.
-  - **Next debug checklist:**
-    1.  In , add detailed logging to the  function to print the exact payload being sent to MSG91 and the response received.
-    2.  Trigger an event that sends a notification (e.g., create a new lead).
-    3.  Check the backend logs () to see the request and response.
-    4.  Verify the  environment variable is set correctly.
-  - **Why fix this issue and what will be achieved with the fix?** This completes a core feature requested by the user and ensures the integration is functional.
-  - **Status:** NOT STARTED
-  - **Is recurring issue?** Y
-  - **Should Test frontend/backend/both after fix?** backend
+-   **Issue 1: Lead Workflow and UI Fixes (P0)**
+    -   **Description:** The user has reported that Converted leads are not being locked, are not appearing in a Ready to Enroll section, and the sidebar menu is in the wrong order. This is a critical workflow and usability issue.
+    -   **Attempted fixes:** The agent started exploring .
+    -   **Next debug checklist:**
+        1.  Open . In the status update logic (likely within a dropdown or modal), add a condition to disable the control if the lead's current status is Converted.
+        2.  In the same file, modify the filtering logic. Create a new tab or filtered view named Ready to Enroll that exclusively displays leads where .
+        3.  Open . Locate the  array or equivalent structure.
+        4.  Reorder the items in that array to match the sequence specified by the user: .
+    -   **Why fix this issue and what will be achieved with the fix?** This will align the application's lead management process and navigation with the user's explicit operational requirements.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** frontend
 
 **In progress Task List**:
-- **Task 1: Complete User's VPS Deployment (P0)**
-  - **Where to resume:** The user is blocked by the Auth Failed issue. The agent must guide the user to resolve this. After that, final Nginx and SSL configuration may be needed.
-  - **What will be achieved with this?** The user will have a fully functional, self-hosted version of the application.
-  - **Status:** IN PROGRESS
-  - **Blocked on something:** Blocked on resolving Issue 1: Auth Failed.
+-   **Task 1: Complete Lead Workflow and Sidebar Reordering (P0)**
+    -   **Where to resume:** Continue editing  and  as outlined in the issue checklist above.
+    -   **What will be achieved with this?** The user's latest and most urgent requests will be fulfilled, fixing a key workflow.
+    -   **Status:** IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?** frontend
+    -   **Blocked on something:** None
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks:**
-  - **P0: Implement Certificate Management System:** This is a major new feature request.
-    -   Backend: Create new DB models () and API endpoints for the full lifecycle (create, view, approve, deny).
-    -   Backend: Implement PDF generation using a provided background image, dynamically adding student data and a unique QR code for verification.
-    -   Frontend: Create a public form for students to request certificates using their Enrollment ID.
-    -   Frontend: Create a new page/UI for the Certificate Manager role to manage requests.
-    -   User Role: Add the Certificate Manager role and update the Super Admin panel to assign it.
-    -   Integration: Add a new Certificate Ready event to the WhatsApp notification system.
-  - **P1: Address User's Security Concerns:**
-    -   Based on user's choice, implement either: 1) Auto-logout after 30 mins inactivity, or 2) Logout on browser close (using ).
-  - **P2: Complete Previously Requested Features:**
-    -   **Fee Receipt:** Update the  function to match the user's detailed format (logo, address, student/center copy, fee breakdown, terms).
-    -   **Demo Popup:** Finalize and test the popup on the  that appears when a status is changed to Demo Booked.
-    -   **File Uploads:** Test the student photo and Aadhar card upload functionality during enrollment end-to-end.
-    -   **Student Status:** Ensure Branch Admins can mark students as Dropped or Inactive from the .
-- **Future Tasks:**
-  - **Refactor :** Decompose the monolithic FastAPI app into routers/services.
-  - **Refactor :** Split the oversized component into smaller, focused sub-components.
-  - **Global State Management:** Introduce a state management library like Zustand.
+-   **Upcoming Tasks:**
+    -   **P1: End-to-End Verification of Untested Features:**
+        -   **WhatsApp Integration:** Trigger an event (like new enrollment) and confirm a message is physically received on a test device via the MSG91 API.
+        -   **Demo Booking Popup:** On the , change a lead's status to Demo Booked and verify that the popup for capturing demo details appears and functions correctly.
+-   **Future Tasks:**
+    -   **Refactor :** Decompose the monolithic FastAPI application into a more scalable structure using API routers (e.g., , ).
+    -   **Refactor :** Break down the large  component into smaller, more manageable sub-components for each settings section (Users, Branches, WhatsApp, Webhooks).
+    -   **State Management:** Introduce a global state management library like Zustand or Redux Toolkit to simplify state sharing between components.
 
 **Completed work in this session**
-- **Fixed Task Assignment:** Created  endpoint for Branch Admins.
-- **Fixed Dashboard Analytics:** Correctly accounted for deleted leads.
-- **Implemented Per-Event WhatsApp Templates:** Both backend logic and frontend UI were created.
-- **Created Quiz-Based Exams Module:** Full implementation from backend models to a public exam-taking UI.
-- **Locked Converted Leads:** Prevented editing of leads that have been converted and enrolled.
-- **UI/UX Overhaul:**
-  - Updated app title and added company logo to login, header, and receipts.
-  - Removed Emergent watermark.
-  - Designed a new professional fee receipt component (needs format verification).
-- **Database Cleared:** Wiped all data and created a fresh Super Admin user.
-- **Provided Extensive VPS Deployment Support:** Guided the user through installation of all dependencies (Node, Python, Mongo, Nginx, PM2) and debugged numerous errors related to npm <command>
-
-Usage:
-
-npm install        install all the dependencies in your project
-npm install <foo>  add the <foo> dependency to your project
-npm test           run this project's tests
-npm run <foo>      run the script named <foo>
-npm <command> -h   quick help on <command>
-npm -l             display usage info for all commands
-npm help <term>    search for help on <term>
-npm help npm       more involved overview
-
-All commands:
-
-    access, adduser, audit, bugs, cache, ci, completion,
-    config, dedupe, deprecate, diff, dist-tag, docs, doctor,
-    edit, exec, explain, explore, find-dupes, fund, get, help,
-    help-search, hook, init, install, install-ci-test,
-    install-test, link, ll, login, logout, ls, org, outdated,
-    owner, pack, ping, pkg, prefix, profile, prune, publish,
-    query, rebuild, repo, restart, root, run-script, sbom,
-    search, set, shrinkwrap, star, stars, start, stop, team,
-    test, token, uninstall, unpublish, unstar, update, version,
-    view, whoami
-
-Specify configs in the ini-formatted file:
-    /root/.npmrc
-or on the command line via: npm <command> --key=value
-
-More configuration info: npm help config
-Configuration fields: npm help 7 config
-
-npm@10.8.2 /usr/lib/node_modules/npm, 
-Usage:   
-  pip <command> [options]
-
-Commands:
-  install                     Install packages.
-  lock                        Generate a lock file.
-  download                    Download packages.
-  uninstall                   Uninstall packages.
-  freeze                      Output installed packages in requirements format.
-  inspect                     Inspect the python environment.
-  list                        List installed packages.
-  show                        Show information about installed packages.
-  check                       Verify installed packages have compatible 
-dependencies.
-  config                      Manage local and global configuration.
-  search                      Search PyPI for packages.
-  cache                       Inspect and manage pip's wheel cache.
-  index                       Inspect information available from package 
-indexes.
-  wheel                       Build wheels from your requirements.
-  hash                        Compute hashes of package archives.
-  completion                  A helper command used for command completion.
-  debug                       Show information useful for debugging.
-  help                        Show help for commands.
-
-General Options:
-  -h, --help                  Show help.
-  --debug                     Let unhandled exceptions propagate outside the
-                              main subroutine, instead of logging them to
-                              stderr.
-  --isolated                  Run pip in an isolated mode, ignoring
-                              environment variables and user configuration.
-  --require-virtualenv        Allow pip to only run in a virtual environment;
-                              exit with an error otherwise.
-  --python <python>           Run pip with the specified Python interpreter.
-  -v, --verbose               Give more output. Option is additive, and can be
-                              used up to 3 times.
-  -V, --version               Show version and exit.
-  -q, --quiet                 Give less output. Option is additive, and can be
-                              used up to 3 times (corresponding to WARNING,
-                              ERROR, and CRITICAL logging levels).
-  --log <path>                Path to a verbose appending log.
-  --no-input                  Disable prompting for input.
-  --keyring-provider <keyring_provider>
-                              Enable the credential lookup via the keyring
-                              library if user input is allowed. Specify which
-                              mechanism to use [auto, disabled, import,
-                              subprocess]. (default: auto)
-  --proxy <proxy>             Specify a proxy in the form
-                              scheme://[user:passwd@]proxy.server:port.
-  --retries <retries>         Maximum attempts to establish a new HTTP
-                              connection. (default: 5)
-  --timeout <sec>             Set the socket timeout (default 15 seconds).
-  --exists-action <action>    Default action when a path already exists:
-                              (s)witch, (i)gnore, (w)ipe, (b)ackup, (a)bort.
-  --trusted-host <hostname>   Mark this host or host:port pair as trusted,
-                              even though it does not have valid or any HTTPS.
-  --cert <path>               Path to PEM-encoded CA certificate bundle. If
-                              provided, overrides the default. See 'SSL
-                              Certificate Verification' in pip documentation
-                              for more information.
-  --client-cert <path>        Path to SSL client certificate, a single file
-                              containing the private key and the certificate
-                              in PEM format.
-  --cache-dir <dir>           Store the cache data in <dir>.
-  --no-cache-dir              Disable the cache.
-  --disable-pip-version-check
-                              Don't periodically check PyPI to determine
-                              whether a new version of pip is available for
-                              download. Implied with --no-
-                              index.
-  --no-color                  Suppress colored output.
-  --use-feature <feature>     Enable new functionality, that may be backward
-                              incompatible.
-  --use-deprecated <feature>  Enable deprecated functionality, that will be
-                              removed in the future.
-  --resume-retries <resume_retries>
-                              Maximum attempts to resume or restart an
-                              incomplete download. (default: 5) (, ),  configuration, and  versions.
-- **Resolved Dependency Conflict:** Fixed  vs  version issue in .
+-   **Notification & Alarm System:** Implemented a full notification suite including in-app alerts (bell icon), browser push notifications (via Service Worker), and timed alarms for lead follow-ups.
+-   **Lead Capture Webhooks:** Created secure, branch-specific webhook endpoints for ingesting leads from external marketing platforms. Added a UI in the Admin Panel for managing webhook keys.
+-   **Certificate Management System (Full Implementation & Fixes):**
+    -   Built the entire workflow: public request form, Certificate Manager role, approval dashboard, and public QR code verification page.
+    -   **Fixed Certificate Download:** Resolved a critical cross-origin bug that prevented the certificate image from loading into the canvas for PDF generation.
+    -   **Custom PDF Styling:** Rewrote the PDF generation logic to precisely match the user's sample image, using a custom background and specific text placements.
+-   **Security & UI Enhancements:**
+    -   Implemented an auto-logout feature after 30 minutes of inactivity.
+    -   Refined the Certificate Manager's UI to be more focused, removing the main dashboard and providing direct navigation to relevant tasks.
+-   **Payment & Receipt Logic:**
+    -   Added frontend validation to prevent recording payments that exceed the total course fee.
+    -   Enhanced the printable fee receipt component for better formatting.
+-   **Testing:** Utilized the testing subagent to validate the notification system and the certificate management system after implementation and major bug fixes.
 
 **Earlier issues found/mentioned but not fixed**
-- The user's report of no message received from the WhatsApp integration was acknowledged but not fully debugged and verified. This is now listed in the All Pending/In progress Issue list.
+-   **WhatsApp Message Reception:** The original handoff noted that the MSG91 integration was never confirmed end-to-end. While the logic was built, no test was run to verify a message is actually delivered to a phone. This remains an unverified item.
+
+**Known issue recurrence from previous fork**
+-   None in this session.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend:** React, Tailwind CSS, Shadcn/UI, Recharts
-- **Backend:** FastAPI, Pydantic, Motor (async MongoDB driver)
-- **Database:** MongoDB
-- **Deployment:** Manual deployment on a Linux VPS using Nginx (reverse proxy), PM2 (process manager), and Certbot (SSL).
-- **File Handling:** Using  for file uploads.
+-   **Frontend:** React, Tailwind CSS, Shadcn/UI, ,  API for dynamic image/PDF generation.
+-   **Backend:** FastAPI, Pydantic, Motor (async MongoDB),  for push notifications.
+-   **Database:** MongoDB.
+-   **Notifications:** A hybrid system using Web Push Protocol (via Service Workers) for real-time browser notifications and API polling for in-app updates.
 
 **key DB schema**
-- **users:** 
-- **enrollments:** 
-- **leads:** 
-- **quizzes:** 
-- **quiz_attempts:** 
-- **certificate_requests:** (New) 
+-   **branches:** Added .
+-   **notifications:** New collection .
+-   **browser_push_subscriptions:** New collection to store user subscription data for push notifications.
+-   **certificate_requests:** New collection for the certificate lifecycle .
+
+**changes in tech stack**
+-   **Backend:** Added  for implementing the Web Push Protocol.
+-   **Frontend:** Added  for generating QR codes on the certificate.
 
 **All files of reference**
-- : All logic resides here. Heavily modified with quiz APIs, file upload endpoint, WhatsApp logic changes, and lead locking logic.
-- :  version was updated to resolve a dependency conflict.
-- : A comprehensive guide created for the user's specific deployment needs.
-- : UI for per-event WhatsApp settings was added.
-- : Modified to handle the demo booking popup and disable editing for converted leads.
-- : New admin page for managing quizzes.
-- : New public page for students to attempt quizzes.
+-   **New Critical Files:**
+    -   : Core of the notification system.
+    -   : Handles certificate approval and PDF generation.
+    -   : Enables background push notifications.
+    -   : Asset for certificate styling.
+-   **Heavily Modified Files:**
+    -   : Grew significantly with all new backend logic.
+    -   : Modified for the notification bell, new sidebar links, and role-based visibility.
+    -   : Updated with new pages and the global activity tracker.
 
 **Areas that need refactoring**:
--  is now even more monolithic and urgently needs to be broken down into routers for auth, leads, quizzes, etc.
--  continues to grow and should be split into smaller components for each settings section.
+-   : This file is critically monolithic and difficult to maintain. It should be broken down into separate router files for each domain (auth, leads, certificates, etc.).
+-   : The  function has hardcoded coordinates and font sizes for placing text on the certificate. This is brittle and should be refactored to be more declarative or configuration-driven.
 
 **key api endpoints**
-- **File Upload:** 
-- **Quiz Management:** , 
-- **Public Quiz:** , 
-- **Branch Users:** 
+-   **Webhooks:** 
+-   **Notifications:** , 
+-   **Certificates:** , , 
 
 **Critical Info for New Agent**
-- **Deployment is Priority #1:** The user is actively trying to deploy the app on their Hostinger VPS. They are not a developer and will require clear, simple, command-by-command instructions. The immediate task is to solve the Auth Failed login issue on their server.
-- **New Feature Request is Large:** The Certificate Management System is a significant undertaking. It should be planned carefully before implementation begins, but only after the deployment is successful.
-- **Confirm User Choices:** The user has requested security enhancements. Before implementing, confirm which option they prefer (e.g., auto-logout vs. logout on close).
-- **Verify before Finishing:** The agent has implemented many features (WhatsApp, Demo Popup, Receipts) but has not always performed an end-to-end verification. The next agent must verify these features are fully working as requested. For example, test that a WhatsApp message is actually sent.
+-   The user's top priority is the list of fixes from their last message: locking converted leads, creating the Ready to Enroll view, and reordering the sidebar. Address these first.
+-   The certificate generation code in  is very specific and fragile. Be cautious if any changes are requested for the certificate's appearance, as it will require manually adjusting pixel coordinates in the code.
+-   After completing the current tasks, prioritize verifying the end-to-end functionality of the WhatsApp and Demo Booking features, as they have been implemented but not fully tested from a user's perspective.
 
 **documents and test reports created in this job**
-- 
--  (Note: This is from before the quiz module and recent fixes were added)
+-   
+-   
+-   
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **user**: Provided a detailed request for a Certificate Management system.
-- **user**: Clarified certificate requirements and raised a security concern about persistent logins.
-- **agent**: Explained the security model (JWT) and offered to implement stricter security, asking for the user's preference. Was about to start the Certificate Management system.
-- **user**: Provided deployment error: Unknown command: "error"
-
-To see a list of supported npm commands, run:
-  npm help.
-- **agent**: Provided multiple solutions, including using , fixing , or using yarn install v1.22.22
-[1/4] Resolving packages...
-[2/4] Fetching packages...
-[3/4] Linking dependencies...
-[4/4] Building fresh packages...
-success Saved lockfile.
-Done in 0.04s..
-- **user**: Asked what to do after running yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command..
-- **agent**: Provided the next steps for PM2 and Nginx configuration.
-- **user**: Stated their subdomain and asked how to set it up.
-- **agent**: Provided specific Nginx and SSL instructions for the  subdomain.
-- **user**: Provided PM2 logs showing the backend is in an errored state.
-- **agent**: Asked the user to check logs for the specific error.
-- **user**: Provided error log: .
-- ... This continues through several more debugging messages (, ,  version error, and finally auth failed).
+1.  **user**: Requested a comprehensive Certificate Management system and a new Fee Receipt format.
+2.  **agent**: Summarized the plan and began implementation.
+3.  **user**: Reported that the certificate download was failing and requested UI changes for the Certificate Manager dashboard.
+4.  **agent**: Acknowledged, debugged the download issue, and implemented the UI changes.
+5.  **user**: Provided specific images for the certificate background and layout, demanding an exact match.
+6.  **agent**: Acknowledged and rewrote the PDF generation code to meet the new styling requirements.
+7.  **user**: **[LATEST PENDING]** Reported three new issues: Converted leads are not locked, they don't appear in a Ready to Enroll section, and the sidebar menu order is incorrect.
+8.  **agent**: Acknowledged the new request and began investigation.
+9.  **user**: please continue
+10. **agent**: Continued investigation into the lead management page.
 
 **Project Health Check:**
-- **Broken:**
-    -   The user's VPS deployment is non-functional due to the Auth Failed login issue.
-- **Mocked:**
-    -   The new Certificate Management system is just a concept.
-    -   The security enhancements (auto-logout) are not implemented.
+-   **Broken:**
+    -   The lead workflow for Converted leads is not functioning as the user requires.
+    -   The main application navigation (sidebar) is not in the user's desired order.
 
 **3rd Party Integrations**
-- **MSG91 (WhatsApp API):** Backend integration exists but needs end-to-end verification. Auth Key: .
-- **Recharts:** Used for dashboard charts.
-- **Dependencies:** , ,  were added to the backend.
+-   **MSG91 (WhatsApp API):** Backend integration exists. End-to-end delivery verification is pending.
+-   **Web Push Protocol:** Implemented via  for browser push notifications.
 
 **Testing status**
-- **Testing agent used after significant changes:** NO, not since the quiz module and numerous other fixes were implemented. The last test run is outdated.
-- **Troubleshoot agent used after agent stuck in loop:** NO
-- **Test files created:** []
-- **Known regressions:** None confirmed, but many new features and fixes are untested by an agent.
+-   **Testing agent used after significant changes:** YES, for the notification and certificate features.
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** []
+-   **Known regressions:** The handling of Converted leads is considered a bug/regression from the user's perspective.
 
 **Credentials to test flow:**
-- **Super Admin:**  / 
+-   **Super Admin:**  / 
+-   **Certificate Manager:**  / 
 
 **What agent forgot to execute**
-- The agent never performed an end-to-end test of the WhatsApp integration to confirm a message is successfully sent and received after the major refactor. They only checked the API responses and UI.
-- Verification of the Demo Booked popup implementation is incomplete.
-- The professional fee receipt format was implemented but not shown to the user for final verification against their requirements.</analysis>
+-   The agent has consistently deferred the end-to-end verification of the MSG91 WhatsApp integration, which was noted as a pending item from the previous fork. A message has not been confirmed as received.
+-   The Demo Booked popup feature was implemented but never fully verified through a user-like interaction.</analysis>
