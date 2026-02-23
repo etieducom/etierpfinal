@@ -1087,13 +1087,18 @@ async def create_branch(branch: BranchCreate, current_user: User = Depends(requi
     state_code = generate_state_code(branch.state)
     city_code = generate_city_code(branch.city)
     
+    # Generate unique webhook key for external lead capture
+    import secrets
+    webhook_key = secrets.token_urlsafe(32)
+    
     new_branch = Branch(
         **branch.model_dump(),
         state_code=state_code,
         city_code=city_code,
         lead_counter=0,
         enrollment_counter=0,
-        receipt_counter=0
+        receipt_counter=0,
+        webhook_key=webhook_key
     )
     branch_dict = new_branch.model_dump()
     branch_dict['created_at'] = branch_dict['created_at'].isoformat()
