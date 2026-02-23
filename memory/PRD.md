@@ -276,6 +276,28 @@ The user, representing a training institute named "ETI Educom", requested a full
   - [x] Larger, more readable fonts
   - [x] QR codes for verification
 
+### Phase 16: Automation & System Management (COMPLETE - February 23, 2026)
+- [x] Certificate Generation Fix
+  - [x] Removed duplicate code block that was generating two QR codes
+  - [x] Single generateCertificatePDF function with proper layout
+  - [x] ETI logo properly loaded with fallback
+- [x] Fee Reminder Automation (APScheduler)
+  - [x] Daily job at 9:00 AM
+  - [x] Sends reminders 7, 5, 3, 1 days before due date and on due date
+  - [x] Handles both installment and one-time payment reminders
+  - [x] Uses WhatsApp fee_reminder template configuration
+- [x] Birthday Wishes Automation
+  - [x] Daily job at 8:00 AM
+  - [x] Checks student date_of_birth against today's MM-DD
+  - [x] Uses WhatsApp birthday_wishes template configuration
+- [x] Admin System Reset Feature
+  - [x] Super Admin only (POST /api/admin/reset-system)
+  - [x] Requires typing "RESET ALL DATA" confirmation
+  - [x] Clears all operational data (leads, enrollments, payments, etc.)
+  - [x] Preserves branches, programs, categories, and settings
+  - [x] New System tab in Admin Panel with danger zone warning
+  - [x] Automated Tasks info display showing scheduled jobs
+
 ## Pending/Backlog
 
 ### P0 - High Priority (None currently)
@@ -286,8 +308,6 @@ All high-priority features completed.
 - [ ] Student Status Management - Mark students as Dropped/Inactive
 
 ### P2 - Low Priority
-- [ ] WhatsApp Fee Reminders (automated background job)
-- [ ] Birthday Wishes automation (daily job to send on student DOB)
 - [ ] Code Refactoring
   - Split server.py into routers/models/schemas
   - Add state management to frontend (Zustand/Redux)
