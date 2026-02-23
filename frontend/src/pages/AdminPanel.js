@@ -474,7 +474,7 @@ const AdminPanel = () => {
       </div>
 
       <Tabs defaultValue="branches" className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="branches">Branches</TabsTrigger>
           <TabsTrigger value="programs">Programs</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
@@ -483,6 +483,7 @@ const AdminPanel = () => {
           <TabsTrigger value="exams" data-testid="exams-tab">Exams</TabsTrigger>
           <TabsTrigger value="whatsapp" data-testid="whatsapp-settings-tab">WhatsApp</TabsTrigger>
           <TabsTrigger value="webhooks" data-testid="webhooks-tab">Webhooks</TabsTrigger>
+          <TabsTrigger value="system" data-testid="system-tab" className="text-red-600">System</TabsTrigger>
         </TabsList>
 
         <TabsContent value="branches" className="space-y-4">
