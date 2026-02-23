@@ -108,56 +108,234 @@ const CertificateManagementPage = () => {
     
     const ctx = canvas.getContext('2d');
     
-    // A4 Landscape dimensions at 300 DPI (3508 x 2480 pixels)
-    // Using slightly smaller for better browser compatibility
-    canvas.width = 2970;  // A4 landscape width at ~254 DPI
-    canvas.height = 2100; // A4 landscape height at ~254 DPI
+    // A4 Landscape dimensions - optimized for PDF
+    canvas.width = 2480;
+    canvas.height = 1754;
     
-    // White background first
+    // White background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Load background image
     const bgImage = new Image();
     bgImage.crossOrigin = 'anonymous';
+    
     await new Promise((resolve) => {
       bgImage.onload = resolve;
       bgImage.onerror = () => {
         console.warn('Background image failed to load');
         resolve();
       };
-      bgImage.src = CERTIFICATE_BG_URL + '?t=' + Date.now(); // Cache bust
+      // Use absolute URL for better loading
+      bgImage.src = window.location.origin + CERTIFICATE_BG_URL;
     });
     
-    // Draw background
+    // Draw background or fallback
     if (bgImage.complete && bgImage.naturalWidth > 0) {
       ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
     } else {
-      // Fallback - create gradient background
+      // Fallback - elegant gradient with borders
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, '#f8fafc');
-      gradient.addColorStop(1, '#e2e8f0');
+      gradient.addColorStop(0, '#fefefe');
+      gradient.addColorStop(0.5, '#f8fafc');
+      gradient.addColorStop(1, '#f1f5f9');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Add decorative border
+      // Decorative double border
       ctx.strokeStyle = '#1a365d';
-      ctx.lineWidth = 15;
-      ctx.strokeRect(50, 50, canvas.width - 100, canvas.height - 100);
+      ctx.lineWidth = 12;
+      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
       ctx.strokeStyle = '#c9a227';
-      ctx.lineWidth = 5;
-      ctx.strokeRect(70, 70, canvas.width - 140, canvas.height - 140);
+      ctx.lineWidth = 4;
+      ctx.strokeRect(60, 60, canvas.width - 120, canvas.height - 120);
     }
     
-    // Load ETI Logo
+    // Load ETI Logo - try multiple sources
     const logoImage = new Image();
     logoImage.crossOrigin = 'anonymous';
     let logoLoaded = false;
-    await new Promise((resolve) => {
-      logoImage.onload = () => { logoLoaded = true; resolve(); };
-      logoImage.onerror = () => resolve();
-      logoImage.src = ETI_LOGO_URL + '?t=' + Date.now(); // Cache bust
-    });
+    
+    // Try local first, then remote
+    const logoSources = [
+      window.location.origin + ETI_LOGO_URL,
+      'https://etieducom.com/wp-content/uploads/2024/03/eti-educom-logo.png'
+    ];
+    
+    for (const src of logoSources) {
+      if (logoLoaded) break;
+      await new Promise((resolve) => {
+        const testImg = new Image();
+        testImg.crossOrigin = 'anonymous';
+        testImg.onload = () => {
+          logoImage.src = src;
+          logoLoaded = true;
+          resolve();
+        };
+        testImg.onerror = () => resolve();
+        testImg.src = src;
+        setTimeout(resolve, 2000); // Timeout after 2s
+      });
+    }
+    
+    // ========== HEADER - LOGO ==========
+    const headerY = 100;
+    if (logoLoaded && logoImage.complete && logoImage.naturalWidth > 0) {
+      const logoWidth = 180;
+      const logoHeight = (logoImage.naturalHeight / logoImage.naturalWidth) * logoWidth;
+      ctx.drawImage(logoImage, (canvas.width - logoWidth) / 2, headerY, logoWidth, logoHeight);
+    } else {
+      // Text logo fallback
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 60px "Arial", sans-serif';
+      ctx.fillStyle = '#1a365d';
+      ctx.fillText('ETI EDUCOM', canvas.width / 2, headerY + 50);
+      ctx.font = '24px "Arial", sans-serif';
+      ctx.fillStyle = '#4a5568';
+      ctx.fillText('Professional Training & Skill Development', canvas.width / 2, headerY + 85);
+    }
+    
+    // ========== TITLE ==========
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 64px "Times New Roman", Georgia, serif';
+    ctx.fillStyle = '#1a365d';
+    ctx.fillText('CERTIFICATE OF COMPLETION', canvas.width / 2, 320);
+    
+    // Gold decorative line
+    ctx.strokeStyle = '#c9a227';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2 - 380, 350);
+    ctx.lineTo(canvas.width / 2 + 380, 350);
+    ctx.stroke();
+    
+    // ========== BODY TEXT ==========
+    ctx.font = 'italic 30px "Times New Roman", Georgia, serif';
+    ctx.fillStyle = '#333333';
+    ctx.fillText('This is to certify that', canvas.width / 2, 430);
+    
+    // Student Name
+    ctx.font = 'bold 52px "Times New Roman", Georgia, serif';
+    ctx.fillStyle = '#1a365d';
+    ctx.fillText(certData.student_name.toUpperCase(), canvas.width / 2, 510);
+    
+    // Name underline
+    const nameWidth = ctx.measureText(certData.student_name.toUpperCase()).width;
+    ctx.strokeStyle = '#c9a227';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo((canvas.width - nameWidth) / 2 - 20, 530);
+    ctx.lineTo((canvas.width + nameWidth) / 2 + 20, 530);
+    ctx.stroke();
+    
+    // Completion text
+    ctx.font = 'italic 26px "Times New Roman", Georgia, serif';
+    ctx.fillStyle = '#333333';
+    ctx.fillText('has successfully completed the professional training program', canvas.width / 2, 600);
+    
+    // Program Name
+    ctx.font = 'bold 40px "Times New Roman", Georgia, serif';
+    ctx.fillStyle = '#1a365d';
+    const programText = `ETI CERTIFIED – ${certData.program_name.toUpperCase()}`;
+    ctx.fillText(programText, canvas.width / 2, 680);
+    
+    // Duration details
+    ctx.font = '24px "Times New Roman", Georgia, serif';
+    ctx.fillStyle = '#333333';
+    const branchCity = certData.branch_name.includes('-') 
+      ? certData.branch_name.split('-')[1].trim() 
+      : certData.branch_name;
+    ctx.fillText(`conducted by ETI Educom, ${branchCity}, Punjab, India, for a duration of ${certData.program_duration}`, canvas.width / 2, 750);
+    ctx.fillText(`(${certData.training_hours || 120} Hours) in ${certData.training_mode} Mode.`, canvas.width / 2, 790);
+    
+    // Participation text
+    ctx.font = 'italic 22px "Times New Roman", Georgia, serif';
+    ctx.fillStyle = '#444444';
+    ctx.fillText('During the training, the candidate actively participated in all sessions, demonstrations,', canvas.width / 2, 860);
+    ctx.fillText('and practical exercises. This certificate is awarded in recognition of their dedication and', canvas.width / 2, 895);
+    ctx.fillText('successful completion of the program requirements.', canvas.width / 2, 930);
+    
+    // ========== BOTTOM SECTION ==========
+    const bottomY = 1050;
+    
+    // LEFT - Registration Details
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 20px Arial, sans-serif';
+    ctx.fillStyle = '#1a365d';
+    ctx.fillText(`Registration No.: ${certData.registration_number}`, 150, bottomY);
+    ctx.fillText(`Certificate ID: ${certData.certificate_id}`, 150, bottomY + 35);
+    ctx.fillText(`Date of Issue: ${certData.issued_date}`, 150, bottomY + 70);
+    
+    // CENTER - Decorative element
+    ctx.strokeStyle = '#cc0000';
+    ctx.lineWidth = 2;
+    const centerX = canvas.width / 2;
+    const centerY = bottomY + 50;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 20, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(centerX - 30, centerY);
+    ctx.lineTo(centerX + 30, centerY);
+    ctx.moveTo(centerX, centerY - 30);
+    ctx.lineTo(centerX, centerY + 30);
+    ctx.stroke();
+    
+    // RIGHT - QR Code & Signature
+    try {
+      const verifyUrl = `${window.location.origin}/verify/${certData.verification_id}`;
+      const qrDataUrl = await QRCode.toDataURL(verifyUrl, { 
+        width: 140, 
+        margin: 1, 
+        color: { dark: '#1a365d' } 
+      });
+      
+      const qrImage = new Image();
+      await new Promise((resolve) => {
+        qrImage.onload = resolve;
+        qrImage.onerror = resolve;
+        qrImage.src = qrDataUrl;
+      });
+      
+      if (qrImage.complete && qrImage.naturalWidth > 0) {
+        ctx.drawImage(qrImage, canvas.width - 280, bottomY - 20, 120, 120);
+      }
+    } catch (qrError) {
+      console.warn('QR code generation failed:', qrError);
+    }
+    
+    // Signature section
+    ctx.textAlign = 'right';
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(canvas.width - 320, bottomY + 120);
+    ctx.lineTo(canvas.width - 120, bottomY + 120);
+    ctx.stroke();
+    
+    ctx.font = 'bold 20px Arial, sans-serif';
+    ctx.fillStyle = '#1a365d';
+    ctx.fillText('Authorized Signatory', canvas.width - 120, bottomY + 145);
+    ctx.font = '18px Arial, sans-serif';
+    ctx.fillStyle = '#333333';
+    ctx.fillText('ETI Educom', canvas.width - 120, bottomY + 170);
+    
+    // ========== FOOTER ==========
+    ctx.textAlign = 'center';
+    ctx.font = 'italic 16px "Times New Roman", Georgia, serif';
+    ctx.fillStyle = '#666666';
+    ctx.fillText("Issued in accordance with ETI Educom's Quality Management System (ISO 9001:2015)", canvas.width / 2, canvas.height - 80);
+    ctx.font = '14px Arial, sans-serif';
+    ctx.fillStyle = '#888888';
+    ctx.fillText(`Scan QR to verify | ${certData.verification_id}`, canvas.width / 2, canvas.height - 55);
+    
+    // Download as PDF
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    const link = document.createElement('a');
+    link.download = `Certificate_${certData.student_name.replace(/\s+/g, '_')}_${certData.certificate_id}.jpg`;
+    link.href = dataUrl;
+    link.click();
+  };
     
     // Draw Logo centered at top
     if (logoLoaded && logoImage.naturalWidth > 0) {
