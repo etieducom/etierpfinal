@@ -417,6 +417,9 @@ All high-priority features completed.
 - POST /api/certificate-requests/{id}/reject - Reject request with reason
 - POST /api/certificate-requests/{id}/download - Download certificate data & mark as Ready
 
+### System Management (Super Admin only)
+- POST /api/admin/reset-system - Reset all system data (preserves config)
+
 ## Test Credentials
 - Super Admin: admin@etieducom.com / admin@123
 - Branch Admin (test): director@etieducom.com / test123
