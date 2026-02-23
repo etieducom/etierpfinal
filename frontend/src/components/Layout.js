@@ -42,10 +42,15 @@ const Layout = ({ children }) => {
   };
 
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/', show: true },
+    // Dashboard - NOT for Certificate Manager
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/', show: !isCertManager },
     { icon: Users, label: 'Leads', path: '/leads', show: !isCertManager },
     // Certificate Management - For Certificate Manager and Super Admin
-    { icon: Award, label: 'Certificates', path: '/certificates', show: isCertManager || isSuperAdmin },
+    // Certificate Manager sees only these two tabs
+    { icon: FileText, label: 'Certificate Requests', path: '/certificates', show: isCertManager },
+    { icon: Award, label: 'Ready Certificates', path: '/certificates?status=Ready', show: isCertManager },
+    // Super Admin also sees certificates but in different location
+    { icon: Award, label: 'Certificates', path: '/certificates', show: isSuperAdmin },
     // Tasks - For all non-Super Admin users
     { icon: CheckSquare, label: 'Tasks', path: '/tasks', show: isBranchAdmin || isCounsellor || isFDE },
     // Pending Follow-ups - For Counsellors and Branch Admins only
