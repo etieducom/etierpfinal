@@ -2334,19 +2334,25 @@ async def generate_receipt(payment_id: str, current_user: User = Depends(get_cur
     enrollment = await db.enrollments.find_one({"id": payment['enrollment_id']}, {"_id": 0})
     branch = await db.branches.find_one({"id": enrollment.get('branch_id')}, {"_id": 0}) if enrollment else None
     
+    # Calculate total paid for this enrollment
+    all_payments = await db.payments.find({"enrollment_id": payment['enrollment_id']}, {"_id": 0, "amount": 1}).to_list(1000)
+    total_paid = sum(p.get('amount', 0) for p in all_payments)
+    
     receipt_data = {
         "receipt_number": payment.get('receipt_number', payment_id[:8].upper()),
         "payment_id": payment_id,
         "payment_date": payment['payment_date'],
         "student_name": enrollment['student_name'] if enrollment else 'N/A',
         "student_email": enrollment.get('email', ''),
-        "student_phone": enrollment.get('phone', ''),
-        "program": enrollment['program_name'] if enrollment else 'N/A',
+        "phone": enrollment.get('phone', ''),
+        "program_name": enrollment['program_name'] if enrollment else 'N/A',
+        "enrollment_id": enrollment.get('enrollment_id', enrollment.get('id', '')[:8].upper()) if enrollment else 'N/A',
         "amount": payment['amount'],
         "payment_mode": payment['payment_mode'],
         "installment_number": payment.get('installment_number'),
         "remarks": payment.get('remarks', ''),
         "total_fee": enrollment.get('final_fee', 0) if enrollment else 0,
+        "total_paid": total_paid,
         "branch_name": branch.get('name', 'ETI Educom') if branch else 'ETI Educom',
         "branch_address": branch.get('address', '') if branch else '',
         "branch_city": branch.get('city', '') if branch else '',
