@@ -228,11 +228,29 @@ The user, representing a training institute named "ETI Educom", requested a full
   - [x] Payment Date defaults to today
   - [x] Optional Remarks field
   - [x] Save Payment button with validation
-- [x] Receipt Dialog
+- [x] Receipt Dialog & Printing
   - [x] Appears after successful payment
   - [x] Shows Receipt Number, Amount Received, Student Name
   - [x] Displays Total Paid, Pending amounts
-  - [x] Print Receipt button generates printable A4 receipt
+  - [x] Print Receipt button generates professional A4 receipt
+- [x] A4 Receipt Format with Terms & Conditions
+  - [x] Dual copies (Student Copy / Center Copy) on single A4 page
+  - [x] ETI Educom logo and branch details in header
+  - [x] Student Information section with enrollment ID
+  - [x] Fee Details section: Total Fee, Amount Paid, Total Paid, Balance
+  - [x] Payment Mode and Remarks
+  - [x] 7 Terms & Conditions points
+  - [x] Signature lines for Student and Authorized Signatory
+  - [x] Thank you footer with computer-generated disclaimer
+- [x] Print Receipt in All Payments
+  - [x] Green printer icon added to Actions column
+  - [x] Same professional A4 format receipt
+- [x] Pending Payments Shows All Types
+  - [x] One-time payments with partial payments displayed
+  - [x] Installment payments with due dates
+  - [x] Type badges: "One-Time" (blue) and "Installment" (purple)
+  - [x] Shows paid amount vs total for one-time payments
+  - [x] Shows installment number (e.g., #2 of 3) for installments
 - [x] WhatsApp Integration Verified
   - [x] MSG91 API integration working
   - [x] Lead creation triggers WhatsApp notification
