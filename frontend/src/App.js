@@ -76,7 +76,7 @@ function App() {
             path="/"
             element={
               <PrivateRoute>
-                <Layout><Dashboard /></Layout>
+                <HomeRedirect />
               </PrivateRoute>
             }
           />
