@@ -24,6 +24,7 @@ import CertificateRequestPage from '@/pages/CertificateRequestPage';
 import CertificateManagementPage from '@/pages/CertificateManagementPage';
 import CertificateVerifyPage from '@/pages/CertificateVerifyPage';
 import Layout from '@/components/Layout';
+import ActivityTracker from '@/components/ActivityTracker';
 import { Toaster } from '@/components/ui/sonner';
 
 const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdminAllowed = false, certManagerAllowed = false }) => {
