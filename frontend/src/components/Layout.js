@@ -41,31 +41,39 @@ const Layout = ({ children }) => {
     }
   };
 
+  // Sidebar menu ordered as per user specification:
+  // Dashboard, Leads, Enrollments, Students, All Payments, Pending Payments, 
+  // International Exams, Manage Exams, Quiz Exams, Tasks, Analytics, Reports, Resources
   const navItems = [
-    // Dashboard - NOT for Certificate Manager
+    // 1. Dashboard - NOT for Certificate Manager
     { icon: LayoutDashboard, label: 'Dashboard', path: '/', show: !isCertManager },
+    // 2. Leads - NOT for Certificate Manager
     { icon: Users, label: 'Leads', path: '/leads', show: !isCertManager },
-    // Enrollments - For Branch Admin and FDE
+    // 3. Enrollments - For Branch Admin and FDE
     { icon: FileSpreadsheet, label: 'Enrollments', path: '/enrollments', show: isBranchAdmin || isFDE },
-    // Students - For Branch Admin and FDE
+    // 4. Students - For Branch Admin and FDE
     { icon: GraduationCap, label: 'Students', path: '/students', show: isBranchAdmin || isFDE },
-    // All Payments - For Branch Admin and FDE
+    // 5. All Payments - For Branch Admin and FDE
     { icon: CreditCard, label: 'All Payments', path: '/all-payments', show: isBranchAdmin || isFDE },
-    // Pending Payments - For Branch Admin and FDE
+    // 6. Pending Payments - For Branch Admin and FDE
     { icon: Clock, label: 'Pending Payments', path: '/pending-payments', show: isBranchAdmin || isFDE },
-    // International Exams - For Branch Admin, Counsellor and FDE
+    // 7. International Exams - For Branch Admin, Counsellor and FDE
     { icon: Globe, label: 'International Exams', path: '/international-exams', show: isBranchAdmin || isCounsellor || isFDE },
-    // Manage Exams - For Branch Admin, Counsellor and FDE
+    // 8. Manage Exams - For Branch Admin, Counsellor and FDE
     { icon: ClipboardList, label: 'Manage Exams', path: '/manage-exams', show: isBranchAdmin || isCounsellor || isFDE },
-    // Quiz Exams - For Super Admin and FDE
+    // 9. Quiz Exams - For Super Admin and FDE
     { icon: BookOpen, label: 'Quiz Exams', path: '/quiz-exams', show: isSuperAdmin || isFDE },
-    // Tasks - For Branch Admin, Counsellor and FDE
+    // 10. Tasks - For Branch Admin, Counsellor and FDE
     { icon: CheckSquare, label: 'Tasks', path: '/tasks', show: isBranchAdmin || isCounsellor || isFDE },
+    // 11. Analytics - NOT for Certificate Manager
+    { icon: BarChart3, label: 'Analytics', path: '/analytics', show: !isCertManager },
+    // 12. Reports - NOT for Certificate Manager
+    { icon: FileText, label: 'Reports', path: '/reports', show: !isCertManager },
+    // 13. Resources - NOT for Certificate Manager
+    { icon: Folder, label: 'Resources', path: '/resources', show: !isCertManager },
+    // --- Additional items below the main navigation ---
     // Pending Follow-ups - For Counsellors and Branch Admins only
     { icon: Bell, label: 'Pending Follow-ups', path: '/followups', show: isCounsellor || isBranchAdmin, badge: pendingCount },
-    { icon: BarChart3, label: 'Analytics', path: '/analytics', show: !isCertManager },
-    { icon: FileText, label: 'Reports', path: '/reports', show: !isCertManager },
-    { icon: Folder, label: 'Resources', path: '/resources', show: !isCertManager },
     // Expenses - For Branch Admin and FDE
     { icon: Wallet, label: 'Expenses', path: '/expenses', show: isBranchAdmin || isFDE },
     // Deleted Leads - For Super Admin and Branch Admin

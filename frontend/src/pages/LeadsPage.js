@@ -382,31 +382,47 @@ const LeadsPage = () => {
                     <p className="text-sm text-slate-900">{lead.lead_source}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <Select
-                      value={lead.status}
-                      onValueChange={(value) => handleStatusChange(lead.id, value)}
-                    >
-                      <SelectTrigger
-                        className="w-36 h-8 text-xs font-semibold border-0"
+                    {lead.status === 'Converted' ? (
+                      // Converted leads are locked - show status as badge only
+                      <div
+                        className="w-36 h-8 flex items-center justify-center text-xs font-semibold rounded-md cursor-not-allowed"
                         style={{
                           backgroundColor: `${STATUS_COLORS[lead.status]}15`,
                           color: STATUS_COLORS[lead.status],
                         }}
-                        data-testid={`status-select-${lead.id}`}
+                        data-testid={`status-locked-${lead.id}`}
+                        title="Converted leads cannot be modified"
                       >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUSES.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        {lead.status} 🔒
+                      </div>
+                    ) : (
+                      <Select
+                        value={lead.status}
+                        onValueChange={(value) => handleStatusChange(lead.id, value)}
+                      >
+                        <SelectTrigger
+                          className="w-36 h-8 text-xs font-semibold border-0"
+                          style={{
+                            backgroundColor: `${STATUS_COLORS[lead.status]}15`,
+                            color: STATUS_COLORS[lead.status],
+                          }}
+                          data-testid={`status-select-${lead.id}`}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUSES.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
+                      {/* Followup button - disabled for converted leads */}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -414,14 +430,19 @@ const LeadsPage = () => {
                           setFollowupLeadId(lead.id);
                           setFollowupDialog(true);
                         }}
+                        disabled={lead.status === 'Converted'}
+                        title={lead.status === 'Converted' ? 'Converted leads are locked' : 'Add follow-up'}
                         data-testid={`followup-button-${lead.id}`}
                       >
                         <MessageSquare className="w-4 h-4" />
                       </Button>
+                      {/* Edit button - disabled for converted leads */}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(lead)}
+                        disabled={lead.status === 'Converted'}
+                        title={lead.status === 'Converted' ? 'Converted leads are locked' : 'Edit lead'}
                         data-testid={`edit-button-${lead.id}`}
                       >
                         <Edit className="w-4 h-4" />
@@ -432,6 +453,8 @@ const LeadsPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(lead.id, lead)}
+                          disabled={lead.status === 'Converted'}
+                          title={lead.status === 'Converted' ? 'Converted leads are locked' : 'Delete lead'}
                           data-testid={`delete-button-${lead.id}`}
                         >
                           <Trash2 className="w-4 h-4 text-red-500" />
