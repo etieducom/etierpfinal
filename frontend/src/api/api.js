@@ -183,6 +183,20 @@ export const webhookAPI = {
   regenerateWebhookKey: (branchId) => api.post(`/admin/branches/${branchId}/regenerate-webhook-key`),
 };
 
+export const certificateAPI = {
+  // Public endpoints (no auth)
+  getEnrollmentInfo: (enrollmentNumber) => axios.get(`${API_URL}/api/public/enrollment/${enrollmentNumber}`),
+  submitRequest: (data) => axios.post(`${API_URL}/api/public/certificate-requests`, data),
+  verify: (verificationId) => axios.get(`${API_URL}/api/public/verify/${verificationId}`),
+  // Authenticated endpoints
+  getAll: (params) => api.get('/certificate-requests', { params }),
+  getOne: (id) => api.get(`/certificate-requests/${id}`),
+  update: (id, data) => api.put(`/certificate-requests/${id}`, data),
+  approve: (id) => api.post(`/certificate-requests/${id}/approve`),
+  reject: (id, reason) => api.post(`/certificate-requests/${id}/reject`, null, { params: { reason } }),
+  download: (id) => api.post(`/certificate-requests/${id}/download`),
+};
+
 export const tasksAPI = {
   getAll: () => api.get('/tasks'),
   create: (data) => api.post('/tasks', data),
