@@ -226,6 +226,14 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/batches"
+            element={
+              <PrivateRoute>
+                <Layout><BatchManagementPage /></Layout>
+              </PrivateRoute>
+            }
+          />
           {/* Public routes - no auth required */}
           <Route path="/exam/:examId" element={<PublicExamPage />} />
           <Route path="/certificate-request" element={<CertificateRequestPage />} />
