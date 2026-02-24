@@ -378,6 +378,64 @@ class OrganizationFollowUpCreate(BaseModel):
     notes: str
     outcome: Optional[str] = None
 
+# Batch Management Models
+class Batch(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    program_id: str
+    program_name: Optional[str] = None
+    trainer_id: str
+    trainer_name: Optional[str] = None
+    branch_id: str
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    timing: Optional[str] = None  # e.g., "10:00 AM - 12:00 PM"
+    max_students: Optional[int] = 30
+    status: str = "Active"  # Active, Completed, Cancelled
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class BatchCreate(BaseModel):
+    name: str
+    program_id: str
+    trainer_id: str
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    timing: Optional[str] = None
+    max_students: Optional[int] = 30
+
+class BatchUpdate(BaseModel):
+    name: Optional[str] = None
+    trainer_id: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    timing: Optional[str] = None
+    max_students: Optional[int] = None
+    status: Optional[str] = None
+
+class StudentBatchAssignment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    enrollment_id: str
+    student_name: Optional[str] = None
+    batch_id: str
+    batch_name: Optional[str] = None
+    trainer_id: str
+    trainer_name: Optional[str] = None
+    assigned_by: str
+    assigned_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class StudentBatchAssignmentCreate(BaseModel):
+    enrollment_id: str
+    batch_id: str
+
+# Payment Plan Edit Model
+class PaymentPlanEdit(BaseModel):
+    plan_type: Optional[str] = None
+    total_installments: Optional[int] = None
+    installments: Optional[List[dict]] = None  # [{amount, due_date}]
+
 class Token(BaseModel):
     access_token: str
     token_type: str
