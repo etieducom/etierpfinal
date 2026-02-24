@@ -702,9 +702,11 @@ const AdminPanel = () => {
                     <td className="px-4 py-3 text-sm">
                       <Badge className="bg-blue-100 text-blue-800">{user.role}</Badge>
                     </td>
+                    {isSuperAdmin && (
                     <td className="px-4 py-3 text-sm text-slate-600">
                       {branches.find(b => b.id === user.branch_id)?.name || 'All'}
                     </td>
+                    )}
                     <td className="px-4 py-3">
                       {user.is_active === false ? (
                         <Badge className="bg-red-100 text-red-700">Inactive</Badge>
