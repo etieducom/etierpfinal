@@ -78,6 +78,8 @@ const Layout = ({ children }) => {
     { icon: Wallet, label: 'Expenses', path: '/expenses', show: isBranchAdmin || isFDE },
     // Deleted Leads - For Super Admin and Branch Admin
     { icon: Trash2, label: 'Deleted Leads', path: '/deleted-leads', show: isSuperAdmin || isBranchAdmin },
+    // Schools/Colleges Outreach - For all roles except Certificate Manager
+    { icon: Building2, label: 'Schools/Colleges', path: '/organizations', show: !isCertManager },
     // Certificates - For Super Admin
     { icon: Award, label: 'Certificates', path: '/certificates', show: isSuperAdmin },
     // Admin Panel - ONLY for Super Admin
