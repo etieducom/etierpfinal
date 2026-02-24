@@ -698,6 +698,18 @@ const StudentsPage = () => {
                         >
                           <Eye className="w-4 h-4 text-blue-500" />
                         </Button>
+                        {/* Add Course Button */}
+                        {canPay && student.status === 'Active' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openAddonDialog(student)}
+                            title="Add Course"
+                            data-testid={`add-course-${student.id}`}
+                          >
+                            <BookPlus className="w-4 h-4 text-purple-500" />
+                          </Button>
+                        )}
                         {/* Status Change Dropdown - Branch Admin/Admin only */}
                         {(isBranchAdmin || user.role === 'Admin') && (
                           <Select
