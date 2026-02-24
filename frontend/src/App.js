@@ -24,6 +24,7 @@ import CertificateRequestPage from '@/pages/CertificateRequestPage';
 import CertificateManagementPage from '@/pages/CertificateManagementPage';
 import CertificateVerifyPage from '@/pages/CertificateVerifyPage';
 import OrganizationsPage from '@/pages/OrganizationsPage';
+import BatchManagementPage from '@/pages/BatchManagementPage';
 import Layout from '@/components/Layout';
 import ActivityTracker from '@/components/ActivityTracker';
 import { Toaster } from '@/components/ui/sonner';
