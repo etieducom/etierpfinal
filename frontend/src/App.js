@@ -29,7 +29,7 @@ import Layout from '@/components/Layout';
 import ActivityTracker from '@/components/ActivityTracker';
 import { Toaster } from '@/components/ui/sonner';
 
-const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdminAllowed = false, certManagerAllowed = false }) => {
+const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdminAllowed = false, certManagerAllowed = false, adminPanelAccess = false }) => {
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
@@ -37,6 +37,12 @@ const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdmi
   
   // Admin-only routes (Super Admin only)
   if (adminOnly && user.role !== 'Admin') return <Navigate to="/" />;
+  
+  // Admin Panel access - Super Admin and Branch Admin
+  if (adminPanelAccess) {
+    const allowedRoles = ['Admin', 'Branch Admin'];
+    if (!allowedRoles.includes(user.role)) return <Navigate to="/" />;
+  }
   
   // FDA routes - also allow Branch Admin
   if (fdaOnly) {
