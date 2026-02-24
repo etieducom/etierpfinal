@@ -41,6 +41,8 @@ const BatchManagementPage = () => {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isBranchAdmin = user.role === 'Branch Admin' || user.role === 'Admin';
+  const canEdit = user.role === 'Branch Admin' || user.role === 'Admin';
+  const canAssign = user.role === 'Branch Admin' || user.role === 'Admin' || user.role === 'Front Desk Executive';
 
   useEffect(() => {
     fetchData();
