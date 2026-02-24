@@ -2405,6 +2405,24 @@ async def create_payment(payment: PaymentCreate, current_user: User = Depends(ge
             detail=f"Payment amount (₹{payment.amount}) exceeds remaining fee (₹{remaining_fee}). Total fee: ₹{final_fee}, Already paid: ₹{total_paid}"
         )
     
+    # Validate installment payment - must pay exact or more than installment amount
+    if payment.installment_number and payment.payment_plan_id:
+        installment = await db.installment_schedule.find_one(
+            {
+                "payment_plan_id": payment.payment_plan_id,
+                "installment_number": payment.installment_number
+            },
+            {"_id": 0}
+        )
+        if installment:
+            installment_amount = installment.get('amount', 0)
+            # Only Branch Admin can pay less than installment amount (critical cases)
+            if payment.amount < installment_amount and current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Payment amount (₹{payment.amount}) is less than installment amount (₹{installment_amount}). Please pay the full installment amount or contact Branch Admin for special cases."
+                )
+    
     # Generate custom receipt number
     branch_id = enrollment.get('branch_id', current_user.branch_id or 'default')
     custom_receipt_id = await generate_custom_id(branch_id, "R")
