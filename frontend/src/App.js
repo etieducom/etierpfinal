@@ -229,7 +229,7 @@ function App() {
           <Route
             path="/batches"
             element={
-              <PrivateRoute branchAdminAllowed>
+              <PrivateRoute>
                 <Layout><BatchManagementPage /></Layout>
               </PrivateRoute>
             }
