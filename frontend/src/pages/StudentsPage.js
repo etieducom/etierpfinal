@@ -41,6 +41,17 @@ const StudentsPage = () => {
   // Receipt dialog
   const [receiptDialog, setReceiptDialog] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
+  
+  // Add-on Course dialog
+  const [addonDialog, setAddonDialog] = useState(false);
+  const [programs, setPrograms] = useState([]);
+  const [addonForm, setAddonForm] = useState({
+    program_id: '',
+    fee_quoted: '',
+    discount_percent: 0
+  });
+  const [savingAddon, setSavingAddon] = useState(false);
+  const [addonCourses, setAddonCourses] = useState([]);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isBranchAdmin = user.role === 'Branch Admin';
