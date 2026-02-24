@@ -80,6 +80,8 @@ const Layout = ({ children }) => {
     { icon: Trash2, label: 'Deleted Leads', path: '/deleted-leads', show: isSuperAdmin || isBranchAdmin },
     // Schools/Colleges Outreach - For all roles except Certificate Manager
     { icon: Building2, label: 'Schools/Colleges', path: '/organizations', show: !isCertManager },
+    // Batch Management - For all roles except Certificate Manager
+    { icon: UsersRound, label: 'Batches', path: '/batches', show: !isCertManager },
     // Certificates - For Super Admin
     { icon: Award, label: 'Certificates', path: '/certificates', show: isSuperAdmin },
     // Admin Panel - ONLY for Super Admin
