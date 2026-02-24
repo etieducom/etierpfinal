@@ -217,6 +217,14 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/organizations"
+            element={
+              <PrivateRoute>
+                <OrganizationsPage />
+              </PrivateRoute>
+            }
+          />
           {/* Public routes - no auth required */}
           <Route path="/exam/:examId" element={<PublicExamPage />} />
           <Route path="/certificate-request" element={<CertificateRequestPage />} />
