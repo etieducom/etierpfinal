@@ -1648,6 +1648,88 @@ const EnrollmentsPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Payment Plan Dialog (Branch Admin only) */}
+      <Dialog open={editPlanDialog} onOpenChange={setEditPlanDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-orange-600" />
+              Edit Payment Plan
+            </DialogTitle>
+          </DialogHeader>
+          {editingPlan && (
+            <div className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-sm">Student: <strong>{editingPlan.enrollment?.student_name}</strong></p>
+                <p className="text-sm">Total Fee: <strong>₹{editingPlan.enrollment?.final_fee?.toLocaleString()}</strong></p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Installments</Label>
+                  <Button size="sm" variant="outline" onClick={addEditInstallment}>
+                    <Plus className="w-4 h-4 mr-1" /> Add Installment
+                  </Button>
+                </div>
+
+                {editInstallments.map((inst, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-3 border rounded-lg">
+                    <span className="text-sm font-medium w-8">#{idx + 1}</span>
+                    <div className="flex-1">
+                      <Input
+                        type="number"
+                        placeholder="Amount"
+                        value={inst.amount}
+                        onChange={(e) => {
+                          const updated = [...editInstallments];
+                          updated[idx].amount = e.target.value;
+                          setEditInstallments(updated);
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        type="date"
+                        value={inst.due_date}
+                        onChange={(e) => {
+                          const updated = [...editInstallments];
+                          updated[idx].due_date = e.target.value;
+                          setEditInstallments(updated);
+                        }}
+                      />
+                    </div>
+                    <Badge className={inst.status === 'Paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                      {inst.status}
+                    </Badge>
+                    {editInstallments.length > 1 && inst.status !== 'Paid' && (
+                      <Button variant="ghost" size="sm" onClick={() => removeEditInstallment(idx)}>
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    Total: ₹{editInstallments.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <Button variant="destructive" onClick={handleDeletePlan}>
+                  <Trash2 className="w-4 h-4 mr-1" /> Delete Plan
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setEditPlanDialog(false)}>Cancel</Button>
+                  <Button onClick={handleSaveEditedPlan}>Save Changes</Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
