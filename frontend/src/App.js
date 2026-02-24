@@ -221,7 +221,7 @@ function App() {
             path="/organizations"
             element={
               <PrivateRoute>
-                <OrganizationsPage />
+                <Layout><OrganizationsPage /></Layout>
               </PrivateRoute>
             }
           />
