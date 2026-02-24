@@ -182,8 +182,8 @@ const AdminPanel = () => {
     name: '', 
     email: '', 
     password: '', 
-    role: 'Counsellor', 
-    branch_id: '',
+    role: isBranchAdmin ? 'Trainer' : 'Counsellor', 
+    branch_id: isBranchAdmin ? currentUser.branch_id : '',
     phone: '',
     alternate_phone: '',
     address: '',
@@ -642,7 +642,16 @@ const AdminPanel = () => {
         <TabsContent value="users" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-semibold">{isBranchAdmin ? 'Trainers' : 'Users'}</h2>
-            <Button onClick={() => setUserDialog(true)} className="bg-slate-900 hover:bg-slate-800">
+            <Button onClick={() => {
+              setUserForm({
+                name: '', email: '', password: '', 
+                role: isBranchAdmin ? 'Trainer' : 'Counsellor', 
+                branch_id: isBranchAdmin ? currentUser.branch_id : '',
+                phone: '', alternate_phone: '', address: '', city: '', state: '', pincode: '',
+                date_of_birth: '', designation: '', photo_url: ''
+              });
+              setUserDialog(true);
+            }} className="bg-slate-900 hover:bg-slate-800">
               <Plus className="w-4 h-4 mr-2" /> Add {isBranchAdmin ? 'Trainer' : 'User'}
             </Button>
           </div>
@@ -655,13 +664,21 @@ const AdminPanel = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Name</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Contact</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Role</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Branch</th>
+                  {isSuperAdmin && <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Branch</th>}
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {users.map((user) => (
+                {users
+                  .filter(user => {
+                    // Branch Admin sees only Trainers from their branch
+                    if (isBranchAdmin) {
+                      return user.role === 'Trainer' && user.branch_id === currentUser.branch_id;
+                    }
+                    return true;
+                  })
+                  .map((user) => (
                   <tr key={user.id} className={`hover:bg-slate-50 ${user.is_active === false ? 'opacity-50' : ''}`}>
                     <td className="px-4 py-3">
                       {user.photo_url ? (
