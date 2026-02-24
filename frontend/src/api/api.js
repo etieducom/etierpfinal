@@ -156,6 +156,7 @@ export const studentsAPI = {
   updateStatus: (id, status, reason) => api.put(`/students/${id}/status`, null, { params: { status, reason } }),
   addAddonCourse: (enrollmentId, data) => api.post(`/enrollments/${enrollmentId}/add-on-course`, data),
   getAddonCourses: (enrollmentId) => api.get(`/enrollments/${enrollmentId}/add-on-courses`),
+  getBatches: (enrollmentId) => api.get(`/students/${enrollmentId}/batches`),
 };
 
 export const organizationsAPI = {
@@ -166,6 +167,23 @@ export const organizationsAPI = {
   delete: (id) => api.delete(`/organizations/${id}`),
   addFollowUp: (orgId, data) => api.post(`/organizations/${orgId}/followups`, data),
   getFollowUps: (orgId) => api.get(`/organizations/${orgId}/followups`),
+};
+
+export const batchAPI = {
+  getAll: () => api.get('/batches'),
+  create: (data) => api.post('/batches', data),
+  update: (id, data) => api.put(`/batches/${id}`, data),
+  delete: (id) => api.delete(`/batches/${id}`),
+  getStudents: (batchId) => api.get(`/batches/${batchId}/students`),
+  assignStudent: (batchId, data) => api.post(`/batches/${batchId}/assign-student`, data),
+  removeStudent: (batchId, enrollmentId) => api.delete(`/batches/${batchId}/remove-student/${enrollmentId}`),
+  getTrainers: () => api.get('/trainers'),
+  getTrainerStats: () => api.get('/trainer-stats'),
+};
+
+export const paymentPlanAPI = {
+  edit: (planId, data) => api.put(`/payment-plans/${planId}/edit`, data),
+  delete: (planId) => api.delete(`/payment-plans/${planId}`),
 };
 
 export const notificationsAPI = {
