@@ -314,19 +314,32 @@ The user, representing a training institute named "ETI Educom", requested a full
   - [x] Better vertical spacing and text sizing
   - [x] Single QR code in proper position
 
+### Phase 18: Branch Admin Permissions Enhancement (COMPLETE - February 24, 2026)
+- [x] Branch Admin Can Create Trainers
+  - [x] Fixed route protection in App.js - added `adminPanelAccess` prop for `/admin` route
+  - [x] Admin Panel now accessible to Branch Admin (previously blocked)
+  - [x] Conditional tab rendering - Branch Admin sees only "Users" and "Batch Info" tabs
+  - [x] Users list filtered to show only Trainers from Branch Admin's branch
+  - [x] "Add Trainer" button instead of "Add User" for Branch Admin
+  - [x] Role dropdown restricted to "Trainer" option only
+  - [x] Branch field disabled with auto-assignment message
+  - [x] Backend already supports Branch Admin creating Trainers (branch auto-assigned)
+
 ## Pending/Backlog
 
 ### P0 - High Priority (None currently)
 All high-priority features completed.
 
 ### P1 - Medium Priority
-- [x] ~~International Exams Module - Wire up backend to frontend for exam booking~~ (DONE)
-- [x] ~~Student Status Management - Mark students as Dropped/Inactive~~ (DONE)
+- [ ] Code Refactoring
+  - Split server.py into routers/models/schemas using FastAPI APIRouters
+  - Add state management to frontend (Zustand/Redux)
 
 ### P2 - Low Priority
-- [ ] Code Refactoring
-  - Split server.py into routers/models/schemas
-  - Add state management to frontend (Zustand/Redux)
+- [ ] WhatsApp Fee Reminders - Implement 7, 5, 3, 1 day before due date logic
+- [ ] Birthday Wishes Automation - Add date_of_birth field to enrollment UI
+- [ ] Refactor AdminPanel.js - Break into smaller components
+- [ ] Payment Data Discrepancy Fix - Handle partially paid installments correctly
 
 ## API Endpoints
 
