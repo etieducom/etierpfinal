@@ -1449,12 +1449,18 @@ const AdminPanel = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Admin">Super Admin</SelectItem>
-                    <SelectItem value="Branch Admin">Branch Admin</SelectItem>
-                    <SelectItem value="Counsellor">Counsellor</SelectItem>
-                    <SelectItem value="Front Desk Executive">Front Desk Executive</SelectItem>
-                    <SelectItem value="Trainer">Trainer</SelectItem>
-                    <SelectItem value="Certificate Manager">Certificate Manager</SelectItem>
+                    {isSuperAdmin ? (
+                      <>
+                        <SelectItem value="Admin">Super Admin</SelectItem>
+                        <SelectItem value="Branch Admin">Branch Admin</SelectItem>
+                        <SelectItem value="Counsellor">Counsellor</SelectItem>
+                        <SelectItem value="Front Desk Executive">Front Desk Executive</SelectItem>
+                        <SelectItem value="Trainer">Trainer</SelectItem>
+                        <SelectItem value="Certificate Manager">Certificate Manager</SelectItem>
+                      </>
+                    ) : (
+                      <SelectItem value="Trainer">Trainer</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
