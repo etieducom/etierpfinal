@@ -260,7 +260,9 @@ const BatchManagementPage = () => {
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Timing</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Students</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                      {(canEdit || canAssign) && (
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -290,23 +292,27 @@ const BatchManagementPage = () => {
                             {batch.status}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => openAssignStudent(batch)} title="Assign Student">
-                              <UserPlus className="w-4 h-4 text-green-500" />
-                            </Button>
-                            {isBranchAdmin && (
-                              <>
-                                <Button variant="ghost" size="sm" onClick={() => openEditBatch(batch)} title="Edit">
-                                  <Edit className="w-4 h-4 text-orange-500" />
+                        {(canEdit || canAssign) && (
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1">
+                              {canAssign && (
+                                <Button variant="ghost" size="sm" onClick={() => openAssignStudent(batch)} title="Assign Student">
+                                  <UserPlus className="w-4 h-4 text-green-500" />
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => handleDeleteBatch(batch)} title="Delete">
-                                  <Trash2 className="w-4 h-4 text-red-500" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </td>
+                              )}
+                              {canEdit && (
+                                <>
+                                  <Button variant="ghost" size="sm" onClick={() => openEditBatch(batch)} title="Edit">
+                                    <Edit className="w-4 h-4 text-orange-500" />
+                                  </Button>
+                                  <Button variant="ghost" size="sm" onClick={() => handleDeleteBatch(batch)} title="Delete">
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
