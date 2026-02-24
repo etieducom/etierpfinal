@@ -1284,12 +1284,16 @@ async def register(user: UserCreate):
 
 @api_router.post("/auth/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    logger.info(f"Login attempt for: {form_data.username}")
     user_doc = await db.users.find_one({"email": form_data.username}, {"_id": 0})
     if not user_doc:
+        logger.warning(f"User not found: {form_data.username}")
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     
+    logger.info(f"User found, verifying password")
     user = User(**user_doc)
     if not verify_password(form_data.password, user.hashed_password):
+        logger.warning(f"Password verification failed for: {form_data.username}")
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     
     access_token = create_access_token(data={"sub": user.email})
