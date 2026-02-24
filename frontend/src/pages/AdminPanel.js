@@ -159,6 +159,10 @@ const AdminPanel = () => {
   const [leadSourceForm, setLeadSourceForm] = useState({ name: '', description: '' });
   const [examForm, setExamForm] = useState({ name: '', description: '', price: '' });
   
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isSuperAdmin = currentUser.role === 'Admin';
+  const isBranchAdmin = currentUser.role === 'Branch Admin';
+  
   const [branchForm, setBranchForm] = useState({ 
     name: '', 
     location: '', 
