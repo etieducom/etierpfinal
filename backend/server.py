@@ -4117,8 +4117,8 @@ async def get_curriculum(curriculum_id: str, current_user: User = Depends(get_cu
     return curriculum
 
 @api_router.put("/curricula/{curriculum_id}")
-async def update_curriculum(curriculum_id: str, data: CurriculumCreate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
-    """Update curriculum - Admin only"""
+async def update_curriculum(curriculum_id: str, data: CurriculumCreate, current_user: User = Depends(require_role([UserRole.ACADEMIC_CONTROLLER]))):
+    """Update curriculum - Academic Controller only"""
     existing = await db.curricula.find_one({"id": curriculum_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Curriculum not found")
