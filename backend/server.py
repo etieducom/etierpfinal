@@ -659,6 +659,36 @@ class ExpenseCreate(BaseModel):
     expense_date: str
     remarks: Optional[str] = None
 
+# Campaign Management for Branch Admin
+class Campaign(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    branch_id: str
+    campaign_name: str
+    platform: str  # Google, Meta, Instagram, etc.
+    campaign_link: Optional[str] = None
+    start_date: str
+    end_date: str
+    total_spend: float = 0.0
+    total_leads: int = 0
+    total_messages: int = 0
+    status: str = "Active"  # Active, Completed, Paused
+    notes: Optional[str] = None
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CampaignCreate(BaseModel):
+    campaign_name: str
+    platform: str
+    campaign_link: Optional[str] = None
+    start_date: str
+    end_date: str
+    total_spend: float = 0.0
+    total_leads: int = 0
+    total_messages: int = 0
+    status: str = "Active"
+    notes: Optional[str] = None
+
 # WhatsApp Notification Settings
 class WhatsAppTemplate(BaseModel):
     template_name: str
