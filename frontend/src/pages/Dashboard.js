@@ -71,6 +71,16 @@ const Dashboard = () => {
       } else if (results[2]) {
         setPendingCount(results[2].data.count);
       }
+      
+      // Fetch AI insights for counsellors and branch admins
+      if (showAIInsights) {
+        try {
+          const insightsRes = await analyticsAPI.getAILeadsInsights();
+          setAIInsights(insightsRes.data);
+        } catch (e) {
+          console.error('Error fetching AI insights:', e);
+        }
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
