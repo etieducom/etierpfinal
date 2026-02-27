@@ -1926,6 +1926,33 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
                     "trainer": updated_lead_obj.trainer_name or ""
                 }
             )
+        
+        # Create notification for FDE when lead is converted
+        if lead_update.status == LeadStatus.CONVERTED:
+            branch_id = lead.get('branch_id')
+            # Find all FDEs in this branch
+            fdes = await db.users.find(
+                {"branch_id": branch_id, "role": UserRole.FDE.value, "is_active": True},
+                {"_id": 0, "id": 1}
+            ).to_list(100)
+            
+            for fde in fdes:
+                notification = Notification(
+                    user_id=fde['id'],
+                    branch_id=branch_id,
+                    type="lead_converted",
+                    title="New Lead Converted!",
+                    message=f"{updated_lead_obj.name} has been converted. Please proceed with enrollment.",
+                    data={
+                        "lead_id": lead_id,
+                        "lead_name": updated_lead_obj.name,
+                        "lead_number": updated_lead_obj.number,
+                        "program": updated_lead_obj.program
+                    },
+                    play_audio=True
+                )
+                await db.notifications.insert_one(notification.model_dump())
+                logger.info(f"Created lead converted notification for FDE {fde['id']}")
     
     return updated_lead_obj
 
