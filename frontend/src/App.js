@@ -156,6 +156,14 @@ function App() {
             }
           />
           <Route
+            path="/campaigns"
+            element={
+              <PrivateRoute branchAdminAllowed>
+                <Layout><CampaignManagement /></Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/enrollments"
             element={
               <PrivateRoute fdaOnly>
