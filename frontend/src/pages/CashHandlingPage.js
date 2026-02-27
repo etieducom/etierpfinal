@@ -196,8 +196,19 @@ const CashHandlingPage = () => {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="p-3 bg-green-50 rounded-lg text-center">
-                <p className="text-sm text-slate-500">Total Cash to Deposit</p>
+                <p className="text-sm text-slate-500">System Calculated Cash</p>
                 <p className="text-2xl font-bold text-green-600">₹{(todayCash?.total_cash || 0).toLocaleString()}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Actual Cash Deposited (if different)</Label>
+                <Input
+                  type="number"
+                  value={manualTotal}
+                  onChange={(e) => setManualTotal(e.target.value)}
+                  placeholder={`Enter amount if different from ₹${(todayCash?.total_cash || 0).toLocaleString()}`}
+                />
+                <p className="text-xs text-slate-500">Leave empty to use system calculated amount</p>
               </div>
               
               <div className="space-y-2">
