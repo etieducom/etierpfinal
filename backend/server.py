@@ -2321,9 +2321,14 @@ async def create_enrollment(enrollment: EnrollmentCreate, current_user: User = D
     if not program:
         raise HTTPException(status_code=404, detail="Program not found")
     
-    # Calculate final fee
-    discount_amount = (enrollment.fee_quoted * (enrollment.discount_percent or 0)) / 100
-    final_fee = enrollment.fee_quoted - discount_amount
+    # Calculate final fee - support both percentage and direct amount discount
+    if enrollment.discount_amount and enrollment.discount_amount > 0:
+        # Use direct discount amount
+        discount = enrollment.discount_amount
+    else:
+        # Use percentage discount
+        discount = (enrollment.fee_quoted * (enrollment.discount_percent or 0)) / 100
+    final_fee = enrollment.fee_quoted - discount
     
     # Generate custom enrollment ID
     branch_id = current_user.branch_id or lead["branch_id"]
