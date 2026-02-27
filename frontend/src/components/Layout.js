@@ -22,6 +22,7 @@ const Layout = ({ children }) => {
   const isFDE = user.role === 'Front Desk Executive';
   const isCounsellor = user.role === 'Counsellor';
   const isCertManager = user.role === 'Certificate Manager';
+  const isTrainer = user.role === 'Trainer';
 
   useEffect(() => {
     // Only Counsellors and Branch Admins need pending followup count
