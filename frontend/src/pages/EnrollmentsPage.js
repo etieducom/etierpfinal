@@ -1281,7 +1281,12 @@ const EnrollmentsPage = () => {
                   </div>
                   <div>
                     <span className="text-slate-500">Discount:</span>
-                    <p className="font-medium">{enrollForm.discount_percent || 0}%</p>
+                    <p className="font-medium">
+                      {enrollForm.discount_amount 
+                        ? `₹${parseFloat(enrollForm.discount_amount).toLocaleString()}`
+                        : `${enrollForm.discount_percent || 0}%`
+                      }
+                    </p>
                   </div>
                 </div>
                 <div className="border-t pt-3 mt-3">
