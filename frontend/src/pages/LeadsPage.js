@@ -44,8 +44,10 @@ const leadSchema = z.object({
   email: z.string().email('Valid email required'),
   fee_quoted: z.string().optional(),
   discount_percent: z.string().optional(),
+  discount_amount: z.string().optional(),
   payment_plan: z.string().optional(),
   lead_source: z.string().min(1, 'Lead source is required'),
+  lead_date: z.string().optional(),
 });
 
 const LeadsPage = () => {
@@ -65,6 +67,10 @@ const LeadsPage = () => {
   const [followupNote, setFollowupNote] = useState('');
   const [followupDate, setFollowupDate] = useState('');
   const [selectedProgram, setSelectedProgram] = useState('');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const leadsPerPage = 10;
   
   // Demo Booked dialog state
   const [demoDialog, setDemoDialog] = useState(false);
