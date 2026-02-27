@@ -40,7 +40,9 @@ const QuizExamsPage = () => {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isAdmin = user.role === 'Admin';
+  const isAcademicController = user.role === 'Academic Controller';
   const isFDE = user.role === 'Front Desk Executive';
+  const canCreateQuiz = isAcademicController; // Only Academic Controller can create quizzes
   
   useEffect(() => {
     fetchQuizzes();
