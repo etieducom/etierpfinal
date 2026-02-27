@@ -28,6 +28,7 @@ const CashHandlingPage = () => {
   // Submit form state
   const [depositReceiptUrl, setDepositReceiptUrl] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [manualTotal, setManualTotal] = useState('');
   
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isFDE = user.role === 'Front Desk Executive';
