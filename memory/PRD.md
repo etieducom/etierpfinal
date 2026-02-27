@@ -325,17 +325,58 @@ The user, representing a training institute named "ETI Educom", requested a full
   - [x] Branch field disabled with auto-assignment message
   - [x] Backend already supports Branch Admin creating Trainers (branch auto-assigned)
 
+### Phase 19: P0 Enhancements (COMPLETE - February 27, 2026)
+- [x] **Discount in Amount** - Added direct discount amount option (not just percentage)
+  - [x] Backend: Added `discount_amount` field to Lead, LeadCreate, LeadUpdate, Enrollment, EnrollmentCreate models
+  - [x] Frontend LeadsPage: Added "Discount Amount (₹)" field in Add Lead dialog
+  - [x] Frontend EnrollmentsPage: Added "Or Discount Amount (₹)" field in enrollment form
+  - [x] Backend calculates final_fee using amount discount if provided, otherwise uses percentage
+- [x] **Lead Date Field** - Added custom date field for leads
+  - [x] Backend: Added `lead_date` field to Lead models
+  - [x] Frontend: Added "Lead Date" field in Add Lead dialog with default to today
+  - [x] Reports include lead_date column
+- [x] **Hide Converted Leads by Default**
+  - [x] Modified filterLeads() to exclude status='Converted' when "All Statuses" selected
+  - [x] Converted leads only show when specifically filtered
+- [x] **Leads Pagination** - 10 recent leads per page
+  - [x] Added currentPage state and leadsPerPage constant (10)
+  - [x] Added pagination controls (Previous/Next buttons, page counter)
+  - [x] Leads sorted by date descending (most recent first)
+- [x] **Students Pagination** - 10 recent students per page
+  - [x] Added pagination to StudentsPage with same controls
+  - [x] Students sorted by enrollment_date descending
+- [x] **Exam Status Lock** - Prevent changing status after "Completed"
+  - [x] Backend update_booking_status() checks if current status is 'Completed' and rejects changes
+- [x] **Reports Enhancement**
+  - [x] Fixed enrollments report - correct field names (email, phone)
+  - [x] Added more columns: Lead ID, Enrollment ID, Discount, Status
+  - [x] Added lead_date to leads report
+- [x] **Student Details Update** - FDE can update student details after enrollment
+  - [x] Added PUT /api/students/{enrollment_id}/update endpoint
+  - [x] Supports updating photo, aadhar, and all personal details
+  - [x] Added aadhar_documents field for multiple file uploads
+
 ## Pending/Backlog
 
 ### P0 - High Priority (None currently)
-All high-priority features completed.
+All P0 features completed.
 
-### P1 - Medium Priority
+### P1 - Medium Priority (In Progress)
+- [ ] **Trainer Module**
+  - [ ] Trainer login and dashboard
+  - [ ] Fixed batch timings auto-creation (9-10:30, 10:30-12, 12-1:30, 2-3:30, 3:30-5, 5-6)
+  - [ ] Attendance marking for students
+  - [ ] Curriculum management (Admin creates, Trainer views)
+  - [ ] Course completion marking
+- [ ] **Branch Admin Financial Stats**
+  - [ ] Total collections, pending amounts, monthly revenue
+  - [ ] Revenue from exams, expenses tracking
+  - [ ] Students per trainer stats
+
+### P2 - Low Priority
 - [ ] Code Refactoring
   - Split server.py into routers/models/schemas using FastAPI APIRouters
   - Add state management to frontend (Zustand/Redux)
-
-### P2 - Low Priority
 - [ ] WhatsApp Fee Reminders - Implement 7, 5, 3, 1 day before due date logic
 - [ ] Birthday Wishes Automation - Add date_of_birth field to enrollment UI
 - [ ] Refactor AdminPanel.js - Break into smaller components
