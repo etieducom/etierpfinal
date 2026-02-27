@@ -429,6 +429,79 @@ class StudentBatchAssignment(BaseModel):
 class StudentBatchAssignmentCreate(BaseModel):
     enrollment_id: str
 
+# Attendance Model
+class Attendance(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    batch_id: str
+    enrollment_id: str
+    student_name: Optional[str] = None
+    date: str  # YYYY-MM-DD
+    status: str  # Present, Absent, Late
+    marked_by: str
+    marked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    remarks: Optional[str] = None
+
+class AttendanceCreate(BaseModel):
+    batch_id: str
+    enrollment_id: str
+    date: str
+    status: str
+    remarks: Optional[str] = None
+
+class AttendanceBulkCreate(BaseModel):
+    batch_id: str
+    date: str
+    attendance_records: List[dict]  # [{enrollment_id, status, remarks}]
+
+# Curriculum Model
+class Curriculum(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    program_id: str
+    program_name: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    topics: List[str] = []  # List of topic names
+    duration_weeks: Optional[int] = None
+    created_by: str
+    branch_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CurriculumCreate(BaseModel):
+    program_id: str
+    title: str
+    description: Optional[str] = None
+    topics: List[str] = []
+    duration_weeks: Optional[int] = None
+
+# Course Completion Model
+class CourseCompletion(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    enrollment_id: str
+    student_name: Optional[str] = None
+    program_id: str
+    program_name: Optional[str] = None
+    batch_id: Optional[str] = None
+    completion_date: str
+    exam_status: str = "Pending"  # Pending, Passed, Failed
+    exam_score: Optional[float] = None
+    marked_by: str
+    marked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    certificate_issued: bool = False
+    remarks: Optional[str] = None
+
+# Fixed Batch Timings (auto-created for trainers)
+FIXED_BATCH_TIMINGS = [
+    {"slot": 1, "name": "Batch 1", "timing": "9:00 AM to 10:30 AM"},
+    {"slot": 2, "name": "Batch 2", "timing": "10:30 AM to 12:00 PM"},
+    {"slot": 3, "name": "Batch 3", "timing": "12:00 PM to 1:30 PM"},
+    {"slot": 4, "name": "Batch 4", "timing": "2:00 PM to 3:30 PM"},
+    {"slot": 5, "name": "Batch 5", "timing": "3:30 PM to 5:00 PM"},
+    {"slot": 6, "name": "Batch 6", "timing": "5:00 PM to 6:30 PM"},
+]
+
 # Payment Plan Edit Model
 class PaymentPlanEdit(BaseModel):
     plan_type: Optional[str] = None
