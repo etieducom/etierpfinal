@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Search, GraduationCap, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Search, GraduationCap, CheckCircle, Clock, XCircle, Gift, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ManageExamsPage = () => {
@@ -14,6 +14,9 @@ const ManageExamsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isBranchAdmin = user.role === 'Branch Admin';
 
   useEffect(() => {
     fetchBookings();
