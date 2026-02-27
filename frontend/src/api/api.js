@@ -226,6 +226,14 @@ export const campaignAPI = {
   getAnalytics: (id) => api.get(`/campaigns/${id}/analytics`),
 };
 
+// Student Feedback API
+export const feedbackAPI = {
+  getList: (month) => api.get(`/feedback/list${month ? `?month=${month}` : ''}`),
+  submit: (data) => api.post('/feedback', data),
+  getSummary: (month) => api.get(`/feedback/summary${month ? `?month=${month}` : ''}`),
+  getMonths: () => api.get('/feedback/months'),
+};
+
 export const paymentPlanAPI = {
   edit: (planId, data) => api.put(`/payment-plans/${planId}/edit`, data),
   delete: (planId) => api.delete(`/payment-plans/${planId}`),
