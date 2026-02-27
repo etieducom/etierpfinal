@@ -27,11 +27,14 @@ const Dashboard = () => {
   const [branchFinancials, setBranchFinancials] = useState([]);
   const [superAdminData, setSuperAdminData] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [aiInsights, setAIInsights] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
   const isSuperAdmin = user.role === 'Admin';
   const isBranchAdmin = user.role === 'Branch Admin';
+  const isCounsellor = user.role === 'Counsellor';
+  const showAIInsights = isBranchAdmin || isCounsellor;
 
   useEffect(() => {
     fetchData();
