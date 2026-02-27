@@ -5126,6 +5126,7 @@ async def get_today_cash(current_user: User = Depends(get_current_user)):
 async def submit_cash_handling(
     deposit_receipt_url: Optional[str] = None,
     remarks: Optional[str] = None,
+    manual_total: Optional[float] = None,
     current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.FRONT_DESK]))
 ):
     """Submit cash handling record with deposit receipt or remarks"""
@@ -5136,12 +5137,15 @@ async def submit_cash_handling(
     
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     
-    # Get total cash for today
+    # Get total cash for today from payments
     cash_payments = await db.payments.find(
         {"branch_id": branch_id, "payment_mode": "Cash", "payment_date": today},
         {"_id": 0, "amount": 1}
     ).to_list(1000)
-    total_cash = sum(p.get('amount', 0) for p in cash_payments)
+    system_total = sum(p.get('amount', 0) for p in cash_payments)
+    
+    # Use manual total if provided, otherwise use system calculated total
+    total_cash = manual_total if manual_total is not None else system_total
     
     # Check existing record
     existing = await db.cash_handling.find_one({"branch_id": branch_id, "date": today})
