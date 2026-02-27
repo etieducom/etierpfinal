@@ -85,9 +85,12 @@ const StudentFeedbackPage = () => {
   const fetchSummary = async (month) => {
     setLoadingSummary(true);
     try {
+      console.log('Fetching summary for month:', month);
       const response = await feedbackAPI.getSummary(month);
+      console.log('Got summary response:', response.data);
       setSummaryData(response.data);
     } catch (error) {
+      console.error('Error fetching summary:', error);
       toast.error('Failed to load feedback summary');
     } finally {
       setLoadingSummary(false);
