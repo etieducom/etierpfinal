@@ -28,6 +28,7 @@ import BatchManagementPage from '@/pages/BatchManagementPage';
 import TrainerDashboard from '@/pages/TrainerDashboard';
 import CurriculumPage from '@/pages/CurriculumPage';
 import CampaignManagement from '@/pages/CampaignManagement';
+import StudentFeedbackPage from '@/pages/StudentFeedbackPage';
 import Layout from '@/components/Layout';
 import ActivityTracker from '@/components/ActivityTracker';
 import { Toaster } from '@/components/ui/sonner';
@@ -280,6 +281,14 @@ function App() {
             element={
               <PrivateRoute academicControllerOnly>
                 <Layout><CurriculumPage /></Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/student-feedback"
+            element={
+              <PrivateRoute>
+                <Layout><StudentFeedbackPage /></Layout>
               </PrivateRoute>
             }
           />
