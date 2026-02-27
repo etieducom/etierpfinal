@@ -3875,6 +3875,416 @@ async def get_trainer_stats(current_user: User = Depends(get_current_user)):
     
     return stats
 
+# ========== TRAINER DASHBOARD ==========
+@api_router.get("/trainer/dashboard")
+async def get_trainer_dashboard(current_user: User = Depends(get_current_user)):
+    """Get trainer dashboard data - batches, students, and recent attendance"""
+    if current_user.role != UserRole.TRAINER:
+        raise HTTPException(status_code=403, detail="Only trainers can access this endpoint")
+    
+    # Get trainer's batches
+    batches = await db.batches.find(
+        {"trainer_id": current_user.id},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Get students assigned to trainer's batches
+    assignments = await db.student_batch_assignments.find(
+        {"trainer_id": current_user.id},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Get unique students
+    student_ids = list(set(a['enrollment_id'] for a in assignments))
+    students = await db.enrollments.find(
+        {"id": {"$in": student_ids}},
+        {"_id": 0, "id": 1, "student_name": 1, "email": 1, "phone": 1, "program_name": 1}
+    ).to_list(1000)
+    
+    # Get today's attendance
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    today_attendance = await db.attendance.find(
+        {"batch_id": {"$in": [b['id'] for b in batches]}, "date": today},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Get curriculum for programs trainer is teaching
+    program_ids = list(set(b['program_id'] for b in batches if b.get('program_id')))
+    curricula = await db.curricula.find(
+        {"program_id": {"$in": program_ids}},
+        {"_id": 0}
+    ).to_list(100)
+    
+    return {
+        "trainer": {
+            "id": current_user.id,
+            "name": current_user.name,
+            "email": current_user.email
+        },
+        "batches": batches,
+        "total_students": len(student_ids),
+        "students": students,
+        "today_attendance": today_attendance,
+        "curricula": curricula
+    }
+
+@api_router.get("/trainer/batches")
+async def get_trainer_batches(current_user: User = Depends(get_current_user)):
+    """Get batches for the logged-in trainer"""
+    if current_user.role != UserRole.TRAINER:
+        raise HTTPException(status_code=403, detail="Only trainers can access this endpoint")
+    
+    batches = await db.batches.find(
+        {"trainer_id": current_user.id},
+        {"_id": 0}
+    ).sort("slot_number", 1).to_list(100)
+    
+    # Get student count for each batch
+    for batch in batches:
+        count = await db.student_batch_assignments.count_documents({"batch_id": batch['id']})
+        batch['student_count'] = count
+    
+    return batches
+
+# ========== ATTENDANCE MANAGEMENT ==========
+@api_router.post("/attendance")
+async def mark_attendance(attendance: AttendanceCreate, current_user: User = Depends(get_current_user)):
+    """Mark attendance for a student - Trainer only"""
+    if current_user.role != UserRole.TRAINER:
+        raise HTTPException(status_code=403, detail="Only trainers can mark attendance")
+    
+    # Verify batch belongs to trainer
+    batch = await db.batches.find_one({"id": attendance.batch_id, "trainer_id": current_user.id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=403, detail="You can only mark attendance for your batches")
+    
+    # Check if already marked
+    existing = await db.attendance.find_one({
+        "batch_id": attendance.batch_id,
+        "enrollment_id": attendance.enrollment_id,
+        "date": attendance.date
+    }, {"_id": 0})
+    
+    if existing:
+        # Update existing
+        await db.attendance.update_one(
+            {"id": existing['id']},
+            {"$set": {"status": attendance.status, "remarks": attendance.remarks}}
+        )
+        return {"message": "Attendance updated successfully"}
+    
+    # Get student name
+    enrollment = await db.enrollments.find_one({"id": attendance.enrollment_id}, {"_id": 0, "student_name": 1})
+    
+    new_attendance = Attendance(
+        batch_id=attendance.batch_id,
+        enrollment_id=attendance.enrollment_id,
+        student_name=enrollment.get('student_name') if enrollment else None,
+        date=attendance.date,
+        status=attendance.status,
+        marked_by=current_user.id,
+        remarks=attendance.remarks
+    )
+    
+    att_dict = new_attendance.model_dump()
+    att_dict['marked_at'] = att_dict['marked_at'].isoformat()
+    await db.attendance.insert_one(att_dict)
+    
+    return {"message": "Attendance marked successfully"}
+
+@api_router.post("/attendance/bulk")
+async def mark_bulk_attendance(data: AttendanceBulkCreate, current_user: User = Depends(get_current_user)):
+    """Mark attendance for multiple students at once - Trainer only"""
+    if current_user.role != UserRole.TRAINER:
+        raise HTTPException(status_code=403, detail="Only trainers can mark attendance")
+    
+    # Verify batch belongs to trainer
+    batch = await db.batches.find_one({"id": data.batch_id, "trainer_id": current_user.id}, {"_id": 0})
+    if not batch:
+        raise HTTPException(status_code=403, detail="You can only mark attendance for your batches")
+    
+    marked_count = 0
+    for record in data.attendance_records:
+        # Check if already marked
+        existing = await db.attendance.find_one({
+            "batch_id": data.batch_id,
+            "enrollment_id": record['enrollment_id'],
+            "date": data.date
+        }, {"_id": 0})
+        
+        # Get student name
+        enrollment = await db.enrollments.find_one({"id": record['enrollment_id']}, {"_id": 0, "student_name": 1})
+        
+        if existing:
+            await db.attendance.update_one(
+                {"id": existing['id']},
+                {"$set": {"status": record['status'], "remarks": record.get('remarks')}}
+            )
+        else:
+            new_attendance = {
+                "id": str(uuid.uuid4()),
+                "batch_id": data.batch_id,
+                "enrollment_id": record['enrollment_id'],
+                "student_name": enrollment.get('student_name') if enrollment else None,
+                "date": data.date,
+                "status": record['status'],
+                "marked_by": current_user.id,
+                "marked_at": datetime.now(timezone.utc).isoformat(),
+                "remarks": record.get('remarks')
+            }
+            await db.attendance.insert_one(new_attendance)
+        marked_count += 1
+    
+    return {"message": f"Attendance marked for {marked_count} students"}
+
+@api_router.get("/attendance/{batch_id}")
+async def get_batch_attendance(batch_id: str, date: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    """Get attendance records for a batch"""
+    query = {"batch_id": batch_id}
+    if date:
+        query["date"] = date
+    
+    attendance = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    return attendance
+
+@api_router.get("/attendance/student/{enrollment_id}")
+async def get_student_attendance(enrollment_id: str, current_user: User = Depends(get_current_user)):
+    """Get attendance history for a student"""
+    attendance = await db.attendance.find(
+        {"enrollment_id": enrollment_id},
+        {"_id": 0}
+    ).sort("date", -1).to_list(100)
+    
+    # Calculate attendance stats
+    total = len(attendance)
+    present = len([a for a in attendance if a['status'] == 'Present'])
+    absent = len([a for a in attendance if a['status'] == 'Absent'])
+    late = len([a for a in attendance if a['status'] == 'Late'])
+    
+    return {
+        "records": attendance,
+        "stats": {
+            "total_days": total,
+            "present": present,
+            "absent": absent,
+            "late": late,
+            "attendance_percentage": round((present / total * 100) if total > 0 else 0, 1)
+        }
+    }
+
+# ========== CURRICULUM MANAGEMENT ==========
+@api_router.post("/curricula")
+async def create_curriculum(curriculum: CurriculumCreate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Create curriculum for a program - Admin only"""
+    program = await db.programs.find_one({"id": curriculum.program_id}, {"_id": 0})
+    if not program:
+        raise HTTPException(status_code=404, detail="Program not found")
+    
+    new_curriculum = Curriculum(
+        program_id=curriculum.program_id,
+        program_name=program.get('name'),
+        title=curriculum.title,
+        description=curriculum.description,
+        topics=curriculum.topics,
+        duration_weeks=curriculum.duration_weeks,
+        created_by=current_user.id,
+        branch_id=current_user.branch_id
+    )
+    
+    curr_dict = new_curriculum.model_dump()
+    curr_dict['created_at'] = curr_dict['created_at'].isoformat()
+    await db.curricula.insert_one(curr_dict)
+    
+    return {"message": "Curriculum created successfully", "id": new_curriculum.id}
+
+@api_router.get("/curricula")
+async def get_curricula(program_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    """Get curricula - optionally filter by program"""
+    query = {}
+    if program_id:
+        query["program_id"] = program_id
+    
+    curricula = await db.curricula.find(query, {"_id": 0}).to_list(100)
+    return curricula
+
+@api_router.get("/curricula/{curriculum_id}")
+async def get_curriculum(curriculum_id: str, current_user: User = Depends(get_current_user)):
+    """Get a specific curriculum"""
+    curriculum = await db.curricula.find_one({"id": curriculum_id}, {"_id": 0})
+    if not curriculum:
+        raise HTTPException(status_code=404, detail="Curriculum not found")
+    return curriculum
+
+@api_router.put("/curricula/{curriculum_id}")
+async def update_curriculum(curriculum_id: str, data: CurriculumCreate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Update curriculum - Admin only"""
+    existing = await db.curricula.find_one({"id": curriculum_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Curriculum not found")
+    
+    program = await db.programs.find_one({"id": data.program_id}, {"_id": 0})
+    
+    await db.curricula.update_one(
+        {"id": curriculum_id},
+        {"$set": {
+            "program_id": data.program_id,
+            "program_name": program.get('name') if program else None,
+            "title": data.title,
+            "description": data.description,
+            "topics": data.topics,
+            "duration_weeks": data.duration_weeks
+        }}
+    )
+    return {"message": "Curriculum updated successfully"}
+
+@api_router.delete("/curricula/{curriculum_id}")
+async def delete_curriculum(curriculum_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Delete curriculum - Admin only"""
+    result = await db.curricula.delete_one({"id": curriculum_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Curriculum not found")
+    return {"message": "Curriculum deleted successfully"}
+
+# ========== COURSE COMPLETION ==========
+@api_router.post("/course-completion")
+async def mark_course_completion(
+    enrollment_id: str,
+    exam_status: str = "Passed",
+    exam_score: Optional[float] = None,
+    remarks: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Mark course as complete for a student - Trainer only"""
+    if current_user.role != UserRole.TRAINER:
+        raise HTTPException(status_code=403, detail="Only trainers can mark course completion")
+    
+    # Check if student is assigned to this trainer
+    assignment = await db.student_batch_assignments.find_one(
+        {"enrollment_id": enrollment_id, "trainer_id": current_user.id},
+        {"_id": 0}
+    )
+    if not assignment:
+        raise HTTPException(status_code=403, detail="Student is not assigned to you")
+    
+    # Get enrollment details
+    enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+    
+    # Check if already completed
+    existing = await db.course_completions.find_one({"enrollment_id": enrollment_id}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Course already marked as complete for this student")
+    
+    completion = CourseCompletion(
+        enrollment_id=enrollment_id,
+        student_name=enrollment.get('student_name'),
+        program_id=enrollment.get('program_id'),
+        program_name=enrollment.get('program_name'),
+        batch_id=assignment.get('batch_id'),
+        completion_date=datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+        exam_status=exam_status,
+        exam_score=exam_score,
+        marked_by=current_user.id,
+        remarks=remarks
+    )
+    
+    comp_dict = completion.model_dump()
+    comp_dict['marked_at'] = comp_dict['marked_at'].isoformat()
+    await db.course_completions.insert_one(comp_dict)
+    
+    # Update enrollment status
+    await db.enrollments.update_one(
+        {"id": enrollment_id},
+        {"$set": {"status": "Completed", "course_completion_date": completion.completion_date}}
+    )
+    
+    return {"message": "Course marked as complete", "completion_id": completion.id}
+
+@api_router.get("/course-completions")
+async def get_course_completions(
+    batch_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get course completions"""
+    query = {}
+    if current_user.role == UserRole.TRAINER:
+        query["marked_by"] = current_user.id
+    if batch_id:
+        query["batch_id"] = batch_id
+    
+    completions = await db.course_completions.find(query, {"_id": 0}).sort("marked_at", -1).to_list(1000)
+    return completions
+
+# ========== BRANCH ADMIN FINANCIAL STATS ==========
+@api_router.get("/branch-admin/financial-stats")
+async def get_branch_financial_stats(current_user: User = Depends(get_current_user)):
+    """Get financial statistics for Branch Admin"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Admin or Branch Admin can view financial stats")
+    
+    branch_filter = {}
+    if current_user.role == UserRole.BRANCH_ADMIN:
+        branch_filter["branch_id"] = current_user.branch_id
+    
+    # Total collections (all payments)
+    payments = await db.payments.find(branch_filter, {"_id": 0, "amount": 1, "payment_date": 1}).to_list(10000)
+    total_collections = sum(p.get('amount', 0) for p in payments)
+    
+    # Monthly revenue (current month)
+    current_month = datetime.now(timezone.utc).strftime('%Y-%m')
+    monthly_payments = [p for p in payments if p.get('payment_date', '').startswith(current_month)]
+    monthly_revenue = sum(p.get('amount', 0) for p in monthly_payments)
+    
+    # Pending amounts (from enrollments)
+    enrollments = await db.enrollments.find(branch_filter, {"_id": 0, "final_fee": 1, "total_paid": 1}).to_list(10000)
+    pending_amounts = sum((e.get('final_fee', 0) - e.get('total_paid', 0)) for e in enrollments)
+    
+    # Revenue from exams
+    exam_bookings = await db.exam_bookings.find(branch_filter, {"_id": 0, "amount": 1}).to_list(10000)
+    exam_revenue = sum(e.get('amount', 0) for e in exam_bookings)
+    
+    # Total expenses
+    expenses = await db.expenses.find(branch_filter, {"_id": 0, "amount": 1, "expense_date": 1}).to_list(10000)
+    total_expenses = sum(e.get('amount', 0) for e in expenses)
+    monthly_expenses = sum(e.get('amount', 0) for e in expenses if e.get('expense_date', '').startswith(current_month))
+    
+    # Trainer-wise student count
+    trainers_query = {"role": UserRole.TRAINER.value}
+    if current_user.role == UserRole.BRANCH_ADMIN:
+        trainers_query["branch_id"] = current_user.branch_id
+    
+    trainers = await db.users.find(trainers_query, {"_id": 0, "id": 1, "name": 1}).to_list(100)
+    
+    trainer_stats = []
+    for trainer in trainers:
+        # Get unique students assigned to this trainer (deduped for multi-course)
+        assignments = await db.student_batch_assignments.find(
+            {"trainer_id": trainer['id']},
+            {"_id": 0, "enrollment_id": 1}
+        ).to_list(1000)
+        unique_students = len(set(a['enrollment_id'] for a in assignments))
+        
+        trainer_stats.append({
+            "trainer_id": trainer['id'],
+            "trainer_name": trainer['name'],
+            "unique_student_count": unique_students
+        })
+    
+    return {
+        "total_collections": total_collections,
+        "monthly_revenue": monthly_revenue,
+        "pending_amounts": pending_amounts,
+        "exam_revenue": exam_revenue,
+        "total_expenses": total_expenses,
+        "monthly_expenses": monthly_expenses,
+        "net_revenue": total_collections - total_expenses,
+        "monthly_net": monthly_revenue - monthly_expenses,
+        "trainer_stats": trainer_stats,
+        "total_students": len(enrollments),
+        "total_trainers": len(trainers)
+    }
+
 # ========== PAYMENT PLAN EDIT (Branch Admin) ==========
 @api_router.put("/payment-plans/{plan_id}/edit")
 async def edit_payment_plan(plan_id: str, edit_data: PaymentPlanEdit, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.BRANCH_ADMIN]))):
