@@ -1799,12 +1799,13 @@ const StudentsPage = () => {
                           <Label className="text-xs">Due Date</Label>
                           <Input
                             type="date"
-                            value={inst.due_date}
+                            value={inst.due_date || ''}
                             onChange={(e) => {
                               const newInstallments = [...planForm.installments];
-                              newInstallments[idx].due_date = e.target.value;
+                              newInstallments[idx] = { ...newInstallments[idx], due_date: e.target.value };
                               setPlanForm(prev => ({ ...prev, installments: newInstallments }));
                             }}
+                            required
                           />
                         </div>
                       </div>
