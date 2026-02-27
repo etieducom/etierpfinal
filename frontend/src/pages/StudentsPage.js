@@ -142,6 +142,89 @@ const StudentsPage = () => {
     }
   };
 
+  // Open Create Payment Plan dialog
+  const openCreatePlanDialog = (student) => {
+    setSelectedStudent(student);
+    const totalAmount = (student.final_fee || 0) - (student.total_paid || 0);
+    setPlanForm({
+      plan_type: 'full',
+      installments_count: 2,
+      installments: [
+        { amount: Math.ceil(totalAmount / 2), due_date: '' },
+        { amount: Math.floor(totalAmount / 2), due_date: '' }
+      ]
+    });
+    setCreatePlanDialog(true);
+  };
+
+  // Handle installment count change
+  const handleInstallmentCountChange = (count) => {
+    const totalAmount = (selectedStudent?.final_fee || 0) - (selectedStudent?.total_paid || 0);
+    const baseAmount = Math.floor(totalAmount / count);
+    const remainder = totalAmount - (baseAmount * count);
+    
+    const newInstallments = [];
+    for (let i = 0; i < count; i++) {
+      newInstallments.push({
+        amount: i === 0 ? baseAmount + remainder : baseAmount,
+        due_date: ''
+      });
+    }
+    setPlanForm(prev => ({
+      ...prev,
+      installments_count: count,
+      installments: newInstallments
+    }));
+  };
+
+  // Handle create payment plan
+  const handleCreatePaymentPlan = async () => {
+    if (!selectedStudent) return;
+    
+    if (planForm.plan_type === 'installments') {
+      // Validate installments
+      const totalInstallmentAmount = planForm.installments.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
+      const expectedAmount = (selectedStudent.final_fee || 0) - (selectedStudent.total_paid || 0);
+      
+      if (Math.abs(totalInstallmentAmount - expectedAmount) > 1) {
+        toast.error(`Installment amounts must total ${expectedAmount.toFixed(2)}`);
+        return;
+      }
+      
+      const missingDates = planForm.installments.some(i => !i.due_date);
+      if (missingDates) {
+        toast.error('Please set due dates for all installments');
+        return;
+      }
+    }
+    
+    setSavingPlan(true);
+    try {
+      const payload = {
+        enrollment_id: selectedStudent.id,
+        plan_type: planForm.plan_type,
+        total_amount: (selectedStudent.final_fee || 0) - (selectedStudent.total_paid || 0)
+      };
+      
+      if (planForm.plan_type === 'installments') {
+        payload.installments_count = planForm.installments_count;
+        payload.installments = planForm.installments.map(i => ({
+          amount: parseFloat(i.amount),
+          due_date: i.due_date
+        }));
+      }
+      
+      await paymentAPI.createPaymentPlan(payload);
+      toast.success('Payment plan created successfully');
+      setCreatePlanDialog(false);
+      fetchStudents();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to create payment plan');
+    } finally {
+      setSavingPlan(false);
+    }
+  };
+
   const calculateAddonFinalFee = () => {
     const quoted = parseFloat(addonForm.fee_quoted) || 0;
     const discount = parseFloat(addonForm.discount_percent) || 0;
