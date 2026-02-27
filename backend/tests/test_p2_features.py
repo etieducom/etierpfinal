@@ -191,8 +191,9 @@ class TestAttendanceAPI:
         
         batch = self.batches[0]
         
+        # Correct endpoint is /api/attendance/{batch_id}
         response = requests.get(
-            f"{BASE_URL}/api/batches/{batch['id']}/attendance",
+            f"{BASE_URL}/api/attendance/{batch['id']}",
             headers=self.trainer_headers,
             params={"date": "2025-01-15"}
         )
@@ -368,15 +369,16 @@ class TestReportsWithStudentNames:
         print("Pending payments report generated successfully")
     
     def test_leads_report(self):
-        """Test leads report endpoint"""
+        """Test leads report endpoint - returns CSV"""
         response = requests.get(
             f"{BASE_URL}/api/reports/leads",
             headers=self.admin_headers
         )
-        assert response.status_code == 200, f"Failed to get leads report: {response.text}"
-        data = response.json()
-        assert "leads" in data
-        print(f"Leads report returned {len(data['leads'])} leads")
+        assert response.status_code == 200, f"Failed to get leads report: {response.status_code}"
+        # This endpoint returns CSV, not JSON
+        content_type = response.headers.get("content-type", "")
+        assert "text/csv" in content_type or response.text.startswith("Name,"), f"Expected CSV, got: {content_type}"
+        print(f"Leads report returned CSV data (first 100 chars): {response.text[:100]}")
 
 
 if __name__ == "__main__":
