@@ -27,6 +27,7 @@ import OrganizationsPage from '@/pages/OrganizationsPage';
 import BatchManagementPage from '@/pages/BatchManagementPage';
 import TrainerDashboard from '@/pages/TrainerDashboard';
 import CurriculumPage from '@/pages/CurriculumPage';
+import CampaignManagement from '@/pages/CampaignManagement';
 import Layout from '@/components/Layout';
 import ActivityTracker from '@/components/ActivityTracker';
 import { Toaster } from '@/components/ui/sonner';
