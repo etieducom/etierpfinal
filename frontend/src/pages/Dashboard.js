@@ -90,8 +90,22 @@ const Dashboard = () => {
         try {
           const branchStatsRes = await financialStatsAPI.get();
           setBranchFinancialStats(branchStatsRes.data);
+          
+          // Also fetch branch incentive stats for Branch Admin
+          const branchIncentiveRes = await incentivesAPI.getBranchIncentiveStats();
+          setBranchIncentiveStats(branchIncentiveRes.data);
         } catch (e) {
-          console.error('Error fetching branch financial stats:', e);
+          console.error('Error fetching branch stats:', e);
+        }
+      }
+      
+      // Fetch Counsellor incentives
+      if (isCounsellor) {
+        try {
+          const incentivesRes = await incentivesAPI.getCounsellorIncentives();
+          setCounsellorIncentives(incentivesRes.data);
+        } catch (e) {
+          console.error('Error fetching counsellor incentives:', e);
         }
       }
     } catch (error) {
