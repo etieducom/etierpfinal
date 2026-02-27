@@ -5389,7 +5389,7 @@ async def get_cash_handling_history(
     
     records = await db.cash_handling.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
     
-    # Also get days with cash payments but no record
+    # Get all cash payments grouped by date
     all_cash_payments = await db.payments.aggregate([
         {"$match": {**branch_filter, "payment_mode": "Cash"}},
         {"$group": {
@@ -5398,13 +5398,27 @@ async def get_cash_handling_history(
         }}
     ]).to_list(1000)
     
-    # Merge with records
-    record_dates = {r['date'] for r in records}
+    # Create a map of date -> current total from payments
+    payment_totals = {p['_id']: p['total'] for p in all_cash_payments if p['_id']}
+    
+    # Update existing records with current payment totals
+    record_dates = set()
+    for record in records:
+        record_date = record.get('date')
+        record_dates.add(record_date)
+        # Always show current payment total for the date
+        if record_date in payment_totals:
+            record['current_total'] = payment_totals[record_date]
+        else:
+            record['current_total'] = record.get('total_cash', 0)
+    
+    # Add days with cash payments but no submission record
     for payment_day in all_cash_payments:
         if payment_day['_id'] and payment_day['_id'] not in record_dates:
             records.append({
                 "date": payment_day['_id'],
                 "total_cash": payment_day['total'],
+                "current_total": payment_day['total'],
                 "status": "Pending",
                 "deposit_receipt_url": None,
                 "remarks": None
