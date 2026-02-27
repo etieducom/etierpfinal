@@ -3966,6 +3966,10 @@ async def update_booking_status(booking_id: str, status: str, current_user: User
     if current_user.role not in [UserRole.ADMIN] and booking.get('branch_id') != current_user.branch_id:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Prevent changing status once exam is completed
+    if booking.get('status') == 'Completed':
+        raise HTTPException(status_code=400, detail="Cannot change status of a completed exam")
+    
     await db.exam_bookings.update_one({"id": booking_id}, {"$set": {"status": status}})
     return {"message": "Booking status updated successfully"}
 
