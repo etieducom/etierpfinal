@@ -29,6 +29,8 @@ const Dashboard = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [aiInsights, setAIInsights] = useState(null);
   const [branchFinancialStats, setBranchFinancialStats] = useState(null);
+  const [counsellorIncentives, setCounsellorIncentives] = useState(null);
+  const [branchIncentiveStats, setBranchIncentiveStats] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
