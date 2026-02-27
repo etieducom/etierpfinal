@@ -1932,7 +1932,7 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
             branch_id = lead.get('branch_id')
             # Find all FDEs in this branch
             fdes = await db.users.find(
-                {"branch_id": branch_id, "role": UserRole.FDE.value, "is_active": True},
+                {"branch_id": branch_id, "role": UserRole.FRONT_DESK.value, "is_active": True},
                 {"_id": 0, "id": 1}
             ).to_list(100)
             
@@ -5092,11 +5092,11 @@ async def get_campaign_analytics(campaign_id: str, current_user: User = Depends(
 @api_router.get("/cash-handling/today")
 async def get_today_cash(current_user: User = Depends(get_current_user)):
     """Get today's cash total for FDE"""
-    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN, UserRole.FDE]:
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN, UserRole.FRONT_DESK]:
         raise HTTPException(status_code=403, detail="Access denied")
     
     branch_filter = {}
-    if current_user.role in [UserRole.BRANCH_ADMIN, UserRole.FDE]:
+    if current_user.role in [UserRole.BRANCH_ADMIN, UserRole.FRONT_DESK]:
         branch_filter["branch_id"] = current_user.branch_id
     
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
@@ -5126,7 +5126,7 @@ async def get_today_cash(current_user: User = Depends(get_current_user)):
 async def submit_cash_handling(
     deposit_receipt_url: Optional[str] = None,
     remarks: Optional[str] = None,
-    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.FDE]))
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.FRONT_DESK]))
 ):
     """Submit cash handling record with deposit receipt or remarks"""
     branch_id = current_user.branch_id
