@@ -4544,8 +4544,8 @@ async def update_branch_exam_counter(branch_id: str):
 # ============ Quiz-Based Exams Endpoints ============
 
 @api_router.post("/quiz-exams")
-async def create_quiz_exam(exam: QuizExamCreate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
-    """Create a new quiz exam - Super Admin only"""
+async def create_quiz_exam(exam: QuizExamCreate, current_user: User = Depends(require_role([UserRole.ACADEMIC_CONTROLLER]))):
+    """Create a new quiz exam - Academic Controller only"""
     # Validate questions (max 100)
     if len(exam.questions) > 100:
         raise HTTPException(status_code=400, detail="Maximum 100 questions allowed")
