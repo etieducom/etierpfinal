@@ -63,6 +63,15 @@ const StudentsPage = () => {
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
+  // Create Payment Plan dialog
+  const [createPlanDialog, setCreatePlanDialog] = useState(false);
+  const [planForm, setPlanForm] = useState({
+    plan_type: 'full',
+    installments_count: 2,
+    installments: []
+  });
+  const [savingPlan, setSavingPlan] = useState(false);
+
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isBranchAdmin = user.role === 'Branch Admin';
   const isFDE = user.role === 'Front Desk Executive';
