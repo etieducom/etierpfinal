@@ -557,6 +557,25 @@ class PaymentPlanEdit(BaseModel):
     total_installments: Optional[int] = None
     installments: Optional[List[dict]] = None  # [{amount, due_date}]
 
+# Cash Handling Model
+class CashHandling(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    date: str  # YYYY-MM-DD format
+    branch_id: str
+    total_cash: float = 0
+    deposit_receipt_url: Optional[str] = None
+    remarks: Optional[str] = None
+    status: str = "Pending"  # Pending, Deposited
+    submitted_by: Optional[str] = None  # FDE user ID
+    submitted_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CashHandlingUpdate(BaseModel):
+    deposit_receipt_url: Optional[str] = None
+    remarks: Optional[str] = None
+    status: str = "Deposited"
+
 class Token(BaseModel):
     access_token: str
     token_type: str
