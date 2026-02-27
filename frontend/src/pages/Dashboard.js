@@ -310,6 +310,181 @@ const Dashboard = () => {
       </div>
       )}
 
+      {/* AI-Powered Lead Insights - For Counsellors and Branch Admins */}
+      {showAIInsights && aiInsights && (
+        <div className="space-y-4" data-testid="ai-insights-section">
+          {/* Health Score Banner */}
+          <Card className={`border-2 ${
+            aiInsights.health_score >= 70 ? 'border-green-300 bg-green-50' :
+            aiInsights.health_score >= 40 ? 'border-yellow-300 bg-yellow-50' :
+            'border-red-300 bg-red-50'
+          }`}>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Lead Management Health Score</h3>
+                  <p className="text-sm text-slate-600">Based on conversion, follow-ups, and lead engagement</p>
+                </div>
+                <div className={`text-5xl font-bold ${
+                  aiInsights.health_score >= 70 ? 'text-green-600' :
+                  aiInsights.health_score >= 40 ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  {Math.round(aiInsights.health_score)}%
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-4 text-center">
+                <p className="text-3xl font-bold text-blue-600">{aiInsights.summary.total_leads}</p>
+                <p className="text-sm text-blue-700">Total Leads</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="pt-4 text-center">
+                <p className="text-3xl font-bold text-green-600">{aiInsights.summary.conversion_rate}%</p>
+                <p className="text-sm text-green-700">Conversion Rate</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="pt-4 text-center">
+                <p className="text-3xl font-bold text-orange-600">{aiInsights.summary.pending_followups}</p>
+                <p className="text-sm text-orange-700">Pending Follow-ups</p>
+              </CardContent>
+            </Card>
+            <Card className={aiInsights.summary.overdue_followups > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}>
+              <CardContent className="pt-4 text-center">
+                <p className={`text-3xl font-bold ${aiInsights.summary.overdue_followups > 0 ? 'text-red-600' : 'text-slate-600'}`}>
+                  {aiInsights.summary.overdue_followups}
+                </p>
+                <p className={`text-sm ${aiInsights.summary.overdue_followups > 0 ? 'text-red-700' : 'text-slate-700'}`}>Overdue Follow-ups</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* AI Insights */}
+          {aiInsights.insights && aiInsights.insights.length > 0 && (
+            <Card className="border-slate-200 shadow-soft">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  AI Insights
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {aiInsights.insights.map((insight, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-3 rounded-lg border-l-4 ${
+                        insight.type === 'alert' ? 'bg-red-50 border-red-500' :
+                        insight.type === 'warning' ? 'bg-yellow-50 border-yellow-500' :
+                        insight.type === 'success' ? 'bg-green-50 border-green-500' :
+                        'bg-blue-50 border-blue-500'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-semibold">{insight.title}</h4>
+                          <p className="text-sm text-slate-600">{insight.message}</p>
+                        </div>
+                        <Badge className={
+                          insight.priority === 'high' ? 'bg-red-100 text-red-800' :
+                          insight.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-slate-100 text-slate-800'
+                        }>
+                          {insight.priority}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recommendations */}
+          {aiInsights.recommendations && aiInsights.recommendations.length > 0 && (
+            <Card className="border-slate-200 shadow-soft bg-gradient-to-r from-blue-50 to-indigo-50">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Award className="w-5 h-5 text-indigo-600" />
+                  Recommendations to Improve
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {aiInsights.recommendations.map((rec, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-slate-700">{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Source & Program Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="border-slate-200 shadow-soft">
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold">Lead Sources</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(aiInsights.source_breakdown || {}).map(([source, count]) => (
+                    <div key={source} className="flex items-center justify-between">
+                      <span className="text-sm">{source}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 bg-slate-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-500 h-2 rounded-full"
+                            style={{ width: `${(count / aiInsights.summary.total_leads * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium w-8">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-soft">
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold">Status Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(aiInsights.status_breakdown || {}).map(([status, count]) => (
+                    <div key={status} className="flex items-center justify-between">
+                      <span className="text-sm">{status}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 bg-slate-200 rounded-full h-2">
+                          <div
+                            className="h-2 rounded-full"
+                            style={{ 
+                              width: `${(count / aiInsights.summary.total_leads * 100)}%`,
+                              backgroundColor: STATUS_COLORS[status] || '#94A3B8'
+                            }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium w-8">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Status Distribution */}
