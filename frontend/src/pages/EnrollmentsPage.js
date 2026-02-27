@@ -731,8 +731,14 @@ const EnrollmentsPage = () => {
 
   const calculateFinalFee = () => {
     const fee = parseFloat(enrollForm.fee_quoted) || 0;
-    const discount = parseFloat(enrollForm.discount_percent) || 0;
-    return fee - (fee * discount / 100);
+    const discountAmount = parseFloat(enrollForm.discount_amount) || 0;
+    const discountPercent = parseFloat(enrollForm.discount_percent) || 0;
+    
+    // Use discount amount if provided, otherwise use percentage
+    if (discountAmount > 0) {
+      return fee - discountAmount;
+    }
+    return fee - (fee * discountPercent / 100);
   };
 
   const totalPaid = (enrollment) => {
