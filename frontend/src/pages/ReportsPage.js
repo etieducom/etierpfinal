@@ -29,6 +29,20 @@ const ReportsPage = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isSuperAdmin = user.role === 'Admin';
   const isBranchAdmin = user.role === 'Branch Admin';
+  const isCounsellor = user.role === 'Counsellor';
+  const isFDE = user.role === 'Front Desk Executive';
+
+  // Define all report types
+  const allReportTypes = [
+    { id: 'leads', label: 'Leads Report', icon: Users, description: 'All leads with status and details', roles: ['Admin', 'Branch Admin', 'Counsellor', 'Front Desk Executive'] },
+    { id: 'enrollments', label: 'Enrollments Report', icon: FileText, description: 'Student enrollments and program details', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
+    { id: 'income', label: 'Income Report', icon: DollarSign, description: 'Payment records and revenue', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
+    { id: 'expenses', label: 'Expenses Report', icon: CreditCard, description: 'Expense records by category', roles: ['Admin', 'Branch Admin'] },
+    { id: 'pending_payments', label: 'Pending Payments', icon: Clock, description: 'Outstanding installments', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
+  ];
+
+  // Filter report types based on user role
+  const reportTypes = allReportTypes.filter(type => type.roles.includes(user.role));
 
   useEffect(() => {
     fetchOptions();
