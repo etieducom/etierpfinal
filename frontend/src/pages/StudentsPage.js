@@ -147,7 +147,7 @@ const StudentsPage = () => {
     setSelectedStudent(student);
     const totalAmount = (student.final_fee || 0) - (student.total_paid || 0);
     setPlanForm({
-      plan_type: 'full',
+      plan_type: 'One-time',
       installments_count: 2,
       installments: [
         { amount: Math.ceil(totalAmount / 2), due_date: '' },
