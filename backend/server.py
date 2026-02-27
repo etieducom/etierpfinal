@@ -1931,6 +1931,201 @@ async def update_followup_status(followup_id: str, status: FollowUpStatus, curre
         raise HTTPException(status_code=404, detail="Follow-up not found")
     return {"message": "Follow-up status updated"}
 
+
+# AI-Powered Lead Analytics for Counsellors and Branch Admins
+@api_router.get("/analytics/ai-leads-insights")
+async def get_ai_leads_insights(current_user: User = Depends(get_current_user)):
+    """Get AI-powered insights for leads management - For Counsellors and Branch Admins"""
+    if current_user.role not in [UserRole.COUNSELLOR, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Counsellors and Branch Admins can access this")
+    
+    branch_filter = {"branch_id": current_user.branch_id, "is_deleted": {"$ne": True}}
+    
+    # Get all leads for analysis
+    leads = await db.leads.find(branch_filter, {"_id": 0}).to_list(10000)
+    
+    # Basic counts
+    total_leads = len(leads)
+    status_counts = {}
+    source_counts = {}
+    program_counts = {}
+    
+    # Date-based analysis
+    today = datetime.now(timezone.utc).date()
+    week_ago = today - timedelta(days=7)
+    month_ago = today - timedelta(days=30)
+    
+    leads_this_week = 0
+    leads_this_month = 0
+    converted_this_month = 0
+    lost_this_month = 0
+    
+    # Followup analysis
+    pending_followups = 0
+    overdue_followups = 0
+    
+    # Conversion tracking
+    conversion_time_sum = 0
+    conversion_count = 0
+    
+    for lead in leads:
+        status = lead.get('status', 'New')
+        source = lead.get('lead_source', 'Unknown')
+        program = lead.get('program_name', 'Unknown')
+        
+        status_counts[status] = status_counts.get(status, 0) + 1
+        source_counts[source] = source_counts.get(source, 0) + 1
+        program_counts[program] = program_counts.get(program, 0) + 1
+        
+        # Date parsing
+        created_str = lead.get('created_at', '')
+        if isinstance(created_str, str) and created_str:
+            try:
+                created_date = datetime.fromisoformat(created_str.replace('Z', '+00:00')).date()
+                if created_date >= week_ago:
+                    leads_this_week += 1
+                if created_date >= month_ago:
+                    leads_this_month += 1
+                    if status == 'Converted':
+                        converted_this_month += 1
+                    elif status in ['Not Interested', 'Lost']:
+                        lost_this_month += 1
+            except:
+                pass
+    
+    # Get followups
+    followups = await db.followups.find(
+        {"branch_id": current_user.branch_id, "status": "Pending"},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    pending_followups = len(followups)
+    today_str = today.isoformat()
+    overdue_followups = len([f for f in followups if f.get('followup_date', '') < today_str])
+    
+    # Calculate conversion rate
+    conversion_rate = round((status_counts.get('Converted', 0) / total_leads * 100) if total_leads > 0 else 0, 1)
+    monthly_conversion_rate = round((converted_this_month / leads_this_month * 100) if leads_this_month > 0 else 0, 1)
+    
+    # Best performing source
+    best_source = max(source_counts.items(), key=lambda x: x[1])[0] if source_counts else "N/A"
+    
+    # Most popular program
+    popular_program = max(program_counts.items(), key=lambda x: x[1])[0] if program_counts else "N/A"
+    
+    # Generate AI insights
+    insights = []
+    recommendations = []
+    
+    # Conversion insights
+    if conversion_rate < 20:
+        insights.append({
+            "type": "warning",
+            "title": "Low Conversion Rate",
+            "message": f"Your conversion rate is {conversion_rate}%. Industry average is 20-30%.",
+            "priority": "high"
+        })
+        recommendations.append("Focus on follow-up quality and timing to improve conversions")
+    elif conversion_rate > 30:
+        insights.append({
+            "type": "success",
+            "title": "Excellent Conversion Rate",
+            "message": f"Your conversion rate is {conversion_rate}%! Keep up the great work.",
+            "priority": "low"
+        })
+    
+    # Followup insights
+    if overdue_followups > 0:
+        insights.append({
+            "type": "alert",
+            "title": "Overdue Follow-ups",
+            "message": f"You have {overdue_followups} overdue follow-ups. These leads may go cold!",
+            "priority": "high"
+        })
+        recommendations.append(f"Clear {overdue_followups} overdue follow-ups today to prevent lead loss")
+    
+    if pending_followups > 10:
+        insights.append({
+            "type": "warning",
+            "title": "High Pending Follow-ups",
+            "message": f"{pending_followups} follow-ups pending. Consider prioritizing hot leads.",
+            "priority": "medium"
+        })
+    
+    # Status analysis
+    new_leads = status_counts.get('New', 0)
+    if new_leads > total_leads * 0.4:
+        insights.append({
+            "type": "warning",
+            "title": "Too Many New Leads Untouched",
+            "message": f"{new_leads} leads ({round(new_leads/total_leads*100)}%) are still in 'New' status.",
+            "priority": "high"
+        })
+        recommendations.append("Contact new leads within 24 hours for best results")
+    
+    # Demo booked analysis
+    demo_booked = status_counts.get('Demo Booked', 0)
+    if demo_booked > 0:
+        insights.append({
+            "type": "info",
+            "title": "Demo Sessions Scheduled",
+            "message": f"{demo_booked} leads have demos scheduled. Prepare well!",
+            "priority": "medium"
+        })
+    
+    # Source insights
+    for source, count in source_counts.items():
+        if count >= total_leads * 0.3:
+            insights.append({
+                "type": "info",
+                "title": f"Strong Lead Source: {source}",
+                "message": f"{source} contributes {round(count/total_leads*100)}% of leads. Consider investing more here.",
+                "priority": "low"
+            })
+    
+    # Weekly trend
+    if leads_this_week == 0:
+        insights.append({
+            "type": "warning",
+            "title": "No New Leads This Week",
+            "message": "No new leads in the past 7 days. Check marketing efforts.",
+            "priority": "high"
+        })
+        recommendations.append("Review and boost marketing campaigns")
+    
+    # Monthly trend recommendations
+    if monthly_conversion_rate < conversion_rate:
+        recommendations.append("This month's conversion is below average. Analyze what changed.")
+    
+    if lost_this_month > converted_this_month:
+        recommendations.append(f"Lost {lost_this_month} leads this month vs {converted_this_month} conversions. Review lost lead feedback.")
+    
+    return {
+        "summary": {
+            "total_leads": total_leads,
+            "leads_this_week": leads_this_week,
+            "leads_this_month": leads_this_month,
+            "conversion_rate": conversion_rate,
+            "monthly_conversion_rate": monthly_conversion_rate,
+            "pending_followups": pending_followups,
+            "overdue_followups": overdue_followups,
+            "best_source": best_source,
+            "popular_program": popular_program
+        },
+        "status_breakdown": status_counts,
+        "source_breakdown": source_counts,
+        "program_breakdown": program_counts,
+        "insights": insights,
+        "recommendations": recommendations,
+        "health_score": min(100, max(0, 
+            50 + 
+            (conversion_rate - 20) * 2 +  # Bonus for good conversion
+            (10 if overdue_followups == 0 else -10) +  # Penalty for overdue
+            (10 if new_leads < total_leads * 0.3 else -5)  # Bonus for touching leads
+        ))
+    }
+
+
 # Analytics
 @api_router.get("/analytics/overview")
 async def get_analytics_overview(current_user: User = Depends(get_current_user)):
