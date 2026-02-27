@@ -438,6 +438,174 @@ const Dashboard = () => {
         </Card>
       )}
 
+      {/* Counsellor Incentives Section */}
+      {isCounsellor && counsellorIncentives && (
+        <Card className="border-slate-200 shadow-soft" data-testid="counsellor-incentives">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold flex items-center gap-2">
+              <Gift className="w-5 h-5 text-purple-600" /> My Incentives (International Exams)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-sm text-green-700">Earned Incentive</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-700 mt-1">
+                    ₹{counsellorIncentives.summary.total_earned?.toLocaleString() || 0}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">{counsellorIncentives.summary.completed_count} completed exams</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-yellow-50 border-yellow-200">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-yellow-600" />
+                    <span className="text-sm text-yellow-700">Pending Incentive</span>
+                  </div>
+                  <p className="text-2xl font-bold text-yellow-700 mt-1">
+                    ₹{counsellorIncentives.summary.total_pending?.toLocaleString() || 0}
+                  </p>
+                  <p className="text-xs text-yellow-600 mt-1">{counsellorIncentives.summary.pending_count} pending exams</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-red-50 border-red-200">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2">
+                    <Ban className="w-5 h-5 text-red-600" />
+                    <span className="text-sm text-red-700">Cancelled (Refunds)</span>
+                  </div>
+                  <p className="text-2xl font-bold text-red-700 mt-1">
+                    ₹{counsellorIncentives.summary.total_cancelled_refunds?.toLocaleString() || 0}
+                  </p>
+                  <p className="text-xs text-red-600 mt-1">{counsellorIncentives.summary.cancelled_count} cancelled exams</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Recent Earned Incentives */}
+            {counsellorIncentives.earned_bookings?.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" /> Recently Earned
+                </h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {counsellorIncentives.earned_bookings.slice(0, 5).map((booking) => (
+                    <div key={booking.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-100">
+                      <div>
+                        <p className="text-sm font-medium">{booking.student_name}</p>
+                        <p className="text-xs text-slate-500">{booking.exam_name}</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-700">+₹{booking.counsellor_incentive}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Pending Exams */}
+            {counsellorIncentives.pending_bookings?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-yellow-600" /> Pending (10% on completion)
+                </h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {counsellorIncentives.pending_bookings.slice(0, 5).map((booking) => (
+                    <div key={booking.id} className="flex items-center justify-between p-2 bg-yellow-50 rounded-lg border border-yellow-100">
+                      <div>
+                        <p className="text-sm font-medium">{booking.student_name}</p>
+                        <p className="text-xs text-slate-500">{booking.exam_name} • ₹{booking.exam_price}</p>
+                      </div>
+                      <Badge className="bg-yellow-100 text-yellow-700">₹{Math.round(booking.exam_price * 0.10)} potential</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Branch Admin Incentive Stats */}
+      {isBranchAdmin && branchIncentiveStats && (
+        <Card className="border-slate-200 shadow-soft" data-testid="branch-incentive-stats">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold flex items-center gap-2">
+              <Gift className="w-5 h-5 text-purple-600" /> Counsellor Incentives Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Branch Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="pt-3">
+                  <p className="text-xs text-green-700">Total Earned</p>
+                  <p className="text-lg font-bold text-green-700">₹{branchIncentiveStats.branch_summary.total_earned_incentives?.toLocaleString() || 0}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-yellow-50 border-yellow-200">
+                <CardContent className="pt-3">
+                  <p className="text-xs text-yellow-700">Pending</p>
+                  <p className="text-lg font-bold text-yellow-700">₹{branchIncentiveStats.branch_summary.total_pending_incentives?.toLocaleString() || 0}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="pt-3">
+                  <p className="text-xs text-blue-700">Completed Exams</p>
+                  <p className="text-lg font-bold text-blue-700">{branchIncentiveStats.branch_summary.completed_exams}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-red-50 border-red-200">
+                <CardContent className="pt-3">
+                  <p className="text-xs text-red-700">Pending Refunds</p>
+                  <p className="text-lg font-bold text-red-700">₹{branchIncentiveStats.branch_summary.total_refunds_pending?.toLocaleString() || 0}</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Counsellor-wise Stats */}
+            {branchIncentiveStats.counsellor_stats?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700 mb-2">Counsellor-wise Breakdown</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Counsellor</th>
+                        <th className="px-3 py-2 text-center">Bookings</th>
+                        <th className="px-3 py-2 text-center">Completed</th>
+                        <th className="px-3 py-2 text-right">Earned</th>
+                        <th className="px-3 py-2 text-right">Pending</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {branchIncentiveStats.counsellor_stats.map((c) => (
+                        <tr key={c.counsellor_id} className="hover:bg-slate-50">
+                          <td className="px-3 py-2">
+                            <p className="font-medium">{c.counsellor_name}</p>
+                            <p className="text-xs text-slate-500">{c.counsellor_email}</p>
+                          </td>
+                          <td className="px-3 py-2 text-center">{c.total_bookings}</td>
+                          <td className="px-3 py-2 text-center">{c.completed_exams}</td>
+                          <td className="px-3 py-2 text-right text-green-600 font-medium">₹{c.earned_incentive?.toLocaleString() || 0}</td>
+                          <td className="px-3 py-2 text-right text-yellow-600">₹{c.pending_incentive?.toLocaleString() || 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* AI-Powered Lead Insights - For Counsellors and Branch Admins */}
       {showAIInsights && aiInsights && (
         <div className="space-y-4" data-testid="ai-insights-section">
