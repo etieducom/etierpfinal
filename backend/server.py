@@ -21,6 +21,15 @@ import base64
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+import json
+
+# LLM Integration for AI Insights
+try:
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    LLM_AVAILABLE = True
+except ImportError:
+    LLM_AVAILABLE = False
+    logging.warning("emergentintegrations not available - AI insights will use rule-based fallback")
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
