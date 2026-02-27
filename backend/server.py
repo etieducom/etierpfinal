@@ -2071,6 +2071,71 @@ async def update_followup_status(followup_id: str, status: FollowUpStatus, curre
         raise HTTPException(status_code=404, detail="Follow-up not found")
     return {"message": "Follow-up status updated"}
 
+# ========== NOTIFICATIONS ==========
+
+@api_router.get("/notifications")
+async def get_notifications(current_user: User = Depends(get_current_user)):
+    """Get all notifications for the current user"""
+    notifications = await db.notifications.find(
+        {"user_id": current_user.id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return notifications
+
+@api_router.get("/notifications/unread")
+async def get_unread_notifications(current_user: User = Depends(get_current_user)):
+    """Get unread notifications for the current user"""
+    notifications = await db.notifications.find(
+        {"user_id": current_user.id, "is_read": False},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return notifications
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, current_user: User = Depends(get_current_user)):
+    """Mark a notification as read"""
+    result = await db.notifications.update_one(
+        {"id": notification_id, "user_id": current_user.id},
+        {"$set": {"is_read": True}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return {"message": "Notification marked as read"}
+
+@api_router.put("/notifications/mark-all-read")
+async def mark_all_notifications_read(current_user: User = Depends(get_current_user)):
+    """Mark all notifications as read for the current user"""
+    await db.notifications.update_many(
+        {"user_id": current_user.id, "is_read": False},
+        {"$set": {"is_read": True}}
+    )
+    return {"message": "All notifications marked as read"}
+
+@api_router.get("/notifications/followup-reminders")
+async def get_followup_reminders(current_user: User = Depends(get_current_user)):
+    """Get follow-ups that are due in the next 10 minutes for audio reminders"""
+    now = datetime.now(timezone.utc)
+    in_10_min = now + timedelta(minutes=10)
+    
+    query = {
+        "created_by": current_user.id,
+        "status": "Pending"
+    }
+    
+    followups = await db.followups.find(query, {"_id": 0}).to_list(1000)
+    
+    upcoming = []
+    for fu in followups:
+        fu_date = fu.get('followup_date')
+        if isinstance(fu_date, str):
+            fu_date = datetime.fromisoformat(fu_date.replace('Z', '+00:00'))
+        
+        # Check if followup is within the next 10 minutes
+        if fu_date and now <= fu_date <= in_10_min:
+            upcoming.append(fu)
+    
+    return upcoming
+
 
 # AI-Powered Lead Analytics for Counsellors and Branch Admins
 @api_router.get("/analytics/ai-leads-insights")
