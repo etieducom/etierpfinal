@@ -556,6 +556,35 @@ const StudentsPage = () => {
     }
   };
 
+  const [uploadingAadhar, setUploadingAadhar] = useState(false);
+
+  const handleAadharUpload = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    setUploadingAadhar(true);
+    const uploadedUrls = [...(editForm.aadhar_documents || [])];
+    
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const response = await uploadAPI.uploadImage(files[i]);
+        uploadedUrls.push(response.data.url);
+      }
+      setEditForm(prev => ({ ...prev, aadhar_documents: uploadedUrls }));
+      toast.success(`${files.length} Aadhar document(s) uploaded`);
+    } catch (error) {
+      toast.error('Failed to upload Aadhar documents');
+    } finally {
+      setUploadingAadhar(false);
+    }
+  };
+
+  const removeAadharDoc = (index) => {
+    const updatedDocs = [...(editForm.aadhar_documents || [])];
+    updatedDocs.splice(index, 1);
+    setEditForm(prev => ({ ...prev, aadhar_documents: updatedDocs }));
+  };
+
   const handleSaveEdit = async () => {
     if (!selectedStudent) return;
     setSavingEdit(true);
