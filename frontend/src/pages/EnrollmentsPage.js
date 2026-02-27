@@ -42,9 +42,11 @@ const EnrollmentsPage = () => {
     program_id: '',
     fee_quoted: '',
     discount_percent: '',
+    discount_amount: '',
     enrollment_date: new Date().toISOString().split('T')[0],
     student_photo_url: '',
     aadhar_photo_url: '',
+    aadhar_documents: [],
   });
   
   // Photo upload state
