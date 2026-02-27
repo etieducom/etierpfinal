@@ -84,8 +84,8 @@ const Layout = ({ children }) => {
     { icon: Building2, label: 'Schools/Colleges', path: '/organizations', show: !isCertManager && !isTrainer && !isAcademicController },
     // Batch Management - For Branch Admin, Super Admin, Front Desk, Counsellor
     { icon: UsersRound, label: 'Batches', path: '/batches', show: isBranchAdmin || isSuperAdmin || isFDE || isCounsellor },
-    // Curriculum Management - For Academic Controller only
-    { icon: BookOpen, label: 'Curriculum', path: '/curriculum', show: isAcademicController },
+    // Curriculum Management - For Academic Controller and Trainer
+    { icon: BookOpen, label: 'Curriculum', path: '/curriculum', show: isAcademicController || isTrainer },
     // Certificates - For Super Admin
     { icon: Award, label: 'Certificates', path: '/certificates', show: isSuperAdmin },
     // Admin Panel - For Super Admin and Branch Admin (Branch Admin only sees limited tabs)
