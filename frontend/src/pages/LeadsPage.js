@@ -547,6 +547,36 @@ const LeadsPage = () => {
             </div>
           )}
         </div>
+        
+        {/* Pagination */}
+        {filteredLeads.length > leadsPerPage && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+            <p className="text-sm text-slate-600">
+              Showing {((currentPage - 1) * leadsPerPage) + 1} to {Math.min(currentPage * leadsPerPage, filteredLeads.length)} of {filteredLeads.length} leads
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-slate-600">
+                Page {currentPage} of {Math.ceil(filteredLeads.length / leadsPerPage)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredLeads.length / leadsPerPage), p + 1))}
+                disabled={currentPage >= Math.ceil(filteredLeads.length / leadsPerPage)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Lead Dialog */}
