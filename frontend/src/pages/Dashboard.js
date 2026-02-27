@@ -669,6 +669,11 @@ const Dashboard = () => {
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-blue-600" />
                   AI Insights
+                  {aiInsights.ai_powered && (
+                    <Badge className="bg-purple-100 text-purple-700 ml-2">
+                      GPT-4o Powered
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
