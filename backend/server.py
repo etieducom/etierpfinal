@@ -4432,9 +4432,12 @@ async def get_branch_financial_stats(current_user: User = Depends(get_current_us
     enrollments = await db.enrollments.find(branch_filter, {"_id": 0, "final_fee": 1, "total_paid": 1}).to_list(10000)
     pending_amounts = sum((e.get('final_fee', 0) - e.get('total_paid', 0)) for e in enrollments)
     
-    # Revenue from exams
-    exam_bookings = await db.exam_bookings.find(branch_filter, {"_id": 0, "amount": 1}).to_list(10000)
-    exam_revenue = sum(e.get('amount', 0) for e in exam_bookings)
+    # Revenue from exams (completed bookings, use exam_price field)
+    exam_bookings = await db.exam_bookings.find(
+        {**branch_filter, "status": {"$ne": "Cancelled"}}, 
+        {"_id": 0, "exam_price": 1}
+    ).to_list(10000)
+    exam_revenue = sum(e.get('exam_price', 0) for e in exam_bookings)
     
     # Total expenses
     expenses = await db.expenses.find(branch_filter, {"_id": 0, "amount": 1, "expense_date": 1}).to_list(10000)
