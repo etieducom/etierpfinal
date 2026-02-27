@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { studentsAPI, paymentAPI, enrollmentAPI, adminAPI } from '@/api/api';
+import { studentsAPI, paymentAPI, enrollmentAPI, adminAPI, uploadAPI } from '@/api/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Search, GraduationCap, User, Phone, Mail, CreditCard, Printer, XCircle, Eye, Wallet, PlusCircle, BookPlus } from 'lucide-react';
+import { Search, GraduationCap, User, Phone, Mail, CreditCard, Printer, XCircle, Eye, Wallet, PlusCircle, BookPlus, Edit, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 
 const PAYMENT_MODES = ['Cash', 'Card', 'UPI', 'Net Banking', 'Cheque'];
