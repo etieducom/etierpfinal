@@ -2047,12 +2047,14 @@ async def generate_report(
             query.update(get_date_query("created_at"))
         
         leads = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
-        writer.writerow(['Name', 'Email', 'Phone', 'Program', 'Source', 'Status', 'City', 'Fee Quoted', 'Created At'])
+        writer.writerow(['Lead ID', 'Name', 'Email', 'Phone', 'Program', 'Source', 'Status', 'City', 'State', 'Fee Quoted', 'Discount', 'Lead Date', 'Created At'])
         for lead in leads:
             writer.writerow([
-                lead.get('name'), lead.get('email'), lead.get('number'),
-                lead.get('program_name'), lead.get('lead_source'), lead.get('status'),
-                lead.get('city', ''), lead.get('fee_quoted', ''), lead.get('created_at', '')
+                lead.get('lead_id', ''), lead.get('name', ''), lead.get('email', ''), lead.get('number', ''),
+                lead.get('program_name', ''), lead.get('lead_source', ''), lead.get('status', ''),
+                lead.get('city', ''), lead.get('state', ''), lead.get('fee_quoted', ''),
+                lead.get('discount_amount') or f"{lead.get('discount_percent', 0)}%",
+                lead.get('lead_date', ''), lead.get('created_at', '')
             ])
         filename = "leads_report.csv"
     
