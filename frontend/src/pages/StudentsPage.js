@@ -56,12 +56,21 @@ const StudentsPage = () => {
   });
   const [savingAddon, setSavingAddon] = useState(false);
   const [addonCourses, setAddonCourses] = useState([]);
+  
+  // Edit Student dialog
+  const [editDialog, setEditDialog] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isBranchAdmin = user.role === 'Branch Admin';
   const isFDE = user.role === 'Front Desk Executive';
+  const isSuperAdmin = user.role === 'Admin';
   const canCancel = isBranchAdmin;
   const canPay = isBranchAdmin || isFDE || user.role === 'Admin';
+  const canEdit = isBranchAdmin || isFDE || isSuperAdmin;
+  const canEditRestricted = isBranchAdmin || isSuperAdmin; // Can edit name, phone
 
   useEffect(() => {
     fetchStudents();
