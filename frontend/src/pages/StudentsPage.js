@@ -529,6 +529,8 @@ const StudentsPage = () => {
       passing_year: student.passing_year || '',
       percentage: student.percentage || '',
       student_photo_url: student.student_photo_url || '',
+      aadhar_photo_url: student.aadhar_photo_url || '',
+      aadhar_documents: student.aadhar_documents || [],
     });
     setSelectedStudent(student);
     setEditDialog(true);
