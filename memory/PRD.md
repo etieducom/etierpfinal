@@ -361,17 +361,33 @@ The user, representing a training institute named "ETI Educom", requested a full
 ### P0 - High Priority (None currently)
 All P0 features completed.
 
-### P1 - Medium Priority (In Progress)
-- [ ] **Trainer Module**
-  - [ ] Trainer login and dashboard
-  - [ ] Fixed batch timings auto-creation (9-10:30, 10:30-12, 12-1:30, 2-3:30, 3:30-5, 5-6)
-  - [ ] Attendance marking for students
-  - [ ] Curriculum management (Admin creates, Trainer views)
-  - [ ] Course completion marking
-- [ ] **Branch Admin Financial Stats**
-  - [ ] Total collections, pending amounts, monthly revenue
-  - [ ] Revenue from exams, expenses tracking
-  - [ ] Students per trainer stats
+### P1 - Medium Priority (COMPLETE - February 27, 2026)
+- [x] **Trainer Module**
+  - [x] Trainer login and dashboard (`/trainer` route, `TrainerDashboard.js`)
+  - [x] Fixed batch timings auto-creation when trainer created
+    - Batch 1: 9:00 AM to 10:30 AM
+    - Batch 2: 10:30 AM to 12:00 PM
+    - Batch 3: 12:00 PM to 1:30 PM
+    - Batch 4: 2:00 PM to 3:30 PM
+    - Batch 5: 3:30 PM to 5:00 PM
+    - Batch 6: 5:00 PM to 6:30 PM
+  - [x] Attendance marking for students (bulk and single)
+    - POST /api/attendance - single student
+    - POST /api/attendance/bulk - multiple students
+    - GET /api/attendance/{batch_id} - batch attendance
+    - GET /api/attendance/student/{enrollment_id} - student history
+  - [x] Curriculum management (Admin creates, Trainer views)
+    - CRUD endpoints: /api/curricula
+    - CurriculumPage.js for admin
+    - Curriculum tab in TrainerDashboard
+  - [x] Course completion marking
+    - POST /api/course-completion
+    - GET /api/course-completions
+- [x] **Branch Admin Financial Stats**
+  - [x] Total collections, pending amounts, monthly revenue
+  - [x] Revenue from exams, expenses tracking
+  - [x] Students per trainer stats (handles multi-course duplicates)
+  - [x] API endpoint: GET /api/branch-admin/financial-stats
 
 ### P2 - Low Priority
 - [ ] Code Refactoring
