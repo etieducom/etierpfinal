@@ -82,6 +82,16 @@ const Dashboard = () => {
           console.error('Error fetching AI insights:', e);
         }
       }
+      
+      // Fetch Branch Admin specific financial stats
+      if (isBranchAdmin) {
+        try {
+          const branchStatsRes = await financialStatsAPI.get();
+          setBranchFinancialStats(branchStatsRes.data);
+        } catch (e) {
+          console.error('Error fetching branch financial stats:', e);
+        }
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
