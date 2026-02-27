@@ -181,7 +181,7 @@ const StudentsPage = () => {
   const handleCreatePaymentPlan = async () => {
     if (!selectedStudent) return;
     
-    if (planForm.plan_type === 'installments') {
+    if (planForm.plan_type === 'Installments') {
       // Validate installments
       const totalInstallmentAmount = planForm.installments.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0);
       const expectedAmount = (selectedStudent.final_fee || 0) - (selectedStudent.total_paid || 0);
@@ -206,7 +206,7 @@ const StudentsPage = () => {
         total_amount: (selectedStudent.final_fee || 0) - (selectedStudent.total_paid || 0)
       };
       
-      if (planForm.plan_type === 'installments') {
+      if (planForm.plan_type === 'Installments') {
         payload.installments_count = planForm.installments_count;
         payload.installments = planForm.installments.map(i => ({
           amount: parseFloat(i.amount),
