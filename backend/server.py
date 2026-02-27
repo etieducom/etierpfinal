@@ -2062,12 +2062,14 @@ async def generate_report(
             query.update(get_date_query("enrollment_date"))
         
         enrollments = await db.enrollments.find(query, {"_id": 0}).sort("enrollment_date", -1).to_list(10000)
-        writer.writerow(['Student Name', 'Email', 'Phone', 'Program', 'Final Fee', 'Payment Status', 'Enrollment Date'])
+        writer.writerow(['Enrollment ID', 'Student Name', 'Email', 'Phone', 'Program', 'Fee Quoted', 'Discount', 'Final Fee', 'Total Paid', 'Payment Status', 'Enrollment Date', 'Status'])
         for e in enrollments:
             writer.writerow([
-                e.get('student_name'), e.get('student_email'), e.get('student_phone'),
-                e.get('program_name'), e.get('final_fee', ''), e.get('payment_status', ''),
-                e.get('enrollment_date', '')
+                e.get('enrollment_id', ''), e.get('student_name', ''), e.get('email', ''), e.get('phone', ''),
+                e.get('program_name', ''), e.get('fee_quoted', ''), 
+                e.get('discount_amount') or f"{e.get('discount_percent', 0)}%",
+                e.get('final_fee', ''), e.get('total_paid', 0), e.get('payment_status', ''),
+                e.get('enrollment_date', ''), e.get('status', 'Active')
             ])
         filename = "enrollments_report.csv"
     
