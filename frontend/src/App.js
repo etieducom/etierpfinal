@@ -293,6 +293,14 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/cash-handling"
+            element={
+              <PrivateRoute fdaOnly>
+                <Layout><CashHandlingPage /></Layout>
+              </PrivateRoute>
+            }
+          />
           {/* Public routes - no auth required */}
           <Route path="/exam/:examId" element={<PublicExamPage />} />
           <Route path="/certificate-request" element={<CertificateRequestPage />} />
