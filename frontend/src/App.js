@@ -31,7 +31,7 @@ import Layout from '@/components/Layout';
 import ActivityTracker from '@/components/ActivityTracker';
 import { Toaster } from '@/components/ui/sonner';
 
-const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdminAllowed = false, certManagerAllowed = false, adminPanelAccess = false, trainerOnly = false }) => {
+const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdminAllowed = false, certManagerAllowed = false, adminPanelAccess = false, trainerOnly = false, academicControllerOnly = false }) => {
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
@@ -39,6 +39,9 @@ const PrivateRoute = ({ children, adminOnly = false, fdaOnly = false, branchAdmi
   
   // Trainer-only routes
   if (trainerOnly && user.role !== 'Trainer') return <Navigate to="/" />;
+  
+  // Academic Controller only routes
+  if (academicControllerOnly && user.role !== 'Academic Controller') return <Navigate to="/" />;
   
   // Admin-only routes (Super Admin only)
   if (adminOnly && user.role !== 'Admin') return <Navigate to="/" />;
