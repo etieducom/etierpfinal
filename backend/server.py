@@ -4705,7 +4705,7 @@ async def get_exam_bookings(current_user: User = Depends(get_current_user)):
 
 @api_router.put("/exam-bookings/{booking_id}/status")
 async def update_booking_status(booking_id: str, status: str, current_user: User = Depends(get_current_user)):
-    """Update exam booking status"""
+    """Update exam booking status - handles incentive and refund tracking"""
     booking = await db.exam_bookings.find_one({"id": booking_id}, {"_id": 0})
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
@@ -4718,8 +4718,27 @@ async def update_booking_status(booking_id: str, status: str, current_user: User
     if booking.get('status') == 'Completed':
         raise HTTPException(status_code=400, detail="Cannot change status of a completed exam")
     
-    await db.exam_bookings.update_one({"id": booking_id}, {"$set": {"status": status}})
-    return {"message": "Booking status updated successfully"}
+    update_data = {"status": status}
+    
+    # Handle Completed status - Calculate counsellor incentive (10%)
+    if status == "Completed":
+        exam_price = booking.get('exam_price', 0)
+        incentive_amount = round(exam_price * 0.10, 2)  # 10% incentive
+        update_data["counsellor_incentive"] = incentive_amount
+        update_data["incentive_status"] = "Earned"
+        update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Handle Cancelled status - Track refund
+    elif status == "Cancelled":
+        exam_price = booking.get('exam_price', 0)
+        update_data["incentive_status"] = "Cancelled"
+        update_data["counsellor_incentive"] = 0.0
+        update_data["refund_status"] = "Pending"
+        update_data["refund_amount"] = exam_price
+        update_data["cancelled_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.exam_bookings.update_one({"id": booking_id}, {"$set": update_data})
+    return {"message": "Booking status updated successfully", "incentive_status": update_data.get("incentive_status")}
 
 # Update Branch counter for exam bookings
 async def update_branch_exam_counter(branch_id: str):
