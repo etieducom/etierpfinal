@@ -276,6 +276,13 @@ export const examsAPI = {
   getBookings: () => api.get('/exam-bookings'),
   createBooking: (data) => api.post('/exam-bookings', data),
   updateBookingStatus: (id, status) => api.put(`/exam-bookings/${id}/status`, null, { params: { status } }),
+  markRefundProcessed: (id) => api.put(`/exam-bookings/${id}/refund`),
+};
+
+// Counsellor Incentives API
+export const incentivesAPI = {
+  getCounsellorIncentives: () => api.get('/counsellor/incentives'),
+  getBranchIncentiveStats: () => api.get('/branch-admin/incentive-stats'),
 };
 
 export const quizAPI = {
