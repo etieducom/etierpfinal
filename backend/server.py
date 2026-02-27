@@ -4606,8 +4606,8 @@ async def get_quiz_exam_details(exam_id: str, current_user: User = Depends(get_c
     return exam
 
 @api_router.put("/quiz-exams/{exam_id}")
-async def update_quiz_exam(exam_id: str, exam: QuizExamCreate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
-    """Update a quiz exam - Super Admin only"""
+async def update_quiz_exam(exam_id: str, exam: QuizExamCreate, current_user: User = Depends(require_role([UserRole.ACADEMIC_CONTROLLER]))):
+    """Update a quiz exam - Academic Controller only"""
     existing = await db.quiz_exams.find_one({"id": exam_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Quiz exam not found")
