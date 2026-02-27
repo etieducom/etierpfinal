@@ -28,6 +28,7 @@ const Dashboard = () => {
   const [superAdminData, setSuperAdminData] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [aiInsights, setAIInsights] = useState(null);
+  const [branchFinancialStats, setBranchFinancialStats] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
