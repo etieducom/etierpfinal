@@ -302,6 +302,14 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/ai-analytics"
+            element={
+              <PrivateRoute branchAdminOnly>
+                <Layout><AIAnalyticsPage /></Layout>
+              </PrivateRoute>
+            }
+          />
           {/* Public routes - no auth required */}
           <Route path="/exam/:examId" element={<PublicExamPage />} />
           <Route path="/certificate-request" element={<CertificateRequestPage />} />
