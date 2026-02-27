@@ -673,6 +673,20 @@ class FollowUp(BaseModel):
     lead_name: Optional[str] = None
     lead_number: Optional[str] = None
 
+# Notification Model
+class Notification(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    branch_id: Optional[str] = None
+    type: str  # "followup_reminder", "lead_converted", "cash_pending"
+    title: str
+    message: str
+    data: Optional[dict] = None  # Additional data like lead_id, followup_id
+    is_read: bool = False
+    play_audio: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Expense Management
 class ExpenseCategory(BaseModel):
     model_config = ConfigDict(extra="ignore")
