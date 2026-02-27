@@ -191,7 +191,8 @@ const StudentsPage = () => {
         return;
       }
       
-      const missingDates = planForm.installments.some(i => !i.due_date);
+      // Check for missing dates - ensure we check the actual value, not just truthy
+      const missingDates = planForm.installments.some(i => !i.due_date || i.due_date.trim() === '');
       if (missingDates) {
         toast.error('Please set due dates for all installments');
         return;
