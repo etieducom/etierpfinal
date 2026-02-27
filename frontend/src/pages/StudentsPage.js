@@ -665,7 +665,7 @@ const StudentsPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredStudents.map((student) => (
+                {paginatedStudents.map((student) => (
                   <tr key={student.id} className="hover:bg-slate-50" data-testid={`student-row-${student.id}`}>
                     <td className="px-4 py-3">
                       <span className="font-mono text-sm font-medium text-blue-600">
