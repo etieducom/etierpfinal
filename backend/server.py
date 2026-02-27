@@ -745,7 +745,7 @@ class Campaign(BaseModel):
     platform: str  # Google, Meta, Instagram, etc.
     campaign_link: Optional[str] = None
     start_date: str
-    end_date: str
+    end_date: Optional[str] = None  # Optional - filled when campaign completes
     total_spend: float = 0.0
     total_leads: int = 0
     total_messages: int = 0
