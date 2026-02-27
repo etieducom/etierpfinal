@@ -1116,39 +1116,73 @@ const EnrollmentsPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Aadhar Card Photo
+                    <FileText className="w-4 h-4" /> Aadhar Card Documents
                   </Label>
-                  {enrollForm.aadhar_photo_url ? (
-                    <div className="relative">
+                  <p className="text-xs text-slate-500 mb-2">Upload images or PDF (multiple files allowed)</p>
+                  
+                  {/* Existing single photo (legacy support) */}
+                  {enrollForm.aadhar_photo_url && (
+                    <div className="relative inline-block mr-2 mb-2">
                       <img 
                         src={enrollForm.aadhar_photo_url} 
                         alt="Aadhar" 
-                        className="w-24 h-24 object-cover rounded-lg border"
+                        className="w-20 h-20 object-cover rounded-lg border"
                       />
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="mt-2"
+                        variant="destructive"
+                        className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full"
                         onClick={() => setEnrollForm({ ...enrollForm, aadhar_photo_url: '' })}
                       >
-                        Remove
+                        ×
                       </Button>
                     </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
-                      <Upload className="w-6 h-6 text-slate-400" />
-                      <span className="text-sm text-slate-500 mt-1">
-                        {uploadingAadhar ? 'Uploading...' : 'Upload Aadhar'}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handlePhotoUpload(e, 'aadhar')}
-                        disabled={uploadingAadhar}
-                      />
-                    </label>
                   )}
+                  
+                  {/* Multiple documents display */}
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {enrollForm.aadhar_documents?.map((doc, idx) => (
+                      <div key={idx} className="relative">
+                        {doc.includes('application/pdf') || doc.endsWith('.pdf') ? (
+                          <div className="w-20 h-20 bg-red-50 border rounded-lg flex items-center justify-center">
+                            <FileText className="w-8 h-8 text-red-500" />
+                            <span className="absolute bottom-1 text-xs text-slate-600">PDF</span>
+                          </div>
+                        ) : (
+                          <img 
+                            src={doc} 
+                            alt={`Aadhar ${idx + 1}`} 
+                            className="w-20 h-20 object-cover rounded-lg border"
+                          />
+                        )}
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="absolute -top-2 -right-2 w-6 h-6 p-0 rounded-full"
+                          onClick={() => removeAadharDocument(idx)}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Upload button */}
+                  <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                    <Upload className="w-5 h-5 text-slate-400" />
+                    <span className="text-sm text-slate-500 mt-1">
+                      {uploadingAadhar ? 'Uploading...' : 'Add Aadhar Documents'}
+                    </span>
+                    <span className="text-xs text-slate-400">Images or PDF</span>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      multiple
+                      className="hidden"
+                      onChange={handleMultipleAadharUpload}
+                      disabled={uploadingAadhar}
+                    />
+                  </label>
                 </div>
               </div>
             </div>
