@@ -3607,6 +3607,13 @@ class StudentUpdateModel(BaseModel):
     student_photo_url: Optional[str] = None
     aadhar_photo_url: Optional[str] = None
     aadhar_documents: Optional[List[str]] = None
+    # Fields that FDE cannot edit (only Branch Admin/Admin)
+    student_name: Optional[str] = None
+    student_phone: Optional[str] = None
+    student_email: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    parent_name: Optional[str] = None
+    parent_phone: Optional[str] = None
 
 @api_router.put("/students/{enrollment_id}/update")
 async def update_student_details(enrollment_id: str, data: StudentUpdateModel, current_user: User = Depends(get_current_user)):
@@ -3624,6 +3631,13 @@ async def update_student_details(enrollment_id: str, data: StudentUpdateModel, c
     
     # Build update data (only include non-None values)
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    # FDE cannot edit name, phone, or financial fields
+    restricted_fields_for_fde = ['student_name', 'student_phone', 'fee_quoted', 'discount_percent', 'discount_amount', 'final_fee', 'total_paid']
+    if current_user.role == UserRole.FRONT_DESK:
+        for field in restricted_fields_for_fde:
+            if field in update_data:
+                raise HTTPException(status_code=403, detail=f"Front Desk cannot edit {field}")
     
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")
