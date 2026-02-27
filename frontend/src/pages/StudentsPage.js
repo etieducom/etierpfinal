@@ -1392,6 +1392,173 @@ const StudentsPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Student Dialog */}
+      <Dialog open={editDialog} onOpenChange={setEditDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Student Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Photo Upload */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                {editForm.student_photo_url ? (
+                  <img 
+                    src={editForm.student_photo_url} 
+                    alt="Student" 
+                    className="w-20 h-20 rounded-full object-cover border-2 border-slate-300"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center">
+                    <User className="w-8 h-8 text-slate-400" />
+                  </div>
+                )}
+              </div>
+              <label className="cursor-pointer">
+                <div className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-slate-50">
+                  <Upload className="w-4 h-4" />
+                  <span className="text-sm">{uploadingPhoto ? 'Uploading...' : 'Change Photo'}</span>
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+              </label>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {/* Name - Restricted for FDE */}
+              <div className="space-y-2">
+                <Label>Student Name</Label>
+                <Input
+                  value={editForm.student_name}
+                  onChange={(e) => handleEditFormChange('student_name', e.target.value)}
+                  disabled={!canEditRestricted}
+                  className={!canEditRestricted ? 'bg-slate-100' : ''}
+                />
+                {!canEditRestricted && <p className="text-xs text-slate-500">Contact Branch Admin to edit</p>}
+              </div>
+              
+              {/* Phone - Restricted for FDE */}
+              <div className="space-y-2">
+                <Label>Phone Number</Label>
+                <Input
+                  value={editForm.student_phone}
+                  onChange={(e) => handleEditFormChange('student_phone', e.target.value)}
+                  disabled={!canEditRestricted}
+                  className={!canEditRestricted ? 'bg-slate-100' : ''}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  value={editForm.student_email}
+                  onChange={(e) => handleEditFormChange('student_email', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Date of Birth</Label>
+                <Input
+                  type="date"
+                  value={editForm.date_of_birth}
+                  onChange={(e) => handleEditFormChange('date_of_birth', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Gender</Label>
+                <Select value={editForm.gender} onValueChange={(v) => handleEditFormChange('gender', v)}>
+                  <SelectTrigger><SelectValue placeholder="Select Gender" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Parent/Guardian Name</Label>
+                <Input
+                  value={editForm.parent_name}
+                  onChange={(e) => handleEditFormChange('parent_name', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Parent Phone</Label>
+                <Input
+                  value={editForm.parent_phone}
+                  onChange={(e) => handleEditFormChange('parent_phone', e.target.value)}
+                />
+              </div>
+              
+              <div className="col-span-2 space-y-2">
+                <Label>Address</Label>
+                <Input
+                  value={editForm.address}
+                  onChange={(e) => handleEditFormChange('address', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>City</Label>
+                <Input
+                  value={editForm.city}
+                  onChange={(e) => handleEditFormChange('city', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>State</Label>
+                <Input
+                  value={editForm.state}
+                  onChange={(e) => handleEditFormChange('state', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Pincode</Label>
+                <Input
+                  value={editForm.pincode}
+                  onChange={(e) => handleEditFormChange('pincode', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Highest Qualification</Label>
+                <Input
+                  value={editForm.highest_qualification}
+                  onChange={(e) => handleEditFormChange('highest_qualification', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Institution Name</Label>
+                <Input
+                  value={editForm.institution_name}
+                  onChange={(e) => handleEditFormChange('institution_name', e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Passing Year</Label>
+                <Input
+                  value={editForm.passing_year}
+                  onChange={(e) => handleEditFormChange('passing_year', e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button variant="outline" onClick={() => setEditDialog(false)}>Cancel</Button>
+              <Button onClick={handleSaveEdit} disabled={savingEdit}>
+                {savingEdit ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
