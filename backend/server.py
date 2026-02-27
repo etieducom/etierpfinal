@@ -451,8 +451,10 @@ class LeadCreate(BaseModel):
     program_id: str
     fee_quoted: Optional[float] = None
     discount_percent: Optional[float] = None
+    discount_amount: Optional[float] = None  # Direct amount discount
     payment_plan: Optional[str] = None
     lead_source: str
+    lead_date: Optional[str] = None  # Custom lead date
 
 class LeadUpdate(BaseModel):
     name: Optional[str] = None
@@ -465,9 +467,11 @@ class LeadUpdate(BaseModel):
     program_id: Optional[str] = None
     fee_quoted: Optional[float] = None
     discount_percent: Optional[float] = None
+    discount_amount: Optional[float] = None  # Direct amount discount
     payment_plan: Optional[str] = None
     lead_source: Optional[str] = None
     status: Optional[LeadStatus] = None
+    lead_date: Optional[str] = None  # Custom lead date
     # Demo booking fields
     demo_date: Optional[str] = None
     demo_time: Optional[str] = None
@@ -488,8 +492,10 @@ class Lead(BaseModel):
     program_name: Optional[str] = None
     fee_quoted: Optional[float] = None
     discount_percent: Optional[float] = None
+    discount_amount: Optional[float] = None  # Direct amount discount
     payment_plan: Optional[str] = None
     lead_source: str
+    lead_date: Optional[str] = None  # Custom lead date
     status: LeadStatus = LeadStatus.NEW
     branch_id: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
