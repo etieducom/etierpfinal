@@ -130,6 +130,13 @@ const LeadsPage = () => {
   const filterLeads = () => {
     let filtered = leads;
 
+    // Hide converted leads by default (unless specifically filtered)
+    if (statusFilter === 'All') {
+      filtered = filtered.filter((lead) => lead.status !== 'Converted');
+    } else if (statusFilter !== 'All') {
+      filtered = filtered.filter((lead) => lead.status === statusFilter);
+    }
+
     if (searchTerm) {
       filtered = filtered.filter(
         (lead) =>
@@ -139,26 +146,30 @@ const LeadsPage = () => {
       );
     }
 
-    if (statusFilter !== 'All') {
-      filtered = filtered.filter((lead) => lead.status === statusFilter);
-    }
-
     // Date filters
     if (dateFrom) {
       filtered = filtered.filter((lead) => {
-        const leadDate = lead.created_at ? lead.created_at.split('T')[0] : '';
+        const leadDate = lead.lead_date || (lead.created_at ? lead.created_at.split('T')[0] : '');
         return leadDate >= dateFrom;
       });
     }
 
     if (dateTo) {
       filtered = filtered.filter((lead) => {
-        const leadDate = lead.created_at ? lead.created_at.split('T')[0] : '';
+        const leadDate = lead.lead_date || (lead.created_at ? lead.created_at.split('T')[0] : '');
         return leadDate <= dateTo;
       });
     }
 
+    // Sort by date (most recent first)
+    filtered.sort((a, b) => {
+      const dateA = a.lead_date || a.created_at || '';
+      const dateB = b.lead_date || b.created_at || '';
+      return dateB.localeCompare(dateA);
+    });
+
     setFilteredLeads(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
   const onSubmit = async (data) => {
