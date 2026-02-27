@@ -763,6 +763,36 @@ const StudentsPage = () => {
               </div>
             )}
           </div>
+          
+          {/* Pagination */}
+          {filteredStudents.length > studentsPerPage && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
+              <p className="text-sm text-slate-600">
+                Showing {((currentPage - 1) * studentsPerPage) + 1} to {Math.min(currentPage * studentsPerPage, filteredStudents.length)} of {filteredStudents.length} students
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-slate-600">
+                  Page {currentPage} of {Math.ceil(filteredStudents.length / studentsPerPage)}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredStudents.length / studentsPerPage), p + 1))}
+                  disabled={currentPage >= Math.ceil(filteredStudents.length / studentsPerPage)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
