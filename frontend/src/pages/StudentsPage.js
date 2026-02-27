@@ -1752,14 +1752,14 @@ const StudentsPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="full">Full Payment</SelectItem>
-                    <SelectItem value="installments">Installments</SelectItem>
+                    <SelectItem value="One-time">Full Payment</SelectItem>
+                    <SelectItem value="Installments">Installments</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Installments Configuration */}
-              {planForm.plan_type === 'installments' && (
+              {planForm.plan_type === 'Installments' && (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Number of Installments</Label>
