@@ -95,8 +95,6 @@ const Layout = ({ children }) => {
     { icon: Award, label: 'Ready Certificates', path: '/certificates?status=Ready', show: isCertManager },
     // Trainer Dashboard - For Trainers only
     { icon: GraduationCap, label: 'My Dashboard', path: '/trainer', show: isTrainer },
-    // Academic Controller sees Curriculum and Quiz Exams
-    { icon: BookOpen, label: 'My Curriculum', path: '/curriculum', show: isAcademicController },
   ].filter(item => item.show);
 
   const handleLogout = () => {
