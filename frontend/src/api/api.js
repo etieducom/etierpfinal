@@ -317,4 +317,20 @@ export const quizAPI = {
   submitAttempt: (attemptId, data) => axios.post(`${API_URL}/api/public/quiz/attempt/${attemptId}/submit`, data),
 };
 
+// Notification API
+export const notificationAPI = {
+  getAll: () => api.get('/notifications'),
+  getUnread: () => api.get('/notifications/unread'),
+  markRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllRead: () => api.put('/notifications/mark-all-read'),
+  getFollowupReminders: () => api.get('/notifications/followup-reminders'),
+};
+
+// Cash Handling API
+export const cashHandlingAPI = {
+  getToday: () => api.get('/cash-handling/today'),
+  submit: (data) => api.post('/cash-handling/submit', null, { params: data }),
+  getHistory: (params) => api.get('/cash-handling/history', { params }),
+};
+
 export default api;
