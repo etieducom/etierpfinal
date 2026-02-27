@@ -923,14 +923,7 @@ const EnrollmentsPage = () => {
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
                               {!status.hasPlan && (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => openPaymentPlanDialog(enrollment)}
-                                  data-testid={`payment-plan-btn-${enrollment.id}`}
-                                >
-                                  <FileText className="w-4 h-4 mr-1" /> Plan
-                                </Button>
+                                <Badge variant="outline" className="text-orange-600 border-orange-300">No Plan</Badge>
                               )}
                               {status.hasPlan && (
                                 <>
