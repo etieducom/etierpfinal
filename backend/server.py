@@ -1986,7 +1986,7 @@ async def get_ai_leads_insights(current_user: User = Depends(get_current_user)):
                         converted_this_month += 1
                     elif status in ['Not Interested', 'Lost']:
                         lost_this_month += 1
-            except:
+            except ValueError:
                 pass
     
     # Get followups
