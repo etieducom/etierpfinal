@@ -3180,12 +3180,12 @@ async def create_payment_plan(plan: PaymentPlanCreate, current_user: User = Depe
     
     # If installments, create installment schedule
     if plan.plan_type == PaymentPlanType.INSTALLMENTS and plan.installments:
-        for inst in plan.installments:
+        for idx, inst in enumerate(plan.installments):
             await db.installment_schedule.insert_one({
                 "id": str(uuid.uuid4()),
                 "payment_plan_id": new_plan.id,
                 "enrollment_id": plan.enrollment_id,
-                "installment_number": inst["installment_number"],
+                "installment_number": inst.get("installment_number", idx + 1),
                 "amount": inst["amount"],
                 "due_date": inst["due_date"],
                 "status": "Pending"
