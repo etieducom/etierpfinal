@@ -1712,6 +1712,116 @@ const StudentsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Payment Plan Dialog */}
+      <Dialog open={createPlanDialog} onOpenChange={setCreatePlanDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create Payment Plan</DialogTitle>
+          </DialogHeader>
+          {selectedStudent && (
+            <div className="space-y-4 py-4">
+              {/* Student Info */}
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="font-medium">{selectedStudent.student_name}</p>
+                <p className="text-sm text-slate-500">{selectedStudent.program_name}</p>
+                <div className="grid grid-cols-3 gap-2 mt-2 text-sm">
+                  <div>
+                    <span className="text-slate-500">Total Fee:</span>
+                    <p className="font-medium">₹{(selectedStudent.final_fee || 0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Paid:</span>
+                    <p className="font-medium text-green-600">₹{(selectedStudent.total_paid || 0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Pending:</span>
+                    <p className="font-medium text-red-600">₹{((selectedStudent.final_fee || 0) - (selectedStudent.total_paid || 0)).toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Plan Type */}
+              <div className="space-y-2">
+                <Label>Payment Plan Type</Label>
+                <Select 
+                  value={planForm.plan_type} 
+                  onValueChange={(v) => setPlanForm(prev => ({ ...prev, plan_type: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">Full Payment</SelectItem>
+                    <SelectItem value="installments">Installments</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Installments Configuration */}
+              {planForm.plan_type === 'installments' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Number of Installments</Label>
+                    <Select 
+                      value={planForm.installments_count.toString()} 
+                      onValueChange={(v) => handleInstallmentCountChange(parseInt(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[2, 3, 4, 5, 6].map(n => (
+                          <SelectItem key={n} value={n.toString()}>{n} Installments</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {planForm.installments.map((inst, idx) => (
+                      <div key={idx} className="flex gap-3 items-center p-3 bg-slate-50 rounded-lg">
+                        <span className="text-sm font-medium w-16">#{idx + 1}</span>
+                        <div className="flex-1">
+                          <Label className="text-xs">Amount (₹)</Label>
+                          <Input
+                            type="number"
+                            value={inst.amount}
+                            onChange={(e) => {
+                              const newInstallments = [...planForm.installments];
+                              newInstallments[idx].amount = e.target.value;
+                              setPlanForm(prev => ({ ...prev, installments: newInstallments }));
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Label className="text-xs">Due Date</Label>
+                          <Input
+                            type="date"
+                            value={inst.due_date}
+                            onChange={(e) => {
+                              const newInstallments = [...planForm.installments];
+                              newInstallments[idx].due_date = e.target.value;
+                              setPlanForm(prev => ({ ...prev, installments: newInstallments }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button variant="outline" onClick={() => setCreatePlanDialog(false)}>Cancel</Button>
+                <Button onClick={handleCreatePaymentPlan} disabled={savingPlan}>
+                  {savingPlan ? 'Creating...' : 'Create Plan'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
