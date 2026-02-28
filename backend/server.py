@@ -7742,6 +7742,65 @@ async def sync_ads_data(branch_id: str, current_user: User = Depends(require_rol
     
     return {"message": f"Synced {insights_count} insights records", "period": f"{start_date.date()} to {end_date.date()}"}
 
+@api_router.get("/meta/campaigns/{branch_id}")
+async def get_meta_campaigns(
+    branch_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get list of campaigns from Meta Ad Account - fetches directly from Facebook API"""
+    # Check access
+    if current_user.role == UserRole.BRANCH_ADMIN and current_user.branch_id != branch_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    config = await db.meta_configs.find_one({"branch_id": branch_id, "is_active": True})
+    if not config:
+        raise HTTPException(status_code=404, detail="Meta not configured for this branch")
+    
+    if not config.get('access_token') or not config.get('ad_account_id'):
+        raise HTTPException(status_code=400, detail="Access token and Ad Account ID required")
+    
+    access_token = config['access_token']
+    ad_account_id = config['ad_account_id']
+    
+    # Fetch campaigns from Facebook
+    url = f"{META_GRAPH_API_BASE}/{ad_account_id}/campaigns"
+    params = {
+        "access_token": access_token,
+        "fields": "id,name,status,objective,daily_budget,lifetime_budget,created_time,start_time,stop_time,effective_status",
+        "limit": 100
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params, timeout=30.0)
+        if response.status_code != 200:
+            logger.error(f"Error fetching campaigns: {response.text}")
+            error_data = response.json() if response.text else {}
+            error_msg = error_data.get('error', {}).get('message', response.text[:200])
+            raise HTTPException(status_code=400, detail=f"Facebook API error: {error_msg}")
+        
+        data = response.json()
+    
+    campaigns = []
+    for campaign in data.get("data", []):
+        campaigns.append({
+            "id": campaign.get("id"),
+            "name": campaign.get("name"),
+            "status": campaign.get("status"),
+            "effective_status": campaign.get("effective_status"),
+            "objective": campaign.get("objective"),
+            "daily_budget": float(campaign.get("daily_budget", 0)) / 100 if campaign.get("daily_budget") else None,  # Convert from cents
+            "lifetime_budget": float(campaign.get("lifetime_budget", 0)) / 100 if campaign.get("lifetime_budget") else None,
+            "created_time": campaign.get("created_time"),
+            "start_time": campaign.get("start_time"),
+            "stop_time": campaign.get("stop_time")
+        })
+    
+    return {
+        "campaigns": campaigns,
+        "total": len(campaigns),
+        "ad_account_id": ad_account_id
+    }
+
 @api_router.get("/meta/analytics/{branch_id}")
 async def get_meta_analytics(
     branch_id: str,
