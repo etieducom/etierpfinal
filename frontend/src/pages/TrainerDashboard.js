@@ -422,8 +422,6 @@ const TrainerDashboard = () => {
               />
               <p className="text-xs text-slate-500">Note: Past date attendance can only be edited if it was already marked. New entries are allowed only for today.</p>
             </div>
-              />
-            </div>
             
             <div className="border rounded-lg divide-y">
               {batchStudents.map((student) => (
