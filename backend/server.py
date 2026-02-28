@@ -2014,24 +2014,47 @@ async def create_followup(followup: FollowUpCreate, current_user: User = Depends
 
 @api_router.get("/followups/pending")
 async def get_pending_followups(current_user: User = Depends(get_current_user)):
-    today = datetime.now(timezone.utc).date()
-    today_start = datetime.combine(today, datetime.min.time()).isoformat()
-    today_end = datetime.combine(today, datetime.max.time()).isoformat()
-    
+    """Get all pending followups (today and future)"""
     query = {
-        "status": FollowUpStatus.PENDING,
-        "followup_date": {"$gte": today_start, "$lte": today_end}
+        "status": FollowUpStatus.PENDING
     }
     
-    if current_user.role != UserRole.ADMIN:
+    # For counsellors, only show their own followups
+    if current_user.role == UserRole.COUNSELLOR:
         query["created_by"] = current_user.id
+    # For branch admin, show all followups in their branch
+    elif current_user.role == UserRole.BRANCH_ADMIN:
+        query["branch_id"] = current_user.branch_id
+    # Admin sees all
     
     followups = await db.followups.find(query, {"_id": 0}).sort("followup_date", 1).to_list(1000)
+    
+    # Enrich with lead info
     for fu in followups:
         if isinstance(fu.get('created_at'), str):
-            fu['created_at'] = datetime.fromisoformat(fu['created_at'])
+            try:
+                fu['created_at'] = datetime.fromisoformat(fu['created_at'].replace('Z', '+00:00'))
+            except:
+                pass
         if isinstance(fu.get('followup_date'), str):
-            fu['followup_date'] = datetime.fromisoformat(fu['followup_date'])
+            try:
+                fu['followup_date'] = datetime.fromisoformat(fu['followup_date'].replace('Z', '+00:00'))
+            except:
+                pass
+        
+        # Get lead info
+        if fu.get('lead_id'):
+            lead = await db.leads.find_one({"id": fu['lead_id']}, {"_id": 0, "name": 1, "number": 1})
+            if lead:
+                fu['lead_name'] = lead.get('name', 'Unknown')
+                fu['lead_number'] = lead.get('number', '')
+        
+        # Get creator name
+        if fu.get('created_by'):
+            creator = await db.users.find_one({"id": fu['created_by']}, {"_id": 0, "name": 1, "email": 1})
+            if creator:
+                fu['created_by_name'] = creator.get('name', creator.get('email', 'Unknown'))
+    
     return followups
 
 @api_router.get("/followups/pending/count")
