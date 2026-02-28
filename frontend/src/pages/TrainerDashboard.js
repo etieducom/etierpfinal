@@ -400,6 +400,62 @@ const TrainerDashboard = () => {
             )}
           </div>
         </TabsContent>
+
+        {/* Passed Students Tab */}
+        <TabsContent value="passed" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-amber-500" />
+                Passed Students
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="px-4 py-2 text-left text-sm font-semibold">Name</th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold">Program</th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold">Completion Date</th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold">Exam Status</th>
+                    <th className="px-4 py-2 text-left text-sm font-semibold">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dashboard?.passed_students?.map((student) => (
+                    <tr key={student.id} className="border-b hover:bg-slate-50">
+                      <td className="px-4 py-3">
+                        <p className="font-medium">{student.student_name}</p>
+                        <p className="text-xs text-slate-500">{student.email}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="outline">{student.program_name}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {student.completion_date || '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge className={student.exam_status === 'Passed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                          {student.exam_status || 'Passed'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        {student.exam_score ? `${student.exam_score}%` : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                  {(!dashboard?.passed_students || dashboard.passed_students.length === 0) && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                        No students have completed their course yet
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Attendance Dialog */}
