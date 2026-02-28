@@ -7449,7 +7449,12 @@ async def create_meta_config(config: MetaConfigCreate, current_user: User = Depe
     if existing:
         raise HTTPException(status_code=400, detail="Meta config already exists for this branch. Use PUT to update.")
     
-    meta_config = MetaConfig(**config.model_dump())
+    # Auto-fix Ad Account ID - add act_ prefix if missing
+    config_data = config.model_dump()
+    if config_data.get('ad_account_id') and not config_data['ad_account_id'].startswith('act_'):
+        config_data['ad_account_id'] = f"act_{config_data['ad_account_id']}"
+    
+    meta_config = MetaConfig(**config_data)
     config_dict = meta_config.model_dump()
     config_dict['created_at'] = config_dict['created_at'].isoformat()
     config_dict['updated_at'] = config_dict['updated_at'].isoformat()
@@ -7463,6 +7468,11 @@ async def create_meta_config(config: MetaConfigCreate, current_user: User = Depe
 async def update_meta_config(branch_id: str, update: MetaConfigUpdate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
     """Update Meta configuration for a branch - Super Admin only"""
     update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    
+    # Auto-fix Ad Account ID - add act_ prefix if missing
+    if update_data.get('ad_account_id') and not update_data['ad_account_id'].startswith('act_'):
+        update_data['ad_account_id'] = f"act_{update_data['ad_account_id']}"
+    
     update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
     
     result = await db.meta_configs.update_one(
