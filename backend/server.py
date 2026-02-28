@@ -7683,6 +7683,38 @@ async def sync_ads_data(branch_id: str, current_user: User = Depends(require_rol
     access_token = config['access_token']
     ad_account_id = config['ad_account_id']
     
+    # First check if there are any campaigns
+    campaigns_url = f"{META_GRAPH_API_BASE}/{ad_account_id}/campaigns"
+    campaigns_params = {
+        "access_token": access_token,
+        "fields": "id,name,status",
+        "limit": 10
+    }
+    
+    async with httpx.AsyncClient() as client:
+        campaigns_response = await client.get(campaigns_url, params=campaigns_params, timeout=30.0)
+        if campaigns_response.status_code != 200:
+            error_data = campaigns_response.json() if campaigns_response.text else {}
+            error_msg = error_data.get('error', {}).get('message', campaigns_response.text[:200])
+            logger.error(f"Error checking campaigns: {error_msg}")
+            raise HTTPException(status_code=400, detail=f"Facebook API error: {error_msg}")
+        
+        campaigns_data = campaigns_response.json()
+        campaigns_list = campaigns_data.get("data", [])
+        
+        if not campaigns_list:
+            # No campaigns exist - update last sync time and return
+            await db.meta_configs.update_one(
+                {"branch_id": branch_id},
+                {"$set": {"last_sync_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            return {
+                "message": "No campaigns found in this Ad Account. Create campaigns in Meta Ads Manager first.",
+                "campaigns_count": 0,
+                "insights_count": 0,
+                "period": "N/A"
+            }
+    
     # Fetch last 30 days of data
     end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(days=30)
@@ -7700,10 +7732,26 @@ async def sync_ads_data(branch_id: str, current_user: User = Depends(require_rol
     }
     
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, params=params)
+        response = await client.get(url, params=params, timeout=30.0)
         if response.status_code != 200:
-            logger.error(f"Error fetching ads insights: {response.text}")
-            raise HTTPException(status_code=400, detail=f"Facebook API error: {response.text[:200]}")
+            error_data = response.json() if response.text else {}
+            error_msg = error_data.get('error', {}).get('message', response.text[:200])
+            logger.error(f"Error fetching ads insights: {error_msg}")
+            
+            # If insights not available but campaigns exist, return campaign count
+            if "nonexisting field" in error_msg.lower() or "insights" in error_msg.lower():
+                await db.meta_configs.update_one(
+                    {"branch_id": branch_id},
+                    {"$set": {"last_sync_at": datetime.now(timezone.utc).isoformat()}}
+                )
+                return {
+                    "message": f"Found {len(campaigns_list)} campaigns but no performance data yet. Run your ads to see insights.",
+                    "campaigns_count": len(campaigns_list),
+                    "insights_count": 0,
+                    "period": f"{start_date.date()} to {end_date.date()}"
+                }
+            
+            raise HTTPException(status_code=400, detail=f"Facebook API error: {error_msg}")
         
         data = response.json()
     
