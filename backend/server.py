@@ -4529,8 +4529,8 @@ async def get_student_batches(enrollment_id: str, current_user: User = Depends(g
 @api_router.get("/trainer-stats")
 async def get_trainer_stats(current_user: User = Depends(get_current_user)):
     """Get trainer-wise student statistics for Branch Admin dashboard"""
-    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
-        raise HTTPException(status_code=403, detail="Only Admin or Branch Admin can view trainer stats")
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN, UserRole.COUNSELLOR]:
+        raise HTTPException(status_code=403, detail="Access denied")
     
     query = {"role": UserRole.TRAINER.value}
     if current_user.role != UserRole.ADMIN:
@@ -4540,27 +4540,46 @@ async def get_trainer_stats(current_user: User = Depends(get_current_user)):
     
     stats = []
     for trainer in trainers:
-        # Get all assignments for this trainer
-        assignments = await db.student_batch_assignments.find(
+        # Get all batches for this trainer
+        batches = await db.batches.find(
             {"trainer_id": trainer['id']},
+            {"_id": 0, "id": 1, "name": 1, "program_name": 1, "status": 1}
+        ).to_list(100)
+        
+        batch_ids = [b['id'] for b in batches]
+        
+        # Get all students assigned to this trainer's batches
+        assignments = await db.student_batch_assignments.find(
+            {"batch_id": {"$in": batch_ids}},
             {"_id": 0, "enrollment_id": 1, "batch_id": 1}
         ).to_list(1000)
         
-        unique_students = set(a['enrollment_id'] for a in assignments)
-        unique_batches = set(a['batch_id'] for a in assignments)
+        unique_student_ids = set(a['enrollment_id'] for a in assignments)
         
-        # Get batch details
-        batches = await db.batches.find(
-            {"trainer_id": trainer['id']},
-            {"_id": 0, "name": 1, "program_name": 1, "status": 1}
-        ).to_list(100)
+        # Get active students count
+        active_count = 0
+        if unique_student_ids:
+            active_count = await db.enrollments.count_documents({
+                "id": {"$in": list(unique_student_ids)},
+                "status": "Active"
+            })
+        
+        # Get completed students count
+        completed_count = 0
+        if unique_student_ids:
+            completed_count = await db.enrollments.count_documents({
+                "id": {"$in": list(unique_student_ids)},
+                "status": "Completed"
+            })
         
         stats.append({
             "trainer_id": trainer['id'],
-            "trainer_name": trainer['name'],
+            "trainer_name": trainer.get('name', trainer.get('email', 'Unknown')),
             "email": trainer.get('email'),
-            "unique_student_count": len(unique_students),
-            "total_batches": len(unique_batches),
+            "total_students": len(unique_student_ids),
+            "active_students": active_count,
+            "completed_students": completed_count,
+            "total_batches": len(batches),
             "active_batches": len([b for b in batches if b.get('status') == 'Active']),
             "batches": batches
         })
