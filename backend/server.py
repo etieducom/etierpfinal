@@ -4917,6 +4917,21 @@ async def mark_bulk_attendance(data: AttendanceBulkCreate, current_user: User = 
     if not batch:
         raise HTTPException(status_code=403, detail="You can only mark attendance for your batches")
     
+    # Check if date is valid (only today's date allowed, no past dates)
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    if data.date != today:
+        # Check if attendance was already marked for the past date
+        existing_for_date = await db.attendance.count_documents({
+            "batch_id": data.batch_id,
+            "date": data.date
+        })
+        if existing_for_date == 0:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot mark attendance for {data.date}. Attendance can only be marked for today ({today})."
+            )
+        # If some attendance exists, allow editing
+    
     marked_count = 0
     for record in data.attendance_records:
         # Check if already marked
