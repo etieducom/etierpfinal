@@ -6,13 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { metaAPI } from '@/api/api';
-import { Facebook, Instagram, TrendingUp, TrendingDown, DollarSign, Users, Eye, MousePointer, Target, Brain, RefreshCw, AlertCircle, BarChart3, ArrowUpRight, Sparkles } from 'lucide-react';
+import { Facebook, TrendingUp, TrendingDown, DollarSign, Users, Eye, MousePointer, Target, Brain, RefreshCw, AlertCircle, ArrowUpRight, Sparkles, Play, Pause, Archive, Clock } from 'lucide-react';
 
 const MetaAnalyticsPage = () => {
   const [analytics, setAnalytics] = useState(null);
   const [leads, setLeads] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(false);
   const [days, setDays] = useState('30');
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -44,6 +46,20 @@ const MetaAnalyticsPage = () => {
     }
   };
 
+  const fetchCampaigns = async () => {
+    setLoadingCampaigns(true);
+    try {
+      const response = await metaAPI.getCampaigns(branchId);
+      setCampaigns(response.data.campaigns || []);
+      toast.success(`Loaded ${response.data.total} campaigns from Meta`);
+    } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
+      toast.error(error.response?.data?.detail || 'Failed to fetch campaigns. Check your access token.');
+    } finally {
+      setLoadingCampaigns(false);
+    }
+  };
+
   const handleSync = async () => {
     setSyncing(true);
     try {
@@ -68,6 +84,22 @@ const MetaAnalyticsPage = () => {
 
   const formatNumber = (value) => {
     return new Intl.NumberFormat('en-IN').format(value);
+  };
+
+  const getStatusBadge = (status, effectiveStatus) => {
+    const displayStatus = effectiveStatus || status;
+    switch (displayStatus?.toUpperCase()) {
+      case 'ACTIVE':
+        return <Badge className="bg-green-100 text-green-700"><Play className="w-3 h-3 mr-1" />Active</Badge>;
+      case 'PAUSED':
+        return <Badge className="bg-yellow-100 text-yellow-700"><Pause className="w-3 h-3 mr-1" />Paused</Badge>;
+      case 'ARCHIVED':
+        return <Badge className="bg-slate-100 text-slate-700"><Archive className="w-3 h-3 mr-1" />Archived</Badge>;
+      case 'DELETED':
+        return <Badge variant="destructive">Deleted</Badge>;
+      default:
+        return <Badge variant="secondary">{displayStatus || 'Unknown'}</Badge>;
+    }
   };
 
   if (!branchId) {
@@ -102,7 +134,7 @@ const MetaAnalyticsPage = () => {
     );
   }
 
-  const { summary, campaigns, daily_trend, ai_analysis, period } = analytics;
+  const { summary, campaigns: campaignStats, daily_trend, ai_analysis, period } = analytics;
 
   return (
     <div className="space-y-6" data-testid="meta-analytics-page">
@@ -233,7 +265,8 @@ const MetaAnalyticsPage = () => {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="overview">AI Insights</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="campaigns">All Campaigns</TabsTrigger>
+          <TabsTrigger value="performance">Campaign Performance</TabsTrigger>
           <TabsTrigger value="leads">Facebook Leads</TabsTrigger>
         </TabsList>
 
@@ -338,17 +371,89 @@ const MetaAnalyticsPage = () => {
           )}
         </TabsContent>
 
-        {/* Campaigns Tab */}
+        {/* All Campaigns Tab - Live from Meta */}
         <TabsContent value="campaigns">
           <Card>
             <CardHeader>
-              <CardTitle>Campaign Performance</CardTitle>
-              <CardDescription>Breakdown of performance by campaign</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>All Meta Campaigns</CardTitle>
+                  <CardDescription>Live list of campaigns from your Meta Ad Account</CardDescription>
+                </div>
+                <Button onClick={fetchCampaigns} disabled={loadingCampaigns} variant="outline">
+                  <RefreshCw className={`w-4 h-4 mr-2 ${loadingCampaigns ? 'animate-spin' : ''}`} />
+                  Load Campaigns
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              {Object.keys(campaigns || {}).length > 0 ? (
+              {campaigns.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-2 text-sm font-medium text-slate-500">Campaign Name</th>
+                        <th className="text-left py-3 px-2 text-sm font-medium text-slate-500">Status</th>
+                        <th className="text-left py-3 px-2 text-sm font-medium text-slate-500">Objective</th>
+                        <th className="text-left py-3 px-2 text-sm font-medium text-slate-500">Budget</th>
+                        <th className="text-left py-3 px-2 text-sm font-medium text-slate-500">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {campaigns.map((campaign) => (
+                        <tr key={campaign.id} className="border-b hover:bg-slate-50">
+                          <td className="py-3 px-2">
+                            <p className="font-medium text-slate-800">{campaign.name}</p>
+                            <p className="text-xs text-slate-400">ID: {campaign.id}</p>
+                          </td>
+                          <td className="py-3 px-2">
+                            {getStatusBadge(campaign.status, campaign.effective_status)}
+                          </td>
+                          <td className="py-3 px-2 text-sm text-slate-600">
+                            {campaign.objective?.replace(/_/g, ' ') || '-'}
+                          </td>
+                          <td className="py-3 px-2 text-sm">
+                            {campaign.daily_budget ? (
+                              <span>{formatCurrency(campaign.daily_budget)}/day</span>
+                            ) : campaign.lifetime_budget ? (
+                              <span>{formatCurrency(campaign.lifetime_budget)} lifetime</span>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-2 text-sm text-slate-500">
+                            {campaign.created_time ? new Date(campaign.created_time).toLocaleDateString() : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Target className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500 mb-4">Click "Load Campaigns" to fetch your Meta campaigns</p>
+                  <Button onClick={fetchCampaigns} disabled={loadingCampaigns}>
+                    <RefreshCw className={`w-4 h-4 mr-2 ${loadingCampaigns ? 'animate-spin' : ''}`} />
+                    Load Campaigns
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Campaign Performance Tab - From synced data */}
+        <TabsContent value="performance">
+          <Card>
+            <CardHeader>
+              <CardTitle>Campaign Performance</CardTitle>
+              <CardDescription>Performance breakdown from synced data (last {days} days)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {Object.keys(campaignStats || {}).length > 0 ? (
                 <div className="space-y-4">
-                  {Object.entries(campaigns).map(([name, stats]) => (
+                  {Object.entries(campaignStats).map(([name, stats]) => (
                     <div key={name} className="p-4 border rounded-lg hover:bg-slate-50 transition-colors">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-medium text-slate-800">{name}</h4>
@@ -378,7 +483,14 @@ const MetaAnalyticsPage = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-center py-8 text-slate-500">No campaign data available. Click "Sync Data" to fetch latest data.</p>
+                <div className="text-center py-8">
+                  <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500 mb-4">No performance data available. Click "Sync Data" to fetch from Meta.</p>
+                  <Button onClick={handleSync} disabled={syncing} variant="outline">
+                    <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                    Sync Data
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
