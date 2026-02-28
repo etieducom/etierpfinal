@@ -16,7 +16,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://cash-handling-test.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://meta-crm-integration.preview.emergentagent.com')
 
 # Test credentials
 BRANCH_ADMIN_EMAIL = "branchadmin@etieducom.com"
