@@ -1,14 +1,16 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, PlainTextResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import hmac
+import hashlib
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta, date
 from passlib.context import CryptContext
@@ -23,6 +25,17 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import json
 import qrcode
+
+# Facebook Business SDK
+try:
+    from facebook_business.api import FacebookAdsApi
+    from facebook_business.adobjects.lead import Lead
+    from facebook_business.adobjects.adaccount import AdAccount
+    from facebook_business.adobjects.page import Page
+    FACEBOOK_SDK_AVAILABLE = True
+except ImportError:
+    FACEBOOK_SDK_AVAILABLE = False
+    logger.warning("Facebook Business SDK not available")
 
 # LLM Integration for AI Insights
 try:
