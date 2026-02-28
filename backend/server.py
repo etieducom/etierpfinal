@@ -2984,11 +2984,11 @@ Your response MUST be valid JSON with this structure:
   }
 }
 
-Be specific and use actual data. Focus on actionable insights.""",
-                model="gpt-4o"
-            )
+Be specific and use actual data. Focus on actionable insights."""
+            ).with_model("openai", "gpt-4o")
             
-            ai_response = await chat.send_message_async(f"Analyze this user efficiency data:\n\n{efficiency_summary}")
+            user_message = UserMessage(text=f"Analyze this user efficiency data:\n\n{efficiency_summary}")
+            ai_response = await chat.send_message(user_message)
             
             try:
                 ai_text = ai_response.strip()
