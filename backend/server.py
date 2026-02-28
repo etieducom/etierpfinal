@@ -6600,6 +6600,17 @@ async def create_certificate_request(request_data: CertificateRequestCreate):
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found with this ID")
     
+    # Check if fees are fully paid
+    final_fee = enrollment.get('final_fee', 0)
+    total_paid = enrollment.get('total_paid', 0)
+    pending_fee = final_fee - total_paid
+    
+    if pending_fee > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot request certificate. Please clear pending fee of ₹{pending_fee:,.0f} first."
+        )
+    
     # Check if there's already a pending/approved request
     existing = await db.certificate_requests.find_one({
         "enrollment_number": request_data.enrollment_number,
