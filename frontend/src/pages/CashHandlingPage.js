@@ -161,11 +161,18 @@ const CashHandlingPage = () => {
                   <Badge className="bg-green-100 text-green-700">
                     <CheckCircle className="w-4 h-4 mr-1" /> Deposited
                   </Badge>
-                ) : (
+                ) : canSubmit ? (
                   <Button onClick={() => setSubmitDialog(true)} className="w-full bg-green-600 hover:bg-green-700">
                     <Upload className="w-4 h-4 mr-2" />
                     Submit Deposit Record
                   </Button>
+                ) : (
+                  <div className="text-center">
+                    <Badge variant="outline" className="text-orange-600 border-orange-300 mb-2">
+                      <Clock className="w-4 h-4 mr-1" /> Submission Window: 4 PM - 5 PM
+                    </Badge>
+                    <p className="text-xs text-slate-500">You can submit the deposit record between 4 PM and 5 PM only</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
