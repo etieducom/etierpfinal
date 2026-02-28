@@ -1978,7 +1978,7 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User 
                         "lead_id": lead_id,
                         "lead_name": updated_lead_obj.name,
                         "lead_number": updated_lead_obj.number,
-                        "program": updated_lead_obj.program
+                        "program": updated_lead_obj.program_name
                     },
                     play_audio=True
                 )
