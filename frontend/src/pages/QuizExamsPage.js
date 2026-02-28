@@ -18,6 +18,8 @@ const QuizExamsPage = () => {
   const [createDialog, setCreateDialog] = useState(false);
   const [editDialog, setEditDialog] = useState(false);
   const [viewAttemptsDialog, setViewAttemptsDialog] = useState(false);
+  const [qrCodeDialog, setQrCodeDialog] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState(null);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [selectedAttempts, setSelectedAttempts] = useState([]);
   
