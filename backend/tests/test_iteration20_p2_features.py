@@ -33,7 +33,7 @@ class TestTaskStatusUpdate:
         """Get Trainer authentication token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", data={
             "username": "trainer@etieducom.com",
-            "password": "password123"
+            "password": "test123"
         })
         if response.status_code == 200:
             return response.json().get("access_token")
