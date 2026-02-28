@@ -4876,15 +4876,30 @@ async def get_trainer_dashboard(current_user: User = Depends(get_current_user)):
     
     # Get unique students
     student_ids = list(set(a['enrollment_id'] for a in assignments))
-    students = await db.enrollments.find(
+    all_students = await db.enrollments.find(
         {"id": {"$in": student_ids}},
         {"_id": 0, "id": 1, "student_name": 1, "email": 1, "phone": 1, "program_name": 1, "dob": 1, "status": 1}
     ).to_list(1000)
     
-    # Calculate upcoming birthdays (next 30 days)
+    # Separate active and completed students
+    active_students = [s for s in all_students if s.get('status') != 'Completed']
+    passed_students = [s for s in all_students if s.get('status') == 'Completed']
+    
+    # Get completion details for passed students
+    for student in passed_students:
+        completion = await db.course_completions.find_one(
+            {"enrollment_id": student['id']},
+            {"_id": 0, "completion_date": 1, "exam_status": 1, "exam_score": 1}
+        )
+        if completion:
+            student['completion_date'] = completion.get('completion_date')
+            student['exam_status'] = completion.get('exam_status')
+            student['exam_score'] = completion.get('exam_score')
+    
+    # Calculate upcoming birthdays (next 30 days) - only for active students
     today = datetime.now(timezone.utc)
     upcoming_birthdays = []
-    for student in students:
+    for student in active_students:
         if student.get('dob'):
             try:
                 dob = student['dob']
@@ -4913,9 +4928,9 @@ async def get_trainer_dashboard(current_user: User = Depends(get_current_user)):
     upcoming_birthdays.sort(key=lambda x: x['days_until'])
     
     # Get today's attendance
-    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     today_attendance = await db.attendance.find(
-        {"batch_id": {"$in": [b['id'] for b in batches]}, "date": today},
+        {"batch_id": {"$in": [b['id'] for b in batches]}, "date": today_str},
         {"_id": 0}
     ).to_list(1000)
     
@@ -4937,8 +4952,10 @@ async def get_trainer_dashboard(current_user: User = Depends(get_current_user)):
             "email": current_user.email
         },
         "batches": batches,
-        "total_students": len(student_ids),
-        "students": students,
+        "total_students": len(active_students),
+        "total_passed": len(passed_students),
+        "students": active_students,
+        "passed_students": passed_students,
         "upcoming_birthdays": upcoming_birthdays,
         "today_attendance": today_attendance,
         "curricula": curricula
