@@ -343,10 +343,17 @@ const NotificationCenter = () => {
                 {dueSoonFollowups.map(fu => (
                   <div 
                     key={fu.id}
-                    className="px-4 py-3 border-b border-amber-100 hover:bg-amber-100 cursor-pointer"
+                    className="px-4 py-3 border-b border-amber-100 hover:bg-amber-100 cursor-pointer relative group"
                     onClick={() => window.location.href = '/followups'}
                   >
-                    <div className="flex items-start gap-3">
+                    <button
+                      onClick={(e) => dismissFollowup(fu.id, e)}
+                      className="absolute top-2 right-2 p-1 rounded-full hover:bg-amber-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Dismiss"
+                    >
+                      <X className="w-4 h-4 text-amber-600" />
+                    </button>
+                    <div className="flex items-start gap-3 pr-6">
                       <Clock className="w-5 h-5 text-amber-500 mt-0.5" />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-slate-900">
