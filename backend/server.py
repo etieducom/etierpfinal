@@ -7923,9 +7923,8 @@ Your response MUST be valid JSON:
   "roi_assessment": "assessment of return on ad spend"
 }
 
-Be specific, data-driven, and actionable.""",
-                model="gpt-4o"
-            )
+Be specific, data-driven, and actionable."""
+            ).with_model("openai", "gpt-4o")
             
             ai_response = await chat.send_message_async(f"Analyze this Facebook Ads data:\n\n{analytics_summary}")
             
