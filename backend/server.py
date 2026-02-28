@@ -597,6 +597,95 @@ class CashHandlingUpdate(BaseModel):
     remarks: Optional[str] = None
     status: str = "Deposited"
 
+# Meta Integration Models
+class MetaConfig(BaseModel):
+    """Meta/Facebook integration configuration per branch"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    branch_id: str
+    app_id: str
+    app_secret: str
+    page_id: str
+    page_ids: List[str] = []  # Multiple pages support
+    ad_account_id: Optional[str] = None
+    instagram_account_id: Optional[str] = None
+    access_token: Optional[str] = None
+    webhook_verify_token: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_sync_at: Optional[datetime] = None
+
+class MetaConfigCreate(BaseModel):
+    branch_id: str
+    app_id: str
+    app_secret: str
+    page_id: str
+    page_ids: List[str] = []
+    ad_account_id: Optional[str] = None
+    instagram_account_id: Optional[str] = None
+    access_token: Optional[str] = None
+
+class MetaConfigUpdate(BaseModel):
+    app_id: Optional[str] = None
+    app_secret: Optional[str] = None
+    page_id: Optional[str] = None
+    page_ids: Optional[List[str]] = None
+    ad_account_id: Optional[str] = None
+    instagram_account_id: Optional[str] = None
+    access_token: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class MetaLead(BaseModel):
+    """Lead imported from Facebook Lead Ads"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    branch_id: str
+    leadgen_id: str  # Facebook's lead ID
+    page_id: str
+    form_id: Optional[str] = None
+    ad_id: Optional[str] = None
+    campaign_id: Optional[str] = None
+    campaign_name: Optional[str] = None
+    ad_name: Optional[str] = None
+    # Lead data
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    field_data: Dict[str, Any] = {}  # All form fields
+    # CRM linkage
+    crm_lead_id: Optional[str] = None  # ID of lead created in CRM
+    is_synced_to_crm: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    fb_created_time: Optional[str] = None
+
+class MetaAdInsight(BaseModel):
+    """Cached ad performance data"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    branch_id: str
+    date: str  # YYYY-MM-DD
+    account_id: str
+    campaign_id: Optional[str] = None
+    campaign_name: Optional[str] = None
+    adset_id: Optional[str] = None
+    adset_name: Optional[str] = None
+    ad_id: Optional[str] = None
+    ad_name: Optional[str] = None
+    # Metrics
+    impressions: int = 0
+    reach: int = 0
+    clicks: int = 0
+    spend: float = 0
+    cpc: float = 0
+    cpm: float = 0
+    ctr: float = 0
+    conversions: int = 0
+    cost_per_conversion: float = 0
+    # Breakdown
+    level: str = "account"  # account, campaign, adset, ad
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class Token(BaseModel):
     access_token: str
     token_type: str
