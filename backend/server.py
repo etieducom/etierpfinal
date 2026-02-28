@@ -5446,6 +5446,12 @@ async def mark_course_completion(
         {"$set": {"status": "Completed", "course_completion_date": completion.completion_date}}
     )
     
+    # Remove student from batch assignment (they've completed the course)
+    await db.student_batch_assignments.delete_one({
+        "enrollment_id": enrollment_id,
+        "trainer_id": current_user.id
+    })
+    
     return {"message": "Course marked as complete", "completion_id": completion.id}
 
 @api_router.get("/course-completions")
