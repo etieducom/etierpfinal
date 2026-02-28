@@ -2643,6 +2643,259 @@ Be specific and actionable. Use actual numbers from the data.""",
         "ai_powered": ai_analysis is not None
     }
 
+@api_router.get("/analytics/user-efficiency")
+async def get_user_efficiency_analysis(current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.BRANCH_ADMIN]))):
+    """Get AI-powered user efficiency analysis - For Branch Admins only"""
+    branch_id = current_user.branch_id
+    branch_filter = {"branch_id": branch_id} if branch_id else {}
+    
+    today = datetime.now(timezone.utc)
+    today_str = today.strftime('%Y-%m-%d')
+    week_ago = (today - timedelta(days=7)).strftime('%Y-%m-%d')
+    month_start = today.replace(day=1).strftime('%Y-%m-%d')
+    
+    # === COUNSELLOR EFFICIENCY ===
+    counsellors = await db.users.find(
+        {**branch_filter, "role": UserRole.COUNSELLOR.value, "is_active": True},
+        {"_id": 0, "id": 1, "name": 1, "email": 1}
+    ).to_list(100)
+    
+    counsellor_efficiency = []
+    for counsellor in counsellors:
+        # Count leads assigned this month
+        leads_assigned = await db.leads.count_documents({
+            "assigned_to": counsellor['id'],
+            "is_deleted": {"$ne": True}
+        })
+        
+        # Count leads converted this month
+        leads_converted = await db.leads.count_documents({
+            "assigned_to": counsellor['id'],
+            "status": "Converted",
+            "is_deleted": {"$ne": True}
+        })
+        
+        # Count follow-ups scheduled vs completed
+        followups_scheduled = await db.followups.count_documents({
+            "created_by": counsellor['id'],
+            "followup_date": {"$gte": month_start, "$lte": today_str}
+        })
+        
+        followups_completed = await db.followups.count_documents({
+            "created_by": counsellor['id'],
+            "status": "Completed"
+        })
+        
+        # Average response time (time from lead creation to first followup)
+        # This is a simplified calculation
+        conversion_rate = round(leads_converted / leads_assigned * 100, 1) if leads_assigned > 0 else 0
+        followup_rate = round(followups_completed / followups_scheduled * 100, 1) if followups_scheduled > 0 else 0
+        
+        # Calculate efficiency score (weighted average)
+        efficiency_score = round((conversion_rate * 0.5 + followup_rate * 0.5), 1)
+        
+        counsellor_efficiency.append({
+            "user_id": counsellor['id'],
+            "name": counsellor.get('name', counsellor['email']),
+            "email": counsellor['email'],
+            "role": "Counsellor",
+            "leads_assigned": leads_assigned,
+            "leads_converted": leads_converted,
+            "conversion_rate": conversion_rate,
+            "followups_scheduled": followups_scheduled,
+            "followups_completed": followups_completed,
+            "followup_completion_rate": followup_rate,
+            "efficiency_score": efficiency_score
+        })
+    
+    # === FDE EFFICIENCY ===
+    fdes = await db.users.find(
+        {**branch_filter, "role": UserRole.FRONT_DESK.value, "is_active": True},
+        {"_id": 0, "id": 1, "name": 1, "email": 1}
+    ).to_list(100)
+    
+    fde_efficiency = []
+    for fde in fdes:
+        # Count enrollments processed this month
+        enrollments_processed = await db.enrollments.count_documents({
+            **branch_filter,
+            "enrolled_by": fde['id'],
+            "enrolled_on": {"$gte": month_start}
+        })
+        
+        # Count payments collected this month
+        payments_collected = await db.payments.find(
+            {**branch_filter, "collected_by": fde['id'], "payment_date": {"$gte": month_start}},
+            {"_id": 0, "amount": 1}
+        ).to_list(10000)
+        
+        total_payments = len(payments_collected)
+        total_amount = sum(p.get('amount', 0) for p in payments_collected)
+        
+        # Count tasks completed
+        tasks_assigned = await db.tasks.count_documents({"assigned_to": fde['id']})
+        tasks_completed = await db.tasks.count_documents({"assigned_to": fde['id'], "status": "Completed"})
+        task_completion_rate = round(tasks_completed / tasks_assigned * 100, 1) if tasks_assigned > 0 else 100
+        
+        # Calculate efficiency score
+        efficiency_score = round((task_completion_rate * 0.3 + min(enrollments_processed * 10, 100) * 0.4 + min(total_payments * 5, 100) * 0.3), 1)
+        efficiency_score = min(efficiency_score, 100)
+        
+        fde_efficiency.append({
+            "user_id": fde['id'],
+            "name": fde.get('name', fde['email']),
+            "email": fde['email'],
+            "role": "Front Desk Executive",
+            "enrollments_processed": enrollments_processed,
+            "payments_collected": total_payments,
+            "amount_collected": total_amount,
+            "tasks_assigned": tasks_assigned,
+            "tasks_completed": tasks_completed,
+            "task_completion_rate": task_completion_rate,
+            "efficiency_score": efficiency_score
+        })
+    
+    # === TRAINER EFFICIENCY ===
+    trainers = await db.users.find(
+        {**branch_filter, "role": UserRole.TRAINER.value, "is_active": True},
+        {"_id": 0, "id": 1, "name": 1, "email": 1}
+    ).to_list(100)
+    
+    trainer_efficiency = []
+    for trainer in trainers:
+        # Get batches assigned
+        batches = await db.batches.find(
+            {"trainer_id": trainer['id']},
+            {"_id": 0, "id": 1}
+        ).to_list(100)
+        batch_ids = [b['id'] for b in batches]
+        
+        # Count active students
+        active_students = await db.enrollments.count_documents({
+            "batch_id": {"$in": batch_ids},
+            "status": "Active"
+        })
+        
+        # Count completed students (marked by this trainer)
+        completed_students = await db.enrollments.count_documents({
+            "batch_id": {"$in": batch_ids},
+            "status": "Completed"
+        })
+        
+        # Attendance marking rate (last 7 days)
+        attendance_days = await db.attendance.distinct("date", {
+            "batch_id": {"$in": batch_ids},
+            "date": {"$gte": week_ago}
+        })
+        attendance_rate = round(len(attendance_days) / 7 * 100, 1) if batch_ids else 0
+        
+        # Feedback scores (if available)
+        feedbacks = await db.feedbacks.find(
+            {"trainer_id": trainer['id']},
+            {"_id": 0, "trainer_rating": 1}
+        ).to_list(1000)
+        avg_rating = round(sum(f.get('trainer_rating', 0) for f in feedbacks) / len(feedbacks), 1) if feedbacks else 0
+        
+        # Calculate efficiency score
+        efficiency_score = round((attendance_rate * 0.3 + avg_rating * 10 * 0.4 + min(completed_students * 10, 100) * 0.3), 1)
+        efficiency_score = min(efficiency_score, 100)
+        
+        trainer_efficiency.append({
+            "user_id": trainer['id'],
+            "name": trainer.get('name', trainer['email']),
+            "email": trainer['email'],
+            "role": "Trainer",
+            "total_batches": len(batches),
+            "active_students": active_students,
+            "completed_students": completed_students,
+            "attendance_rate": attendance_rate,
+            "avg_feedback_rating": avg_rating,
+            "efficiency_score": efficiency_score
+        })
+    
+    # Combine all users and sort by efficiency
+    all_users = counsellor_efficiency + fde_efficiency + trainer_efficiency
+    all_users.sort(key=lambda x: x['efficiency_score'], reverse=True)
+    
+    # === AI ANALYSIS ===
+    ai_analysis = None
+    if LLM_AVAILABLE and os.environ.get('EMERGENT_LLM_KEY'):
+        try:
+            efficiency_summary = f"""
+User Efficiency Data for Branch Analysis:
+
+COUNSELLORS:
+{json.dumps(counsellor_efficiency, indent=2)}
+
+FRONT DESK EXECUTIVES:
+{json.dumps(fde_efficiency, indent=2)}
+
+TRAINERS:
+{json.dumps(trainer_efficiency, indent=2)}
+
+Analysis Period: {month_start} to {today_str}
+"""
+            
+            chat = LlmChat(
+                api_key=os.environ.get('EMERGENT_LLM_KEY'),
+                session_id=f"user-efficiency-{branch_id}-{today.strftime('%Y%m%d')}",
+                system_message="""You are an HR analyst for an educational institute. Analyze user efficiency data and provide actionable insights.
+
+Your response MUST be valid JSON with this structure:
+{
+  "top_performers": [
+    {"name": "user name", "role": "role", "highlight": "what makes them excel"}
+  ],
+  "needs_attention": [
+    {"name": "user name", "role": "role", "issue": "what needs improvement", "suggestion": "how to improve"}
+  ],
+  "team_insights": {
+    "counsellors": "brief analysis of counsellor team performance",
+    "fdes": "brief analysis of FDE team performance", 
+    "trainers": "brief analysis of trainer team performance"
+  },
+  "recommendations": [
+    "specific actionable recommendation 1",
+    "specific actionable recommendation 2",
+    "specific actionable recommendation 3"
+  ],
+  "overall_efficiency": {
+    "score": 1-100,
+    "status": "excellent|good|average|needs improvement",
+    "summary": "2-3 sentence summary of overall team efficiency"
+  }
+}
+
+Be specific and use actual data. Focus on actionable insights.""",
+                model="gpt-4o"
+            )
+            
+            ai_response = await chat.send_message_async(f"Analyze this user efficiency data:\n\n{efficiency_summary}")
+            
+            try:
+                ai_text = ai_response.strip()
+                if ai_text.startswith("```"):
+                    ai_text = ai_text.split("```")[1]
+                    if ai_text.startswith("json"):
+                        ai_text = ai_text[4:]
+                ai_analysis = json.loads(ai_text)
+            except json.JSONDecodeError:
+                ai_analysis = {"raw_response": ai_response}
+                
+        except Exception as e:
+            logger.error(f"User efficiency AI analysis failed: {e}")
+    
+    return {
+        "generated_at": today.isoformat(),
+        "analysis_period": {"start": month_start, "end": today_str},
+        "counsellors": counsellor_efficiency,
+        "fdes": fde_efficiency,
+        "trainers": trainer_efficiency,
+        "all_users_ranked": all_users,
+        "ai_analysis": ai_analysis,
+        "ai_powered": ai_analysis is not None
+    }
+
 
 # Analytics
 @api_router.get("/analytics/overview")
