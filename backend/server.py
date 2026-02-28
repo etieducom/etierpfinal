@@ -762,6 +762,10 @@ class Lead(BaseModel):
     deleted_by: Optional[str] = None
     deleted_by_name: Optional[str] = None
     deletion_reason: Optional[str] = None
+    # Meta (Facebook) integration fields
+    meta_lead_id: Optional[str] = None  # Link to MetaLead
+    meta_campaign: Optional[str] = None  # Campaign name from Facebook
+    meta_ad: Optional[str] = None  # Ad name from Facebook
 
 class FollowUpCreate(BaseModel):
     lead_id: str
