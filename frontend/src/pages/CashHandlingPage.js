@@ -34,6 +34,11 @@ const CashHandlingPage = () => {
   const isFDE = user.role === 'Front Desk Executive';
   const isBranchAdmin = user.role === 'Branch Admin' || user.role === 'Admin';
 
+  // Check if within submission time window (4 PM - 5 PM)
+  const currentHour = new Date().getHours();
+  const isWithinSubmissionWindow = currentHour >= 16 && currentHour < 17; // 4 PM to 5 PM
+  const canSubmit = isWithinSubmissionWindow || isBranchAdmin; // Branch Admin can always view
+
   useEffect(() => {
     if (isFDE) {
       fetchTodayCash();
