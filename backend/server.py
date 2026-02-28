@@ -5320,6 +5320,109 @@ async def get_student_attendance(enrollment_id: str, current_user: User = Depend
         }
     }
 
+@api_router.get("/attendance/insights/missed")
+async def get_missed_attendance_insights(current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.BRANCH_ADMIN]))):
+    """Get missed attendance insights for Branch Admin - which trainers missed marking attendance"""
+    branch_id = current_user.branch_id
+    branch_filter = {"branch_id": branch_id} if branch_id else {}
+    
+    today = datetime.now(timezone.utc)
+    week_ago = (today - timedelta(days=7)).strftime('%Y-%m-%d')
+    today_str = today.strftime('%Y-%m-%d')
+    
+    # Get all active batches in branch
+    batches = await db.batches.find(
+        {**branch_filter, "status": "Active"},
+        {"_id": 0, "id": 1, "name": 1, "trainer_id": 1, "schedule": 1}
+    ).to_list(100)
+    
+    # Get trainers info
+    trainer_ids = list(set(b.get('trainer_id') for b in batches if b.get('trainer_id')))
+    trainers = await db.users.find(
+        {"id": {"$in": trainer_ids}},
+        {"_id": 0, "id": 1, "name": 1, "email": 1}
+    ).to_list(100)
+    trainer_map = {t['id']: t for t in trainers}
+    
+    # For each batch, check if attendance was marked for the last 7 days
+    missed_days = []
+    trainer_insights = {}
+    
+    for batch in batches:
+        trainer_id = batch.get('trainer_id')
+        if not trainer_id:
+            continue
+            
+        trainer = trainer_map.get(trainer_id, {})
+        
+        if trainer_id not in trainer_insights:
+            trainer_insights[trainer_id] = {
+                "trainer_id": trainer_id,
+                "trainer_name": trainer.get('name', 'Unknown'),
+                "trainer_email": trainer.get('email', ''),
+                "total_batches": 0,
+                "total_expected_days": 0,
+                "marked_days": 0,
+                "missed_days": 0,
+                "missed_dates": []
+            }
+        
+        trainer_insights[trainer_id]["total_batches"] += 1
+        
+        # Get dates when attendance was marked for this batch in last 7 days
+        marked_dates = await db.attendance.distinct("date", {
+            "batch_id": batch['id'],
+            "date": {"$gte": week_ago, "$lte": today_str}
+        })
+        
+        # Generate expected dates (weekdays only) - simplified: assume 6 days a week
+        expected_days = 7  # Last 7 days
+        trainer_insights[trainer_id]["total_expected_days"] += expected_days
+        trainer_insights[trainer_id]["marked_days"] += len(marked_dates)
+        
+        # Calculate missed days
+        missed_count = max(0, expected_days - len(marked_dates))
+        trainer_insights[trainer_id]["missed_days"] += missed_count
+        
+        if missed_count > 0:
+            # Find specific missed dates
+            for i in range(7):
+                check_date = (today - timedelta(days=i)).strftime('%Y-%m-%d')
+                if check_date not in marked_dates:
+                    missed_days.append({
+                        "date": check_date,
+                        "batch_name": batch['name'],
+                        "batch_id": batch['id'],
+                        "trainer_name": trainer.get('name', 'Unknown'),
+                        "trainer_id": trainer_id
+                    })
+                    if check_date not in trainer_insights[trainer_id]["missed_dates"]:
+                        trainer_insights[trainer_id]["missed_dates"].append(check_date)
+    
+    # Sort missed days by date (most recent first)
+    missed_days.sort(key=lambda x: x['date'], reverse=True)
+    
+    # Calculate compliance percentages
+    trainer_list = []
+    for t in trainer_insights.values():
+        t["compliance_rate"] = round((t["marked_days"] / t["total_expected_days"] * 100) if t["total_expected_days"] > 0 else 100, 1)
+        trainer_list.append(t)
+    
+    # Sort by compliance rate (worst first)
+    trainer_list.sort(key=lambda x: x["compliance_rate"])
+    
+    return {
+        "analysis_period": {"start": week_ago, "end": today_str},
+        "total_batches": len(batches),
+        "total_trainers": len(trainer_ids),
+        "missed_days_list": missed_days[:50],  # Top 50 most recent missed
+        "trainer_insights": trainer_list,
+        "summary": {
+            "total_missed_days": sum(t["missed_days"] for t in trainer_list),
+            "avg_compliance_rate": round(sum(t["compliance_rate"] for t in trainer_list) / len(trainer_list), 1) if trainer_list else 100
+        }
+    }
+
 # ========== CURRICULUM MANAGEMENT ==========
 @api_router.post("/curricula")
 async def create_curriculum(curriculum: CurriculumCreate, current_user: User = Depends(require_role([UserRole.ACADEMIC_CONTROLLER]))):
