@@ -32,6 +32,7 @@ import StudentFeedbackPage from '@/pages/StudentFeedbackPage';
 import CashHandlingPage from '@/pages/CashHandlingPage';
 import AIAnalyticsPage from '@/pages/AIAnalyticsPage';
 import UserEfficiencyPage from '@/pages/UserEfficiencyPage';
+import AttendanceInsightsPage from '@/pages/AttendanceInsightsPage';
 import Layout from '@/components/Layout';
 import ActivityTracker from '@/components/ActivityTracker';
 import { Toaster } from '@/components/ui/sonner';
