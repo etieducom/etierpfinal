@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="1" tests="8" time="6.611" timestamp="2026-02-28T07:47:08.985726+00:00" hostname="agent-env-96d4cc9a-e6e5-434a-b1d7-41fc475bdfd2"><testcase classname="backend.tests.test_iteration19_user_efficiency.TestUserEfficiencyAPI" name="test_health_check" time="1.232"><failure message="assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_iteration19_user_efficiency.py:40: in test_health_check
+    assert response.status_code == 200
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration19_user_efficiency.TestUserEfficiencyAPI" name="test_user_efficiency_branch_admin_access" time="0.908"><failure message="AssertionError: Branch Admin login failed&#10;assert None is not None">backend/tests/test_iteration19_user_efficiency.py:46: in test_user_efficiency_branch_admin_access
+    assert token is not None, "Branch Admin login failed"
+E   AssertionError: Branch Admin login failed
+E   assert None is not None</failure></testcase><testcase classname="backend.tests.test_iteration19_user_efficiency.TestUserEfficiencyAPI" name="test_user_efficiency_counsellor_access_denied" time="0.760"><skipped type="pytest.skip" message="Counsellor credentials not available">/app/backend/tests/test_iteration19_user_efficiency.py:74: Counsellor credentials not available</skipped></testcase><testcase classname="backend.tests.test_iteration19_user_efficiency.TestUserEfficiencyAPI" name="test_user_efficiency_response_structure" time="0.708"><failure message="assert None is not None">backend/tests/test_iteration19_user_efficiency.py:86: in test_user_efficiency_response_structure
+    assert token is not None
+E   assert None is not None</failure></testcase><testcase classname="backend.tests.test_iteration19_user_efficiency.TestFollowupRemindersAPI" name="test_followup_due_soon_endpoint" time="0.727"><failure message="AssertionError: Branch Admin login failed&#10;assert None is not None">backend/tests/test_iteration19_user_efficiency.py:162: in test_followup_due_soon_endpoint
+    assert token is not None, "Branch Admin login failed"
+E   AssertionError: Branch Admin login failed
+E   assert None is not None</failure></testcase><testcase classname="backend.tests.test_iteration19_user_efficiency.TestFollowupRemindersAPI" name="test_notifications_endpoint" time="0.712"><failure message="assert None is not None">backend/tests/test_iteration19_user_efficiency.py:175: in test_notifications_endpoint
+    assert token is not None
+E   assert None is not None</failure></testcase><testcase classname="backend.tests.test_iteration19_user_efficiency.TestFollowupRemindersAPI" name="test_notifications_unread_count" time="0.729"><failure message="assert None is not None">backend/tests/test_iteration19_user_efficiency.py:188: in test_notifications_unread_count
+    assert token is not None
+E   assert None is not None</failure></testcase><testcase classname="backend.tests.test_iteration19_user_efficiency.TestSidebarUserEfficiencyLink" name="test_branch_admin_login_returns_correct_role" time="0.694"><failure message="assert 422 == 200&#10; +  where 422 = &lt;Response [422]&gt;.status_code">backend/tests/test_iteration19_user_efficiency.py:221: in test_branch_admin_login_returns_correct_role
+    assert response.status_code == 200
+E   assert 422 == 200
+E    +  where 422 = &lt;Response [422]&gt;.status_code</failure></testcase></testsuite></testsuites>
