@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   Users, Calendar, Clock, BookOpen, CheckCircle, 
-  GraduationCap, ClipboardList, Award, UserCheck, UserX 
+  GraduationCap, ClipboardList, Award, UserCheck, UserX, Cake 
 } from 'lucide-react';
 
 const TrainerDashboard = () => {
