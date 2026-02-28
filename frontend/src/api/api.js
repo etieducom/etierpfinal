@@ -310,6 +310,7 @@ export const quizAPI = {
   create: (data) => api.post('/quiz-exams', data),
   update: (id, data) => api.put(`/quiz-exams/${id}`, data),
   delete: (id) => api.delete(`/quiz-exams/${id}`),
+  getQRCode: (id) => api.get(`/quiz-exams/${id}/qr-code`),
   getAttempts: (examId) => api.get('/quiz-attempts', { params: examId ? { exam_id: examId } : {} }),
   // Public endpoints (no auth required for students)
   getPublicQuiz: (id) => axios.get(`${API_URL}/api/public/quiz/${id}`),
