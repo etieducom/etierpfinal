@@ -224,6 +224,13 @@ class TaskCreate(BaseModel):
     priority: str = "Normal"
     due_date: Optional[str] = None
 
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[str] = None
+    status: Optional[str] = None
+    due_date: Optional[str] = None
+
 # International Exams
 class InternationalExam(BaseModel):
     model_config = ConfigDict(extra="ignore")
