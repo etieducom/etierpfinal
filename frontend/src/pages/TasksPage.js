@@ -27,7 +27,9 @@ const TasksPage = () => {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isBranchAdmin = user.role === 'Branch Admin';
-  const canAssign = isBranchAdmin || user.role === 'Admin';
+  const isCounsellor = user.role === 'Counsellor';
+  // Branch Admin and Admin can assign to anyone, Counsellor can assign to Trainers and FDEs
+  const canAssign = isBranchAdmin || user.role === 'Admin' || isCounsellor;
 
   useEffect(() => {
     fetchTasks();
