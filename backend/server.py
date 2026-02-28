@@ -5517,6 +5517,121 @@ async def get_cash_handling_history(
     
     return records
 
+# ========== TASK MANAGEMENT ==========
+
+@api_router.post("/tasks")
+async def create_task(task: TaskCreate, current_user: User = Depends(get_current_user)):
+    """Create a task - Counsellor can assign to Trainer/FDE, Branch Admin can assign to anyone"""
+    
+    # Check permissions
+    if current_user.role == UserRole.COUNSELLOR:
+        # Counsellor can only assign to Trainers and FDEs
+        assignee = await db.users.find_one({"id": task.assigned_to}, {"_id": 0, "role": 1, "name": 1, "email": 1})
+        if not assignee:
+            raise HTTPException(status_code=404, detail="Assigned user not found")
+        if assignee.get('role') not in [UserRole.TRAINER.value, UserRole.FRONT_DESK.value]:
+            raise HTTPException(status_code=403, detail="Counsellors can only assign tasks to Trainers and Front Desk Executives")
+    elif current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="You don't have permission to create tasks")
+    
+    # Get assignee info
+    assignee = await db.users.find_one({"id": task.assigned_to}, {"_id": 0, "name": 1, "email": 1})
+    if not assignee:
+        raise HTTPException(status_code=404, detail="Assigned user not found")
+    
+    new_task = Task(
+        title=task.title,
+        description=task.description,
+        assigned_to=task.assigned_to,
+        assigned_to_name=assignee.get('name', assignee.get('email', 'Unknown')),
+        assigned_by=current_user.id,
+        assigned_by_name=current_user.name or current_user.email,
+        branch_id=current_user.branch_id,
+        priority=task.priority,
+        due_date=task.due_date
+    )
+    
+    await db.tasks.insert_one(new_task.model_dump())
+    
+    # Create notification for the assignee
+    notification = Notification(
+        user_id=task.assigned_to,
+        branch_id=current_user.branch_id,
+        type="new_task",
+        title="New Task Assigned",
+        message=f"You have been assigned a new task: {task.title}",
+        data={"task_id": new_task.id},
+        play_audio=True
+    )
+    await db.notifications.insert_one(notification.model_dump())
+    
+    return {"message": "Task created successfully", "id": new_task.id}
+
+@api_router.get("/tasks")
+async def get_tasks(status: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    """Get tasks - assigned to me or created by me"""
+    query = {
+        "$or": [
+            {"assigned_to": current_user.id},
+            {"assigned_by": current_user.id}
+        ]
+    }
+    
+    if status:
+        query["status"] = status
+    
+    tasks = await db.tasks.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return tasks
+
+@api_router.get("/tasks/team")
+async def get_team_tasks(current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.BRANCH_ADMIN]))):
+    """Get all tasks in the branch - Branch Admin only"""
+    query = {}
+    if current_user.role == UserRole.BRANCH_ADMIN:
+        query["branch_id"] = current_user.branch_id
+    
+    tasks = await db.tasks.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return tasks
+
+@api_router.put("/tasks/{task_id}")
+async def update_task(task_id: str, update: TaskUpdate, current_user: User = Depends(get_current_user)):
+    """Update task - assignee can update status, creator can update other fields"""
+    task = await db.tasks.find_one({"id": task_id}, {"_id": 0})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # Check permissions
+    is_assignee = task.get('assigned_to') == current_user.id
+    is_creator = task.get('assigned_by') == current_user.id
+    is_admin = current_user.role in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]
+    
+    if not (is_assignee or is_creator or is_admin):
+        raise HTTPException(status_code=403, detail="You don't have permission to update this task")
+    
+    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
+    
+    if update_data.get('status') == 'Completed':
+        update_data['completed_at'] = datetime.now(timezone.utc)
+    
+    await db.tasks.update_one({"id": task_id}, {"$set": update_data})
+    return {"message": "Task updated successfully"}
+
+@api_router.delete("/tasks/{task_id}")
+async def delete_task(task_id: str, current_user: User = Depends(get_current_user)):
+    """Delete task - only creator or admin can delete"""
+    task = await db.tasks.find_one({"id": task_id}, {"_id": 0})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    is_creator = task.get('assigned_by') == current_user.id
+    is_admin = current_user.role in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]
+    
+    if not (is_creator or is_admin):
+        raise HTTPException(status_code=403, detail="You don't have permission to delete this task")
+    
+    await db.tasks.delete_one({"id": task_id})
+    return {"message": "Task deleted successfully"}
+
 # ========== PAYMENT PLAN EDIT (Branch Admin) ==========
 @api_router.put("/payment-plans/{plan_id}/edit")
 async def edit_payment_plan(plan_id: str, edit_data: PaymentPlanEdit, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.BRANCH_ADMIN]))):
