@@ -100,6 +100,8 @@ const Layout = ({ children }) => {
     { icon: BookOpen, label: 'Curriculum', path: '/curriculum', show: isAcademicController },
     // Certificates - For Super Admin
     { icon: Award, label: 'Certificates', path: '/certificates', show: isSuperAdmin },
+    // Meta Settings - For Super Admin only
+    { icon: Facebook, label: 'Meta Settings', path: '/meta-settings', show: isSuperAdmin },
     // Admin Panel - For Super Admin and Branch Admin (Branch Admin only sees limited tabs)
     { icon: Settings, label: 'Admin Panel', path: '/admin', show: isSuperAdmin || isBranchAdmin },
     // Certificate Manager sees only these two tabs
