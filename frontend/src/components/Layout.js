@@ -65,8 +65,8 @@ const Layout = ({ children }) => {
     { icon: ClipboardList, label: 'Manage Exams', path: '/manage-exams', show: isBranchAdmin || isCounsellor || isFDE },
     // 9. Quiz Exams - For Academic Controller and FDE (to view)
     { icon: BookOpen, label: 'Quiz Exams', path: '/quiz-exams', show: isAcademicController || isFDE },
-    // 10. Tasks - For Branch Admin, Counsellor and FDE
-    { icon: CheckSquare, label: 'Tasks', path: '/tasks', show: isBranchAdmin || isCounsellor || isFDE },
+    // 10. Tasks - For Branch Admin, Counsellor, FDE and Trainer
+    { icon: CheckSquare, label: 'Tasks', path: '/tasks', show: isBranchAdmin || isCounsellor || isFDE || isTrainer },
     // 11. Reports - Access controlled per role (Counsellor: leads, FDE: income/student/leads, Branch Admin: all)
     { icon: FileText, label: 'Reports', path: '/reports', show: isBranchAdmin || isCounsellor || isFDE },
     // 12. Resources - NOT for Certificate Manager, Trainer, or Academic Controller
