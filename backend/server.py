@@ -2716,11 +2716,11 @@ Your response MUST be valid JSON with this structure:
   }
 }
 
-Be specific and actionable. Use actual numbers from the data.""",
-                model="gpt-4o"
-            )
+Be specific and actionable. Use actual numbers from the data."""
+            ).with_model("openai", "gpt-4o")
             
-            ai_response = await chat.send_message_async(f"Analyze this branch data and provide insights:\n\n{analytics_summary}")
+            user_message = UserMessage(text=f"Analyze this branch data and provide insights:\n\n{analytics_summary}")
+            ai_response = await chat.send_message(user_message)
             
             # Parse AI response
             try:
