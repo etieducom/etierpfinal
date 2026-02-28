@@ -323,6 +323,14 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/attendance-insights"
+            element={
+              <PrivateRoute branchAdminOnly>
+                <Layout><AttendanceInsightsPage /></Layout>
+              </PrivateRoute>
+            }
+          />
           {/* Public routes - no auth required */}
           <Route path="/exam/:examId" element={<PublicExamPage />} />
           <Route path="/certificate-request" element={<CertificateRequestPage />} />
