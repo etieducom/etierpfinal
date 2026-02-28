@@ -4701,6 +4701,7 @@ async def get_trainer_dashboard(current_user: User = Depends(get_current_user)):
         "batches": batches,
         "total_students": len(student_ids),
         "students": students,
+        "upcoming_birthdays": upcoming_birthdays,
         "today_attendance": today_attendance,
         "curricula": curricula
     }
