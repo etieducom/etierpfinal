@@ -195,6 +195,7 @@ export const attendanceAPI = {
   markBulk: (data) => api.post('/attendance/bulk', data),
   getBatch: (batchId, date) => api.get(`/attendance/${batchId}`, { params: { date } }),
   getStudent: (enrollmentId) => api.get(`/attendance/student/${enrollmentId}`),
+  getMissedInsights: () => api.get('/attendance/insights/missed'),
 };
 
 // Curriculum API
