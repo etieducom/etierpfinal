@@ -175,7 +175,8 @@ const AdminPanel = () => {
     owner_phone: '',
     owner_designation: '',
     branch_phone: '',
-    branch_email: ''
+    branch_email: '',
+    royalty_percentage: 0
   });
   const [programForm, setProgramForm] = useState({ name: '', duration: '', fee: '', max_discount_percent: '' });
   const [userForm, setUserForm] = useState({ 
