@@ -1283,6 +1283,23 @@ const AdminPanel = () => {
                 />
               </div>
             </div>
+
+            {/* Royalty Percentage - Only visible to Super Admin */}
+            {user.role === 'Admin' && (
+              <div className="space-y-2 pt-4 border-t">
+                <Label>Royalty Percentage (%)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={branchForm.royalty_percentage}
+                  onChange={(e) => setBranchForm({ ...branchForm, royalty_percentage: parseFloat(e.target.value) || 0 })}
+                  placeholder="e.g., 10"
+                />
+                <p className="text-xs text-slate-500">Royalty charged on enrollment payments (1st-31st of each month, due 5th next month)</p>
+              </div>
+            )}
             
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => {
@@ -1291,7 +1308,7 @@ const AdminPanel = () => {
                 setBranchForm({ 
                   name: '', location: '', address: '', city: '', state: '', pincode: '',
                   owner_name: '', owner_email: '', owner_phone: '', owner_designation: '',
-                  branch_phone: '', branch_email: ''
+                  branch_phone: '', branch_email: '', royalty_percentage: 0
                 });
               }}>Cancel</Button>
               <Button type="submit" className="bg-slate-900 hover:bg-slate-800">
