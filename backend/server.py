@@ -1922,7 +1922,7 @@ async def get_branch_users(current_user: User = Depends(get_current_user)):
 
 # Lead Management
 @api_router.post("/leads", response_model=Lead)
-async def create_lead(lead: LeadCreate, current_user: User = Depends(get_current_user)):
+async def create_lead(lead: LeadCreate, request: Request, current_user: User = Depends(get_current_user)):
     program = await db.programs.find_one({"id": lead.program_id}, {"_id": 0})
     if not program:
         raise HTTPException(status_code=404, detail="Program not found")
@@ -1947,6 +1947,17 @@ async def create_lead(lead: LeadCreate, current_user: User = Depends(get_current
     lead_dict['updated_at'] = lead_dict['updated_at'].isoformat()
     
     await db.leads.insert_one(lead_dict)
+    
+    # Audit Log
+    await create_audit_log(
+        user=current_user,
+        action="create",
+        entity_type="lead",
+        entity_id=new_lead.id,
+        entity_name=f"{new_lead.name} ({custom_lead_id})",
+        changes={"name": new_lead.name, "phone": new_lead.number, "program": program['name']},
+        request=request
+    )
     
     # Send WhatsApp notification for new enquiry/lead
     await send_whatsapp_notification(
