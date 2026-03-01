@@ -443,6 +443,47 @@ const Dashboard = () => {
         </Card>
       )}
 
+      {/* Royalty Widget for Branch Admin */}
+      {isBranchAdmin && royaltyData && royaltyData.royalty_percentage > 0 && (
+        <Card className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-soft" data-testid="royalty-widget">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2 text-amber-800">
+              <DollarSign className="w-5 h-5" /> Royalty Due
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <p className="text-sm text-amber-700">Royalty for {royaltyData.month_name}</p>
+                <p className="text-3xl font-bold text-amber-900 mt-1">
+                  ₹{royaltyData.royalty_amount?.toLocaleString()}
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  {royaltyData.royalty_percentage}% of ₹{royaltyData.total_collection?.toLocaleString()} collection
+                </p>
+              </div>
+              <div className="flex flex-col items-start md:items-end gap-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-amber-600" />
+                  <span className="text-sm text-amber-700">Due: {royaltyData.due_date_display}</span>
+                </div>
+                {royaltyData.is_paid ? (
+                  <Badge className="bg-green-100 text-green-700">
+                    <CheckCircle className="w-3 h-3 mr-1" /> Paid
+                  </Badge>
+                ) : royaltyData.royalty_amount > 0 ? (
+                  <Badge className="bg-orange-100 text-orange-700">
+                    <Clock className="w-3 h-3 mr-1" /> Pending
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">No Royalty</Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Counsellor Incentives Section */}
       {isCounsellor && counsellorIncentives && (
         <Card className="border-slate-200 shadow-soft" data-testid="counsellor-incentives">
