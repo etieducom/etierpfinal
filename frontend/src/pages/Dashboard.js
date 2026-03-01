@@ -31,6 +31,7 @@ const Dashboard = () => {
   const [branchFinancialStats, setBranchFinancialStats] = useState(null);
   const [counsellorIncentives, setCounsellorIncentives] = useState(null);
   const [branchIncentiveStats, setBranchIncentiveStats] = useState(null);
+  const [royaltyData, setRoyaltyData] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
