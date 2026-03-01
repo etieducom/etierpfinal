@@ -218,14 +218,14 @@ const AuditLogsPage = () => {
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4">
             <Select 
-              value={filters.entity_type} 
-              onValueChange={(v) => { setFilters({...filters, entity_type: v}); setPage(1); }}
+              value={filters.entity_type || "all"} 
+              onValueChange={(v) => { setFilters({...filters, entity_type: v === "all" ? "" : v}); setPage(1); }}
             >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="All Entities" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Entities</SelectItem>
+                <SelectItem value="all">All Entities</SelectItem>
                 <SelectItem value="lead">Leads</SelectItem>
                 <SelectItem value="payment">Payments</SelectItem>
                 <SelectItem value="enrollment">Enrollments</SelectItem>
@@ -236,14 +236,14 @@ const AuditLogsPage = () => {
             </Select>
 
             <Select 
-              value={filters.action} 
-              onValueChange={(v) => { setFilters({...filters, action: v}); setPage(1); }}
+              value={filters.action || "all"} 
+              onValueChange={(v) => { setFilters({...filters, action: v === "all" ? "" : v}); setPage(1); }}
             >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="All Actions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Actions</SelectItem>
+                <SelectItem value="all">All Actions</SelectItem>
                 <SelectItem value="create">Created</SelectItem>
                 <SelectItem value="update">Updated</SelectItem>
                 <SelectItem value="delete">Deleted</SelectItem>
