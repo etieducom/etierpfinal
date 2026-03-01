@@ -118,6 +118,7 @@ class Branch(BaseModel):
     enrollment_counter: int = 0
     receipt_counter: int = 0
     webhook_key: Optional[str] = None  # Unique key for external lead capture (Google Ads, Meta)
+    royalty_percentage: float = 0.0  # Royalty % charged to branch on enrollment payments
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class BranchCreate(BaseModel):
@@ -133,6 +134,25 @@ class BranchCreate(BaseModel):
     owner_designation: str
     branch_phone: str
     branch_email: EmailStr
+    royalty_percentage: float = 0.0
+
+# Audit Log Model for tracking changes
+class AuditLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    user_email: str
+    user_name: str
+    user_role: str
+    branch_id: Optional[str] = None
+    action: str  # create, update, delete, login, logout, etc.
+    entity_type: str  # lead, enrollment, payment, student, batch, etc.
+    entity_id: Optional[str] = None
+    entity_name: Optional[str] = None  # Human readable identifier
+    changes: Optional[dict] = None  # What was changed (old -> new values)
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Program(BaseModel):
     model_config = ConfigDict(extra="ignore")
