@@ -1589,6 +1589,38 @@ async def send_whatsapp_message(phone_number: str, message_text: str, lead_name:
         logging.error(f"Error sending WhatsApp message: {str(e)}")
         return {"success": False, "error": str(e)}
 
+# Audit Logging Helper Function
+async def create_audit_log(
+    user: User,
+    action: str,
+    entity_type: str,
+    entity_id: str = None,
+    entity_name: str = None,
+    changes: dict = None,
+    request: Request = None
+):
+    """Create an audit log entry for tracking user actions"""
+    try:
+        log = AuditLog(
+            user_id=user.id,
+            user_email=user.email,
+            user_name=user.name,
+            user_role=user.role.value if hasattr(user.role, 'value') else str(user.role),
+            branch_id=user.branch_id,
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            entity_name=entity_name,
+            changes=changes,
+            ip_address=request.client.host if request else None,
+            user_agent=request.headers.get("user-agent", "")[:200] if request else None
+        )
+        log_dict = log.model_dump()
+        log_dict['created_at'] = log_dict['created_at'].isoformat()
+        await db.audit_logs.insert_one(log_dict)
+    except Exception as e:
+        logging.error(f"Failed to create audit log: {e}")
+
 # Authentication Endpoints
 @api_router.post("/auth/register", response_model=UserResponse)
 async def register(user: UserCreate):
