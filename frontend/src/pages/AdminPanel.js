@@ -529,7 +529,8 @@ const AdminPanel = () => {
                             owner_phone: branch.owner_phone || '',
                             owner_designation: branch.owner_designation || '',
                             branch_phone: branch.branch_phone || '',
-                            branch_email: branch.branch_email || ''
+                            branch_email: branch.branch_email || '',
+                            royalty_percentage: branch.royalty_percentage || 0
                           });
                           setBranchDialog(true);
                         }}
