@@ -35,6 +35,8 @@ import UserEfficiencyPage from '@/pages/UserEfficiencyPage';
 import AttendanceInsightsPage from '@/pages/AttendanceInsightsPage';
 import MetaSettingsPage from '@/pages/MetaSettingsPage';
 import MetaAnalyticsPage from '@/pages/MetaAnalyticsPage';
+import RoyaltyCollectionPage from '@/pages/RoyaltyCollectionPage';
+import AuditLogsPage from '@/pages/AuditLogsPage';
 import Layout from '@/components/Layout';
 import ActivityTracker from '@/components/ActivityTracker';
 import { Toaster } from '@/components/ui/sonner';
