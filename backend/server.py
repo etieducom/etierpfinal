@@ -2065,7 +2065,7 @@ async def get_lead(lead_id: str, current_user: User = Depends(get_current_user))
     return Lead(**lead)
 
 @api_router.put("/leads/{lead_id}", response_model=Lead)
-async def update_lead(lead_id: str, lead_update: LeadUpdate, current_user: User = Depends(get_current_user)):
+async def update_lead(lead_id: str, lead_update: LeadUpdate, request: Request, current_user: User = Depends(get_current_user)):
     lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
