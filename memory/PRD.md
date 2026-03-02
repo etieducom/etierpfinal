@@ -1,46 +1,38 @@
 # ETI Educom Branch Management System - PRD
 
-## Status: ✅ ALL REQUIREMENTS COMPLETE (Feb 28, 2026)
+## Status: ✅ ALL REQUIREMENTS COMPLETE (March 2, 2026)
 
-## Latest Session Updates (Feb 28, 2026)
+## Latest Session Updates (March 2, 2026)
 
-### NEW: Meta (Facebook/Instagram) Integration
-- ✅ **Meta Settings Page** - Super Admin can configure Meta App credentials per branch
-  - App ID, App Secret, Page IDs configuration
-  - Webhook endpoint URL for Facebook Lead Ads
-  - Webhook verify token generation
-- ✅ **Meta Analytics Dashboard** - Branch Admin can view:
-  - Total Spend, Leads, Cost per Lead, CTR
-  - Impressions, Reach, Clicks
-  - AI-powered analysis and recommendations
-  - Campaign breakdown and Facebook leads list
-- ✅ **Facebook Lead Ads Webhook** - Auto-import leads from Facebook
-  - POST /api/webhooks/facebook-leads endpoint
-  - Automatic CRM lead creation from Facebook leads
-- ✅ **Meta Ads Sync** - Manual sync of ad performance data
+### NEW: Royalty Management System
+- ✅ **Super Admin can set Royalty %** per branch when creating/editing branches
+- ✅ **Royalty Collection Page** (`/royalty-collection`) - Super Admin dashboard showing:
+  - Total royalty, collected, pending amounts
+  - Due date (5th of next month)
+  - Branch-wise breakdown with "Mark Paid" functionality
+- ✅ **Branch Admin Royalty Widget** - Dashboard shows:
+  - Royalty amount for last month
+  - Percentage of total collection
+  - Due date and payment status
+- ✅ Royalty calculated on **enrollment payments only** (excludes certification fees)
+- ✅ Period: 1st to 31st of each month
+
+### NEW: Activity Logs (Audit Trail)
+- ✅ **Branch Admin** can see logs of their team (Trainers, Counsellors, FDEs)
+- ✅ **Super Admin** can see logs of Branch Admins
+- ✅ Activity Logs page (`/audit-logs`) shows:
+  - User activity summary (last 7 days)
+  - Filterable by entity type and action
+  - Detailed log with timestamp, user, action, entity, and changes
+- ✅ Automatic logging on: Lead creation, Lead updates, Payment creation
 
 ### Previous Updates:
-- ✅ **Task Mark Complete** - Fixed API endpoint format (JSON body instead of query params)
-- ✅ **Lead Status Update** - Immediate UI update without setTimeout hack
-- ✅ **QR Code Scanning** - Fixed URL to `/exam/{id}` to match App.js route
-- ✅ **Frontend Sorting** - Removed duplicate sorting, now uses backend default order
-- ✅ **Student Batch Removal** - Completed students now removed from batch (batch_id set to null)
-- ✅ **Notification Dismiss Button** - Close icon on all notifications (X button)
-- ✅ **AI User Efficiency Dashboard** - Team efficiency scores and AI insights
-- ✅ **QR Code for Quiz Links** - Generate and download QR codes
-- ✅ **Attendance Insights Page** - Track trainer compliance
-- ✅ **Trainer Tasks Access** - Trainers can now see and manage tasks
-- ✅ **Passed Students Tab** - Separate view for completed students
-
-### Documentation:
-- ✅ **Complete Deployment Guide** - `/app/DEPLOYMENT_GUIDE_COMPLETE.md`
-  - Hostinger VPS deployment
-  - DigitalOcean deployment  
-  - AWS EC2 deployment
-  - Database setup with authentication
-  - SSL certificate setup
-  - Backup & restore procedures
-  - Future updates & data safety explained
+- ✅ Meta (Facebook/Instagram) Integration
+- ✅ AI User Efficiency Dashboard
+- ✅ Task Management System
+- ✅ QR Code for Quiz Links
+- ✅ Attendance Insights
+- ✅ All bug fixes and enhancements
 
 ---
 
@@ -65,35 +57,45 @@
 | Attendance Insights | ✅ |
 | QR Code Generation | ✅ |
 | Reports Download | ✅ |
-| **Meta (Facebook/Instagram) Integration** | ✅ NEW |
+| Meta (Facebook/Instagram) Integration | ✅ |
+| **Royalty Management System** | ✅ NEW |
+| **Activity Logs (Audit Trail)** | ✅ NEW |
 
 ---
 
-## Meta Integration Details
+## Royalty System Details
 
-### For Super Admin (/meta-settings):
-1. Configure Meta App credentials per branch
-2. Copy webhook URL for Facebook Lead Ads setup
-3. View/edit configuration for each branch
+### For Super Admin:
+1. Set royalty % when creating/editing branches (Admin Panel → Branches)
+2. View all branches' royalty at `/royalty-collection`
+3. Mark royalty as paid for each branch
 
-### For Branch Admin (/meta-analytics):
-1. View Facebook/Instagram ad performance
-2. See AI-powered insights and recommendations
-3. Track leads from Facebook Lead Ads
-4. Sync latest ad data manually
+### For Branch Admin:
+1. See royalty widget on dashboard
+2. Shows: Amount, percentage, due date, payment status
 
-### Facebook Lead Ads Setup:
-1. Create Meta Developer App at developers.facebook.com
-2. Enable "Webhooks" and "Page" products
-3. Generate Page Access Token with leads_retrieval permission
-4. Configure webhook URL: `{your-domain}/api/webhooks/facebook-leads`
-5. Subscribe to "leadgen" field for "page" object
+### Calculation:
+- Period: 1st to 31st of each month
+- Based on: Enrollment payments only (excludes certification fees)
+- Due: 5th of next month
 
 ---
 
-## Deployment Files
-- `/app/DEPLOYMENT_GUIDE_COMPLETE.md` - Full step-by-step deployment guide
-- `/app/DEPLOYMENT_GUIDE_HOSTINGER.md` - Quick Hostinger guide
+## Activity Logs Details
+
+### Branch Admin sees:
+- Activities of Trainers, Counsellors, FDEs in their branch
+- Who changed what and when
+
+### Super Admin sees:
+- Activities of Branch Admins across all branches
+
+### Tracked Actions:
+- Lead creation (name, phone, program)
+- Lead updates (status changes)
+- Payment creation (amount, student, receipt)
+
+---
 
 ## Test Credentials
 | Role | Email | Password |
@@ -106,12 +108,6 @@
 
 ---
 
-## Future Updates & Data Safety
-
-**Your data is SAFE during updates!**
-
-- Database (MongoDB) is separate from application code
-- Updates only change code files, NOT your data
-- Always backup before major updates: `mongodump --db eti_educom_prod --out /backup/`
-
-See `/app/DEPLOYMENT_GUIDE_COMPLETE.md` for full details.
+## Deployment Files
+- `/app/DEPLOYMENT_STEP_BY_STEP.md` - Complete 62-step deployment guide
+- `/app/HOSTINGER_DEPLOYMENT_GUIDE.md` - Detailed Hostinger VPS guide
