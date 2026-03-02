@@ -1285,7 +1285,7 @@ const AdminPanel = () => {
             </div>
 
             {/* Royalty Percentage - Only visible to Super Admin */}
-            {user.role === 'Admin' && (
+            {currentUser.role === 'Admin' && (
               <div className="space-y-2 pt-4 border-t">
                 <Label>Royalty Percentage (%)</Label>
                 <Input
