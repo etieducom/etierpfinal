@@ -120,6 +120,14 @@ function App() {
             }
           />
           <Route
+            path="/dashboard"
+            element={
+              <PrivateRoute>
+                <Layout><Dashboard /></Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/leads"
             element={
               <PrivateRoute>
