@@ -812,6 +812,7 @@ class FollowUp(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     lead_id: str
+    branch_id: Optional[str] = None  # Branch ID from the lead
     note: str
     followup_date: datetime
     reminder_time: Optional[str] = None
@@ -2217,6 +2218,7 @@ async def create_followup(followup: FollowUpCreate, current_user: User = Depends
     
     new_followup = FollowUp(
         **followup.model_dump(),
+        branch_id=lead.get('branch_id'),  # Store branch_id from lead
         created_by=current_user.id,
         created_by_name=current_user.name,
         lead_name=lead['name'],
@@ -8592,6 +8594,22 @@ async def startup_event():
     
     scheduler.start()
     logger.info("Scheduler started - Fee reminders at 9:00 AM, Birthday wishes at 8:00 AM")
+    
+    # Migration: Add branch_id to existing followups that don't have it
+    try:
+        followups_without_branch = await db.followups.find({"branch_id": {"$exists": False}}, {"_id": 0, "id": 1, "lead_id": 1}).to_list(10000)
+        if followups_without_branch:
+            logger.info(f"Migrating {len(followups_without_branch)} followups to add branch_id")
+            for fu in followups_without_branch:
+                lead = await db.leads.find_one({"id": fu.get('lead_id')}, {"_id": 0, "branch_id": 1})
+                if lead and lead.get('branch_id'):
+                    await db.followups.update_one(
+                        {"id": fu['id']},
+                        {"$set": {"branch_id": lead['branch_id']}}
+                    )
+            logger.info("Followup migration completed")
+    except Exception as e:
+        logger.error(f"Error during followup migration: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

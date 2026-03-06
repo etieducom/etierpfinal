@@ -17,6 +17,12 @@
 - ✅ **Year selector** to view historical admission data
 - ✅ Shows total admissions count for the selected year
 
+### NEW: Branch Admin Follow-up Visibility
+- ✅ **Branch Admins can now see all follow-ups** created by Counsellors in their branch
+- ✅ Added `branch_id` field to FollowUp model
+- ✅ Automatic migration to add `branch_id` to existing follow-ups
+- ✅ Follow-ups page shows counsellor name, lead details, notes, and scheduled date
+
 ---
 
 ## Previous Session Updates (March 2, 2026)
