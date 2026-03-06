@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Search, GraduationCap, User, Phone, Mail, CreditCard, Printer, XCircle, Eye, Wallet, PlusCircle, BookPlus, Edit, Upload } from 'lucide-react';
+import { Search, GraduationCap, User, Phone, Mail, CreditCard, Printer, XCircle, Eye, Wallet, PlusCircle, BookPlus, Edit, Upload, Plus, IndianRupee } from 'lucide-react';
 import { format } from 'date-fns';
 
 const PAYMENT_MODES = ['Cash', 'Card', 'UPI', 'Net Banking', 'Cheque'];
@@ -1384,6 +1384,105 @@ const StudentsPage = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Add-on Courses Section */}
+              {studentDetails.addon_courses && studentDetails.addon_courses.length > 0 && (
+                <Card className="border-purple-200 bg-purple-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2 text-purple-800">
+                      <Plus className="w-5 h-5" /> Add-on Courses
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {studentDetails.addon_courses.map((addon, idx) => (
+                        <div key={idx} className="bg-white p-3 rounded-lg border border-purple-200">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-medium text-purple-800">{addon.program_name}</p>
+                              <p className="text-sm text-slate-500">
+                                Added: {addon.added_at ? format(new Date(addon.added_at), 'dd MMM yyyy') : '-'}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-slate-500">Fee: ₹{(addon.fee_quoted || 0).toLocaleString()}</p>
+                              {addon.discount_percent > 0 && (
+                                <p className="text-xs text-green-600">Discount: {addon.discount_percent}%</p>
+                              )}
+                              <p className="font-bold text-purple-700">Final: ₹{(addon.final_fee || 0).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      <div className="flex justify-end pt-2 border-t border-purple-200">
+                        <p className="font-bold text-purple-800">Add-on Total: ₹{(studentDetails.addon_total_fee || 0).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Other Enrollments for Same Student */}
+              {studentDetails.other_enrollments && studentDetails.other_enrollments.length > 0 && (
+                <Card className="border-blue-200 bg-blue-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2 text-blue-800">
+                      <GraduationCap className="w-5 h-5" /> Other Courses by Same Student
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {studentDetails.other_enrollments.map((other, idx) => (
+                        <div key={idx} className="bg-white p-3 rounded-lg border border-blue-200">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-medium text-blue-800">{other.program_name}</p>
+                              <p className="text-sm text-slate-500">
+                                Enrollment ID: {other.enrollment_id || other.id?.slice(0, 8).toUpperCase()}
+                              </p>
+                              <p className="text-sm text-slate-500">
+                                Enrolled: {other.enrollment_date ? format(new Date(other.enrollment_date), 'dd MMM yyyy') : '-'}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-slate-500">Fee: ₹{(other.fee_quoted || 0).toLocaleString()}</p>
+                              <p className="font-bold text-blue-700">Final: ₹{(other.final_fee || 0).toLocaleString()}</p>
+                              <p className="text-sm">Paid: ₹{(other.total_paid || 0).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Grand Total Summary (if multiple courses) */}
+              {(studentDetails.addon_courses?.length > 0 || studentDetails.other_enrollments?.length > 0) && (
+                <Card className="border-green-300 bg-gradient-to-r from-green-50 to-emerald-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2 text-green-800">
+                      <IndianRupee className="w-5 h-5" /> Grand Total (All Courses)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-white p-3 rounded-lg border border-green-200 text-center">
+                        <p className="text-sm text-slate-500">Total Fee</p>
+                        <p className="text-2xl font-bold text-slate-800">₹{(studentDetails.grand_total_fee || 0).toLocaleString()}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-green-200 text-center">
+                        <p className="text-sm text-green-600">Total Paid</p>
+                        <p className="text-2xl font-bold text-green-600">₹{(studentDetails.grand_total_paid || 0).toLocaleString()}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-orange-200 text-center">
+                        <p className="text-sm text-orange-600">Total Pending</p>
+                        <p className="text-2xl font-bold text-orange-600">₹{(studentDetails.grand_pending || 0).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </DialogContent>

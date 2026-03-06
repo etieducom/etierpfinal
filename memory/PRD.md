@@ -60,6 +60,12 @@
 - ✅ Available for Branch Admin and Super Admin
 - ✅ Report shows all installments due in the selected month
 
+### BUGFIX: Enhanced Student Details Modal
+- ✅ **Shows Add-on Courses** attached to the enrollment
+- ✅ **Shows Other Enrollments** for the same student (matched by phone/email)
+- ✅ **Grand Total Summary** showing total fee, paid, and pending across ALL courses
+- ✅ Backend API updated to return `addon_courses`, `other_enrollments`, and `grand_total_*` fields
+
 ---
 
 ## Previous Session Updates (March 2, 2026)

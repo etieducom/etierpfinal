@@ -4655,7 +4655,7 @@ async def get_students(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/students/{enrollment_id}")
 async def get_student_details(enrollment_id: str, current_user: User = Depends(get_current_user)):
-    """Get full details of an enrolled student"""
+    """Get full details of an enrolled student including add-on courses and other enrollments"""
     enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
     if not enrollment:
         raise HTTPException(status_code=404, detail="Student not found")
@@ -4667,12 +4667,53 @@ async def get_student_details(enrollment_id: str, current_user: User = Depends(g
     # Get payment plan
     payment_plan = await db.payment_plans.find_one({"enrollment_id": enrollment_id}, {"_id": 0})
     
-    # Get all payments
+    # Get all payments for this enrollment
     payments = await db.payments.find({"enrollment_id": enrollment_id}, {"_id": 0}).sort("payment_date", -1).to_list(100)
     total_paid = sum(p.get('amount', 0) for p in payments)
     
+    # Get add-on courses for this enrollment
+    addon_courses = await db.addon_courses.find({"enrollment_id": enrollment_id}, {"_id": 0}).to_list(100)
+    addon_total_fee = sum(a.get('final_fee', 0) for a in addon_courses)
+    
     # Get branch info
     branch = await db.branches.find_one({"id": enrollment.get('branch_id')}, {"_id": 0, "name": 1, "location": 1})
+    
+    # Get all other enrollments for this student (by phone or email)
+    student_phone = enrollment.get('phone') or enrollment.get('student_phone')
+    student_email = enrollment.get('email') or enrollment.get('student_email')
+    
+    other_enrollments = []
+    if student_phone or student_email:
+        query = {"id": {"$ne": enrollment_id}}
+        if current_user.role not in [UserRole.ADMIN]:
+            query["branch_id"] = current_user.branch_id
+        
+        # Find by phone or email
+        or_conditions = []
+        if student_phone:
+            or_conditions.append({"phone": student_phone})
+            or_conditions.append({"student_phone": student_phone})
+        if student_email:
+            or_conditions.append({"email": student_email})
+            or_conditions.append({"student_email": student_email})
+        
+        if or_conditions:
+            query["$or"] = or_conditions
+            other_enrollments = await db.enrollments.find(query, {"_id": 0}).to_list(100)
+    
+    # Calculate totals across all enrollments for this student
+    all_enrollment_ids = [enrollment_id] + [e['id'] for e in other_enrollments]
+    all_payments = await db.payments.find({"enrollment_id": {"$in": all_enrollment_ids}}, {"_id": 0}).to_list(1000)
+    grand_total_paid = sum(p.get('amount', 0) for p in all_payments)
+    
+    # Calculate grand total fee (current enrollment + addons + other enrollments)
+    grand_total_fee = enrollment.get('final_fee', 0) + addon_total_fee
+    for other in other_enrollments:
+        grand_total_fee += other.get('final_fee', 0)
+        # Also get addons for other enrollments
+        other_addons = await db.addon_courses.find({"enrollment_id": other['id']}, {"_id": 0}).to_list(100)
+        for oa in other_addons:
+            grand_total_fee += oa.get('final_fee', 0)
     
     return {
         "enrollment": enrollment,
@@ -4680,7 +4721,13 @@ async def get_student_details(enrollment_id: str, current_user: User = Depends(g
         "payments": payments,
         "total_paid": total_paid,
         "pending_amount": max(0, enrollment.get('final_fee', 0) - total_paid),
-        "branch": branch
+        "branch": branch,
+        "addon_courses": addon_courses,
+        "addon_total_fee": addon_total_fee,
+        "other_enrollments": other_enrollments,
+        "grand_total_fee": grand_total_fee,
+        "grand_total_paid": grand_total_paid,
+        "grand_pending": max(0, grand_total_fee - grand_total_paid)
     }
 
 @api_router.put("/students/{enrollment_id}/cancel")
