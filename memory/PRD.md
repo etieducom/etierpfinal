@@ -52,6 +52,14 @@
 - ✅ **Removed duplicate charts** (Status Distribution pie chart and Lead Sources bar chart)
 - ✅ Kept the text-based Lead Sources and Status Breakdown cards from AI Insights
 
+### NEW: Monthly Fee Collection Report
+- ✅ **New report type** "Monthly Fee Collection" in Reports section
+- ✅ **Month selector** to choose any month for the report
+- ✅ **Quick download button** for current month (green highlighted section)
+- ✅ **CSV export** with columns: Student ID, Name, Phone, Course, Total Fee, Paid Fee, Due Amount, Due Date, Installment #, Status
+- ✅ Available for Branch Admin and Super Admin
+- ✅ Report shows all installments due in the selected month
+
 ---
 
 ## Previous Session Updates (March 2, 2026)

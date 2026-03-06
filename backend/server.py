@@ -3416,6 +3416,72 @@ async def generate_report(
             ])
         filename = "pending_payments_report.csv"
     
+    elif report_type == "fee_collection":
+        # Monthly fee collection report - shows installments due in a specific month
+        from calendar import monthrange
+        
+        # Default to current month if no date specified
+        if start_date:
+            year = int(start_date[:4])
+            month = int(start_date[5:7])
+        else:
+            now = datetime.now()
+            year = now.year
+            month = now.month
+        
+        # Get first and last day of the month
+        _, last_day = monthrange(year, month)
+        month_start = f"{year}-{str(month).zfill(2)}-01"
+        month_end = f"{year}-{str(month).zfill(2)}-{str(last_day).zfill(2)}"
+        
+        # Get all installments due in the selected month
+        installments = await db.installment_schedule.find({
+            "due_date": {"$gte": month_start, "$lte": month_end}
+        }, {"_id": 0}).to_list(10000)
+        
+        due_installments = []
+        
+        for installment in installments:
+            # Get the payment plan
+            plan = await db.payment_plans.find_one({"id": installment.get('payment_plan_id')}, {"_id": 0})
+            if not plan:
+                continue
+            
+            # Check branch filter
+            if branch_filter.get('branch_id') and plan.get('branch_id') != branch_filter.get('branch_id'):
+                continue
+                
+            enrollment = await db.enrollments.find_one({"id": plan.get('enrollment_id')}, {"_id": 0})
+            if not enrollment:
+                continue
+                
+            due_installments.append({
+                'enrollment_id': enrollment.get('enrollment_id', ''),
+                'student_name': enrollment.get('student_name', ''),
+                'phone': enrollment.get('phone') or enrollment.get('student_phone', ''),
+                'program_name': enrollment.get('program_name', ''),
+                'total_fee': enrollment.get('final_fee') or enrollment.get('fee_quoted', 0),
+                'paid_fee': enrollment.get('total_paid', 0),
+                'due_amount': installment.get('amount', 0),
+                'due_date': installment.get('due_date', ''),
+                'installment_number': installment.get('installment_number', 1),
+                'status': installment.get('status', 'Pending')
+            })
+        
+        # Sort by due date
+        due_installments.sort(key=lambda x: x['due_date'])
+        
+        writer.writerow(['Student ID', 'Student Name', 'Phone', 'Course', 'Total Fee', 'Paid Fee', 'Due Amount', 'Due Date', 'Installment #', 'Status'])
+        for item in due_installments:
+            writer.writerow([
+                item['enrollment_id'], item['student_name'], item['phone'], item['program_name'],
+                item['total_fee'], item['paid_fee'], item['due_amount'], item['due_date'],
+                item['installment_number'], item['status']
+            ])
+        
+        month_name = datetime(year, month, 1).strftime('%B_%Y')
+        filename = f"fee_collection_{month_name}.csv"
+    
     else:
         raise HTTPException(status_code=400, detail="Invalid report type")
     

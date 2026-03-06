@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Download, Filter, FileText, DollarSign, Users, CreditCard, Clock } from 'lucide-react';
+import { Download, Filter, FileText, DollarSign, Users, CreditCard, Clock, Calendar, FileSpreadsheet } from 'lucide-react';
 
 const STATUSES = ['All', 'New', 'Contacted', 'Demo Booked', 'Follow-up', 'Converted', 'Lost'];
 const SOURCES = ['All', 'Website', 'Social Media', 'Referral', 'Walk-in', 'Phone Call', 'Google'];
@@ -39,6 +39,7 @@ const ReportsPage = () => {
     { id: 'income', label: 'Income Report', icon: DollarSign, description: 'Payment records and revenue', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
     { id: 'expenses', label: 'Expenses Report', icon: CreditCard, description: 'Expense records by category', roles: ['Admin', 'Branch Admin'] },
     { id: 'pending_payments', label: 'Pending Payments', icon: Clock, description: 'Outstanding installments', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
+    { id: 'fee_collection', label: 'Monthly Fee Collection', icon: Calendar, description: 'Installments due in selected month', roles: ['Admin', 'Branch Admin'] },
   ];
 
   // Filter report types based on user role
@@ -61,22 +62,29 @@ const ReportsPage = () => {
     }
   };
 
-  const handleGenerateReport = async () => {
+  const handleGenerateReport = async (customReportType = null, customStartDate = null) => {
     setGenerating(true);
     try {
-      const cleanFilters = { report_type: reportType };
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value && value !== 'All') {
-          cleanFilters[key] = value;
-        }
-      });
+      const actualReportType = customReportType || reportType;
+      const cleanFilters = { report_type: actualReportType };
+      
+      // Use custom start_date if provided (for quick fee collection)
+      if (customStartDate) {
+        cleanFilters.start_date = customStartDate;
+      } else {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value && value !== 'All') {
+            cleanFilters[key] = value;
+          }
+        });
+      }
 
       const response = await reportsAPI.generateReport(cleanFilters);
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${reportType}_report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `${actualReportType}_report_${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -87,6 +95,11 @@ const ReportsPage = () => {
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleQuickFeeCollection = () => {
+    const currentMonthStart = new Date().toISOString().slice(0, 7) + '-01';
+    handleGenerateReport('fee_collection', currentMonthStart);
   };
 
   const resetFilters = () => {
@@ -134,6 +147,42 @@ const ReportsPage = () => {
         </CardContent>
       </Card>
 
+      {/* Quick Monthly Fee Collection Download - Branch Admin only */}
+      {(isBranchAdmin || isSuperAdmin) && (
+        <Card className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <FileSpreadsheet className="w-5 h-5" />
+              Monthly Fee Collection Report
+            </CardTitle>
+            <CardDescription className="text-green-700">
+              Download installments due for any month - Available on 1st of every month
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex-1">
+                <p className="text-sm text-green-800">
+                  <strong>Current Month:</strong> {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  Includes: Student ID, Name, Phone, Course, Total Fee, Paid Fee, Due Amount, Due Date
+                </p>
+              </div>
+              <Button 
+                onClick={handleQuickFeeCollection}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={generating}
+                data-testid="quick-fee-collection-btn"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download {new Date().toLocaleString('default', { month: 'short' })} Report
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Filters */}
       <Card className="border-slate-200 shadow-soft">
         <CardHeader>
@@ -168,25 +217,43 @@ const ReportsPage = () => {
             )}
 
             {/* Date Filters */}
-            <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Input
-                type="date"
-                value={filters.start_date}
-                onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
-                data-testid="start-date-input"
-              />
-            </div>
+            {reportType !== 'fee_collection' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    value={filters.start_date}
+                    onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
+                    data-testid="start-date-input"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label>End Date</Label>
-              <Input
-                type="date"
-                value={filters.end_date}
-                onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
-                data-testid="end-date-input"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    value={filters.end_date}
+                    onChange={(e) => setFilters({ ...filters, end_date: e.target.value })}
+                    data-testid="end-date-input"
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Month Picker for Fee Collection Report */}
+            {reportType === 'fee_collection' && (
+              <div className="space-y-2">
+                <Label>Select Month</Label>
+                <Input
+                  type="month"
+                  value={filters.start_date ? filters.start_date.slice(0, 7) : new Date().toISOString().slice(0, 7)}
+                  onChange={(e) => setFilters({ ...filters, start_date: e.target.value + '-01' })}
+                  data-testid="month-picker"
+                />
+                <p className="text-xs text-slate-500">Select the month to view all installments due</p>
+              </div>
+            )}
 
             {/* Lead-specific Filters */}
             {reportType === 'leads' && (
@@ -257,7 +324,7 @@ const ReportsPage = () => {
               Reset Filters
             </Button>
             <Button
-              onClick={handleGenerateReport}
+              onClick={() => handleGenerateReport()}
               disabled={generating}
               className="bg-slate-900 hover:bg-slate-800"
               data-testid="generate-report-button"
