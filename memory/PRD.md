@@ -32,6 +32,14 @@
   - Meta Ads (Facebook/Instagram analytics)
 - ✅ Clean, unified UI for all Branch Admin analytics
 
+### NEW: Consolidated International Exams Page
+- ✅ **Combined "International Exams" and "Manage Exams"** into single page
+- ✅ **Two tabs**:
+  - "Book New Exam" - Available exams with booking functionality
+  - "Bookings" - Stats, search, filter, and manage all bookings
+- ✅ Removed separate "Manage Exams" sidebar link
+- ✅ Old `/manage-exams` route redirects to `/international-exams`
+
 ---
 
 ## Previous Session Updates (March 2, 2026)

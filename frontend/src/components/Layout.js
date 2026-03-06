@@ -61,8 +61,7 @@ const Layout = ({ children }) => {
     { icon: Clock, label: 'Pending Payments', path: '/pending-payments', show: isBranchAdmin || isFDE },
     // 7. International Exams - For Branch Admin, Counsellor and FDE
     { icon: Globe, label: 'International Exams', path: '/international-exams', show: isBranchAdmin || isCounsellor || isFDE },
-    // 8. Manage Exams - For Branch Admin, Counsellor and FDE
-    { icon: ClipboardList, label: 'Manage Exams', path: '/manage-exams', show: isBranchAdmin || isCounsellor || isFDE },
+    // 8. Quiz Exams - For Branch Admin, Trainer, Academic Controller
     // 9. Quiz Exams - For Academic Controller and FDE (to view)
     { icon: BookOpen, label: 'Quiz Exams', path: '/quiz-exams', show: isAcademicController || isFDE },
     // 10. Tasks - For Branch Admin, Counsellor, FDE and Trainer

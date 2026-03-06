@@ -16,7 +16,6 @@ import PendingPaymentsPage from '@/pages/PendingPaymentsPage';
 import DeletedLeadsPage from '@/pages/DeletedLeadsPage';
 import StudentsPage from '@/pages/StudentsPage';
 import InternationalExamsPage from '@/pages/InternationalExamsPage';
-import ManageExamsPage from '@/pages/ManageExamsPage';
 import TasksPage from '@/pages/TasksPage';
 import QuizExamsPage from '@/pages/QuizExamsPage';
 import PublicExamPage from '@/pages/PublicExamPage';
@@ -210,11 +209,7 @@ function App() {
           />
           <Route
             path="/manage-exams"
-            element={
-              <PrivateRoute>
-                <Layout><ManageExamsPage /></Layout>
-              </PrivateRoute>
-            }
+            element={<Navigate to="/international-exams" replace />}
           />
           <Route
             path="/admin"
