@@ -3494,8 +3494,8 @@ async def delete_lead_source(source_id: str, current_user: User = Depends(requir
 # Expense Management (FDA)
 @api_router.post("/expenses", response_model=Expense)
 async def create_expense(expense: ExpenseCreate, current_user: User = Depends(get_current_user)):
-    if current_user.role not in [UserRole.ADMIN, UserRole.FRONT_DESK]:
-        raise HTTPException(status_code=403, detail="Only Front Desk Executive can add expenses")
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN, UserRole.FRONT_DESK]:
+        raise HTTPException(status_code=403, detail="Only Branch Admin or Front Desk Executive can add expenses")
     
     if not current_user.branch_id and current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=400, detail="User must be assigned to a branch")
@@ -6674,7 +6674,7 @@ async def get_quiz_qr_code(exam_id: str, current_user: User = Depends(get_curren
         raise HTTPException(status_code=404, detail="Quiz exam not found")
     
     # Generate the public quiz URL - use /exam route which matches frontend App.js
-    frontend_url = os.environ.get('FRONTEND_URL', 'https://meta-crm-integration.preview.emergentagent.com')
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://expense-tracking-2.preview.emergentagent.com')
     quiz_url = f"{frontend_url}/exam/{exam_id}"
     
     # Generate QR code

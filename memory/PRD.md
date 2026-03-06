@@ -1,8 +1,18 @@
 # ETI Educom Branch Management System - PRD
 
-## Status: ✅ ALL REQUIREMENTS COMPLETE (March 2, 2026)
+## Status: ✅ ALL REQUIREMENTS COMPLETE (March 6, 2026)
 
-## Latest Session Updates (March 2, 2026)
+## Latest Session Updates (March 6, 2026)
+
+### NEW: Branch Admin Expense Management
+- ✅ **Branch Admins can now add expenses** for their branch
+- ✅ Modified `POST /api/expenses` endpoint to allow `branch_admin` role
+- ✅ Expenses are automatically associated with the Branch Admin's branch
+- ✅ Branch Admins can view, add, and delete expenses from `/expenses` page
+
+---
+
+## Previous Session Updates (March 2, 2026)
 
 ### NEW: Royalty Management System
 - ✅ **Super Admin can set Royalty %** per branch when creating/editing branches
