@@ -4198,6 +4198,79 @@ async def get_monthly_financial_analytics(year: int = None, current_user: User =
         "total_expenses": sum(e.get('amount', 0) for e in expenses)
     }
 
+@api_router.get("/analytics/admissions/monthly")
+async def get_monthly_admission_stats(year: int = None, current_user: User = Depends(get_current_user)):
+    """Get monthly admission (enrollment) statistics for charts - Branch Admin and Admin only"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Admin or Branch Admin can access this")
+    
+    if year is None:
+        year = datetime.now().year
+    
+    # Build query based on user role
+    branch_query = {}
+    if current_user.role != UserRole.ADMIN:
+        branch_query["branch_id"] = current_user.branch_id
+    
+    # Date range for the year
+    start_date = f"{year}-01-01"
+    end_date = f"{year}-12-31"
+    
+    # Get all enrollments for the year
+    enrollments = await db.enrollments.find({
+        **branch_query,
+        "enrollment_date": {"$gte": start_date, "$lte": end_date}
+    }, {"_id": 0, "enrollment_date": 1, "status": 1, "program_name": 1, "fee_quoted": 1}).to_list(10000)
+    
+    # Aggregate by month
+    monthly_data = {}
+    for month in range(1, 13):
+        month_str = f"{year}-{str(month).zfill(2)}"
+        monthly_data[month_str] = {
+            "month": month, 
+            "admissions": 0, 
+            "active": 0,
+            "completed": 0,
+            "total_fee": 0
+        }
+    
+    for enrollment in enrollments:
+        enroll_date = enrollment.get('enrollment_date', '')
+        if isinstance(enroll_date, str):
+            month_key = enroll_date[:7]
+        else:
+            month_key = enroll_date.strftime('%Y-%m')
+        
+        if month_key in monthly_data:
+            monthly_data[month_key]["admissions"] += 1
+            monthly_data[month_key]["total_fee"] += enrollment.get('fee_quoted', 0)
+            status = enrollment.get('status', 'Active')
+            if status == 'Active':
+                monthly_data[month_key]["active"] += 1
+            elif status == 'Completed':
+                monthly_data[month_key]["completed"] += 1
+    
+    # Convert to list sorted by month
+    result = sorted(monthly_data.values(), key=lambda x: x["month"])
+    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    for item in result:
+        item["month_name"] = month_names[item["month"] - 1]
+    
+    # Get program-wise breakdown
+    program_breakdown = {}
+    for enrollment in enrollments:
+        program = enrollment.get('program_name', 'Unknown')
+        if program not in program_breakdown:
+            program_breakdown[program] = 0
+        program_breakdown[program] += 1
+    
+    return {
+        "year": year,
+        "monthly_data": result,
+        "total_admissions": len(enrollments),
+        "program_breakdown": program_breakdown
+    }
+
 @api_router.get("/analytics/financial/branch-wise")
 async def get_branch_wise_financial(current_user: User = Depends(require_role([UserRole.ADMIN]))):
     """Get income and expenses for all branches - Admin only"""

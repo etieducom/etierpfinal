@@ -82,6 +82,7 @@ export const analyticsAPI = {
   getOverview: () => api.get('/analytics/overview'),
   getBranchWise: () => api.get('/analytics/branch-wise'),
   getMonthlyFinancial: (year) => api.get(`/analytics/financial/monthly${year ? `?year=${year}` : ''}`),
+  getMonthlyAdmissions: (year) => api.get(`/analytics/admissions/monthly${year ? `?year=${year}` : ''}`),
   getBranchWiseFinancial: () => api.get('/analytics/financial/branch-wise'),
   getSuperAdminDashboard: () => api.get('/analytics/super-admin-dashboard'),
   getAILeadsInsights: () => api.get('/analytics/ai-leads-insights'),

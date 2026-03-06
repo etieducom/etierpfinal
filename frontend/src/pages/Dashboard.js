@@ -32,6 +32,7 @@ const Dashboard = () => {
   const [counsellorIncentives, setCounsellorIncentives] = useState(null);
   const [branchIncentiveStats, setBranchIncentiveStats] = useState(null);
   const [royaltyData, setRoyaltyData] = useState(null);
+  const [admissionData, setAdmissionData] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
@@ -99,6 +100,10 @@ const Dashboard = () => {
           // Fetch royalty for last month
           const royaltyRes = await royaltyAPI.getBranchRoyalty(user.branch_id);
           setRoyaltyData(royaltyRes.data);
+          
+          // Fetch monthly admission stats
+          const admissionRes = await analyticsAPI.getMonthlyAdmissions(selectedYear);
+          setAdmissionData(admissionRes.data);
         } catch (e) {
           console.error('Error fetching branch stats:', e);
         }
@@ -480,6 +485,69 @@ const Dashboard = () => {
                 )}
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Monthly Admission Stats Chart for Branch Admin */}
+      {isBranchAdmin && admissionData && (
+        <Card className="border-slate-200 shadow-soft" data-testid="admission-stats-chart">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-purple-600" /> Monthly Admissions
+              </CardTitle>
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-slate-600">
+                  Total: <span className="font-bold text-purple-700">{admissionData.total_admissions}</span> admissions in {admissionData.year}
+                </div>
+                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[2024, 2025, 2026].map((year) => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={admissionData.monthly_data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                <XAxis dataKey="month_name" stroke="#64748B" />
+                <YAxis stroke="#64748B" allowDecimals={false} />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    const labels = { admissions: 'Admissions', active: 'Active', completed: 'Completed' };
+                    return [value, labels[name] || name];
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="admissions" name="Admissions" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            
+            {/* Program-wise breakdown */}
+            {admissionData.program_breakdown && Object.keys(admissionData.program_breakdown).length > 0 && (
+              <div className="mt-6 pt-4 border-t border-slate-200">
+                <h4 className="text-sm font-semibold text-slate-700 mb-3">Program-wise Distribution</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {Object.entries(admissionData.program_breakdown)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 8)
+                    .map(([program, count]) => (
+                      <div key={program} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100">
+                        <span className="text-sm font-medium text-slate-700 truncate mr-2">{program}</span>
+                        <Badge className="bg-purple-100 text-purple-700 flex-shrink-0">{count}</Badge>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

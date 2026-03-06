@@ -10,6 +10,13 @@
 - ✅ Expenses are automatically associated with the Branch Admin's branch
 - ✅ Branch Admins can view, add, and delete expenses from `/expenses` page
 
+### NEW: Monthly Admission Stats Chart
+- ✅ **New API endpoint** `GET /api/analytics/admissions/monthly` for admission statistics
+- ✅ **Bar chart** showing month-wise admissions on Branch Admin dashboard
+- ✅ **Program-wise breakdown** showing distribution of admissions by program
+- ✅ **Year selector** to view historical admission data
+- ✅ Shows total admissions count for the selected year
+
 ---
 
 ## Previous Session Updates (March 2, 2026)
