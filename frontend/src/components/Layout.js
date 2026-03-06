@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet, GraduationCap, Globe, ClipboardList, CheckSquare, BookOpen, Award, Building2, UsersRound, Target, MessageSquare, Banknote, Brain, Zap, CalendarCheck, Facebook, DollarSign, History } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet, GraduationCap, Globe, ClipboardList, CheckSquare, BookOpen, Award, Building2, UsersRound, Target, MessageSquare, Banknote, Brain, DollarSign, History, Facebook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -80,14 +80,8 @@ const Layout = ({ children }) => {
     { icon: Wallet, label: 'Expenses', path: '/expenses', show: isBranchAdmin || isFDE },
     // Cash Handling - For FDE and Branch Admin
     { icon: Banknote, label: 'Cash Handling', path: '/cash-handling', show: isFDE || isBranchAdmin },
-    // AI Analytics - For Branch Admin only
-    { icon: Brain, label: 'AI Analytics', path: '/ai-analytics', show: isBranchAdmin },
-    // User Efficiency - For Branch Admin only
-    { icon: Zap, label: 'User Efficiency', path: '/user-efficiency', show: isBranchAdmin },
-    // Attendance Insights - For Branch Admin only
-    { icon: CalendarCheck, label: 'Attendance Insights', path: '/attendance-insights', show: isBranchAdmin },
-    // Meta Analytics - For Branch Admin only
-    { icon: Facebook, label: 'Meta Analytics', path: '/meta-analytics', show: isBranchAdmin },
+    // Insights - Consolidated AI Analytics for Branch Admin only
+    { icon: Brain, label: 'Insights', path: '/insights', show: isBranchAdmin },
     // Audit Logs - For Branch Admin (see team activity) and Super Admin (see branch admin activity)
     { icon: History, label: 'Activity Logs', path: '/audit-logs', show: isBranchAdmin || isSuperAdmin },
     // Campaign Management - For Branch Admin only

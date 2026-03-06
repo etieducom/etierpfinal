@@ -23,6 +23,15 @@
 - ✅ Automatic migration to add `branch_id` to existing follow-ups
 - ✅ Follow-ups page shows counsellor name, lead details, notes, and scheduled date
 
+### NEW: Consolidated Insights Page
+- ✅ **Single "Insights" menu item** replaces 4 separate analytics links in sidebar
+- ✅ **Tabbed interface** with 4 tabs:
+  - Branch Analytics (AI-powered health score and recommendations)
+  - User Efficiency (Team performance metrics)
+  - Attendance (Trainer attendance compliance)
+  - Meta Ads (Facebook/Instagram analytics)
+- ✅ Clean, unified UI for all Branch Admin analytics
+
 ---
 
 ## Previous Session Updates (March 2, 2026)
