@@ -900,55 +900,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Status Distribution */}
-        <Card className="col-span-1 lg:col-span-5 border-slate-200 shadow-soft">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Status Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => entry.name}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Source Performance */}
-        <Card className="col-span-1 lg:col-span-7 border-slate-200 shadow-soft">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Lead Sources</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics?.source_performance || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="source" stroke="#64748B" />
-                <YAxis stroke="#64748B" />
-                <Tooltip />
-                <Bar dataKey="count" fill="#0F172A" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Income & Expense Chart - Admin and Branch Admin only (NOT FDE) */}
       {(user.role === 'Admin' || user.role === 'Branch Admin') && financialData && (
         <Card className="border-slate-200 shadow-soft" data-testid="financial-chart">

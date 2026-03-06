@@ -29,6 +29,7 @@ import CurriculumPage from '@/pages/CurriculumPage';
 import CampaignManagement from '@/pages/CampaignManagement';
 import StudentFeedbackPage from '@/pages/StudentFeedbackPage';
 import CashHandlingPage from '@/pages/CashHandlingPage';
+import FinancesPage from '@/pages/FinancesPage';
 import AIAnalyticsPage from '@/pages/AIAnalyticsPage';
 import UserEfficiencyPage from '@/pages/UserEfficiencyPage';
 import AttendanceInsightsPage from '@/pages/AttendanceInsightsPage';
@@ -168,12 +169,16 @@ function App() {
             }
           />
           <Route
-            path="/expenses"
+            path="/finances"
             element={
               <PrivateRoute fdaOnly>
-                <Layout><ExpensesPage /></Layout>
+                <Layout><FinancesPage /></Layout>
               </PrivateRoute>
             }
+          />
+          <Route
+            path="/expenses"
+            element={<Navigate to="/finances" replace />}
           />
           <Route
             path="/campaigns"
@@ -309,11 +314,7 @@ function App() {
           />
           <Route
             path="/cash-handling"
-            element={
-              <PrivateRoute fdaOnly>
-                <Layout><CashHandlingPage /></Layout>
-              </PrivateRoute>
-            }
+            element={<Navigate to="/finances" replace />}
           />
           <Route
             path="/insights"

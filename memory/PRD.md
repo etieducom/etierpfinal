@@ -40,6 +40,18 @@
 - ✅ Removed separate "Manage Exams" sidebar link
 - ✅ Old `/manage-exams` route redirects to `/international-exams`
 
+### NEW: Consolidated Finances Page
+- ✅ **Combined "Expenses" and "Cash Handling"** into single "Finances" page
+- ✅ **Two tabs**:
+  - "Expenses" - Add, view, delete expenses with stats
+  - "Cash Handling" - Submit deposits (FDE) / View history (Branch Admin)
+- ✅ Removed separate sidebar links, now single "Finances" link
+- ✅ Old routes `/expenses` and `/cash-handling` redirect to `/finances`
+
+### Dashboard Cleanup
+- ✅ **Removed duplicate charts** (Status Distribution pie chart and Lead Sources bar chart)
+- ✅ Kept the text-based Lead Sources and Status Breakdown cards from AI Insights
+
 ---
 
 ## Previous Session Updates (March 2, 2026)

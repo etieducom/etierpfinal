@@ -75,10 +75,8 @@ const Layout = ({ children }) => {
     { icon: Bell, label: 'Pending Follow-ups', path: '/followups', show: isCounsellor || isBranchAdmin },
     // Student Feedback - For Counsellors and Branch Admins
     { icon: MessageSquare, label: 'Student Feedback', path: '/student-feedback', show: isCounsellor || isBranchAdmin },
-    // Expenses - For Branch Admin and FDE
-    { icon: Wallet, label: 'Expenses', path: '/expenses', show: isBranchAdmin || isFDE },
-    // Cash Handling - For FDE and Branch Admin
-    { icon: Banknote, label: 'Cash Handling', path: '/cash-handling', show: isFDE || isBranchAdmin },
+    // Finances - For Branch Admin and FDE (combines Expenses & Cash Handling)
+    { icon: Wallet, label: 'Finances', path: '/finances', show: isBranchAdmin || isFDE },
     // Insights - Consolidated AI Analytics for Branch Admin only
     { icon: Brain, label: 'Insights', path: '/insights', show: isBranchAdmin },
     // Audit Logs - For Branch Admin (see team activity) and Super Admin (see branch admin activity)
