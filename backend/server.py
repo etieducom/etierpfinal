@@ -6617,9 +6617,9 @@ async def get_quiz_exams(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/quiz-exams/{exam_id}")
 async def get_quiz_exam_details(exam_id: str, current_user: User = Depends(get_current_user)):
-    """Get full quiz exam with questions - Admin only"""
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Only Super Admin can view exam details")
+    """Get full quiz exam with questions - Admin and Academic Controller only"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.ACADEMIC_CONTROLLER]:
+        raise HTTPException(status_code=403, detail="Only Super Admin or Academic Controller can view exam details")
     
     exam = await db.quiz_exams.find_one({"id": exam_id}, {"_id": 0})
     if not exam:
@@ -6659,8 +6659,8 @@ async def update_quiz_exam(exam_id: str, exam: QuizExamCreate, current_user: Use
     return {"message": "Quiz exam updated successfully"}
 
 @api_router.delete("/quiz-exams/{exam_id}")
-async def delete_quiz_exam(exam_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):
-    """Delete (deactivate) a quiz exam"""
+async def delete_quiz_exam(exam_id: str, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.ACADEMIC_CONTROLLER]))):
+    """Delete (deactivate) a quiz exam - Admin and Academic Controller"""
     result = await db.quiz_exams.update_one({"id": exam_id}, {"$set": {"is_active": False}})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Quiz exam not found")
