@@ -4834,7 +4834,73 @@ async def delete_payment(payment_id: str, current_user: User = Depends(get_curre
     if current_user.role == UserRole.BRANCH_ADMIN and payment.get('branch_id') != current_user.branch_id:
         raise HTTPException(status_code=403, detail="You can only delete payments from your branch")
     
+    enrollment_id = payment.get('enrollment_id')
+    installment_number = payment.get('installment_number')
+    payment_plan_id = payment.get('payment_plan_id')
+    
+    # Delete the payment
     await db.payments.delete_one({"id": payment_id})
+    
+    # Recalculate enrollment totals
+    if enrollment_id:
+        enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+        if enrollment:
+            # Get remaining payments for this enrollment
+            remaining_payments = await db.payments.find(
+                {"enrollment_id": enrollment_id}, 
+                {"_id": 0, "amount": 1}
+            ).to_list(1000)
+            new_total_paid = sum(p.get('amount', 0) for p in remaining_payments)
+            final_fee = enrollment.get('final_fee', 0)
+            
+            # Determine new status
+            new_status = "Paid" if new_total_paid >= final_fee else (
+                "Partial" if new_total_paid > 0 else "Pending"
+            )
+            
+            # Update enrollment
+            await db.enrollments.update_one(
+                {"id": enrollment_id},
+                {"$set": {
+                    "total_paid": new_total_paid,
+                    "payment_status": new_status
+                }}
+            )
+            
+            logger.info(f"Deleted payment {payment_id}. Updated enrollment {enrollment_id}: total_paid={new_total_paid}, status={new_status}")
+    
+    # Reset installment status if this was an installment payment
+    if installment_number and payment_plan_id:
+        # Check if there are any other payments for this installment
+        other_inst_payments = await db.payments.find(
+            {
+                "payment_plan_id": payment_plan_id,
+                "installment_number": installment_number
+            },
+            {"_id": 0, "amount": 1}
+        ).to_list(100)
+        
+        total_inst_paid = sum(p.get('amount', 0) for p in other_inst_payments)
+        
+        if total_inst_paid == 0:
+            # No payments left for this installment - reset to Pending
+            await db.installment_schedule.update_one(
+                {
+                    "payment_plan_id": payment_plan_id,
+                    "installment_number": installment_number
+                },
+                {"$set": {"status": "Pending", "paid_amount": 0, "paid_date": None}}
+            )
+        else:
+            # Update the paid_amount
+            await db.installment_schedule.update_one(
+                {
+                    "payment_plan_id": payment_plan_id,
+                    "installment_number": installment_number
+                },
+                {"$set": {"paid_amount": total_inst_paid}}
+            )
+    
     return {"message": "Payment deleted successfully"}
 
 @api_router.put("/payments/{payment_id}")
@@ -4855,10 +4921,171 @@ async def update_payment(payment_id: str, payment_update: dict, current_user: Us
     allowed_fields = ['amount', 'payment_mode', 'payment_date', 'remarks']
     update_data = {k: v for k, v in payment_update.items() if k in allowed_fields}
     
+    old_amount = payment.get('amount', 0)
+    new_amount = update_data.get('amount', old_amount)
+    
     if update_data:
         await db.payments.update_one({"id": payment_id}, {"$set": update_data})
     
+    # Recalculate enrollment totals if amount changed
+    if 'amount' in update_data and old_amount != new_amount:
+        enrollment_id = payment.get('enrollment_id')
+        if enrollment_id:
+            enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+            if enrollment:
+                # Recalculate from all payments
+                all_payments = await db.payments.find(
+                    {"enrollment_id": enrollment_id}, 
+                    {"_id": 0, "amount": 1}
+                ).to_list(1000)
+                new_total_paid = sum(p.get('amount', 0) for p in all_payments)
+                final_fee = enrollment.get('final_fee', 0)
+                
+                # Determine new status
+                new_status = "Paid" if new_total_paid >= final_fee else (
+                    "Partial" if new_total_paid > 0 else "Pending"
+                )
+                
+                # Update enrollment
+                await db.enrollments.update_one(
+                    {"id": enrollment_id},
+                    {"$set": {
+                        "total_paid": new_total_paid,
+                        "payment_status": new_status
+                    }}
+                )
+                
+                logger.info(f"Updated payment {payment_id} amount from {old_amount} to {new_amount}. Enrollment {enrollment_id}: total_paid={new_total_paid}, status={new_status}")
+        
+        # Update installment paid_amount if applicable
+        installment_number = payment.get('installment_number')
+        payment_plan_id = payment.get('payment_plan_id')
+        
+        if installment_number and payment_plan_id:
+            # Recalculate total paid for this installment
+            inst_payments = await db.payments.find(
+                {
+                    "payment_plan_id": payment_plan_id,
+                    "installment_number": installment_number
+                },
+                {"_id": 0, "amount": 1}
+            ).to_list(100)
+            
+            total_inst_paid = sum(p.get('amount', 0) for p in inst_payments)
+            
+            await db.installment_schedule.update_one(
+                {
+                    "payment_plan_id": payment_plan_id,
+                    "installment_number": installment_number
+                },
+                {"$set": {"paid_amount": total_inst_paid}}
+            )
+    
     return {"message": "Payment updated successfully"}
+
+
+@api_router.post("/payments/recalculate-enrollment/{enrollment_id}")
+async def recalculate_enrollment_payments(enrollment_id: str, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.BRANCH_ADMIN]))):
+    """Recalculate total_paid and payment_status for a specific enrollment - Admin/Branch Admin only"""
+    enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Enrollment not found")
+    
+    # Branch Admin can only recalculate for their branch
+    if current_user.role == UserRole.BRANCH_ADMIN and enrollment.get('branch_id') != current_user.branch_id:
+        raise HTTPException(status_code=403, detail="You can only recalculate payments for your branch")
+    
+    # Get all payments for this enrollment
+    payments = await db.payments.find({"enrollment_id": enrollment_id}, {"_id": 0}).to_list(1000)
+    actual_total_paid = sum(p.get('amount', 0) for p in payments)
+    final_fee = enrollment.get('final_fee', 0)
+    
+    # Determine correct status
+    new_status = "Paid" if actual_total_paid >= final_fee else (
+        "Partial" if actual_total_paid > 0 else "Pending"
+    )
+    
+    old_total = enrollment.get('total_paid', 0)
+    old_status = enrollment.get('payment_status', 'Unknown')
+    
+    # Update enrollment
+    await db.enrollments.update_one(
+        {"id": enrollment_id},
+        {"$set": {
+            "total_paid": actual_total_paid,
+            "payment_status": new_status
+        }}
+    )
+    
+    logger.info(f"Recalculated enrollment {enrollment_id}: total_paid {old_total} -> {actual_total_paid}, status {old_status} -> {new_status}")
+    
+    return {
+        "enrollment_id": enrollment_id,
+        "student_name": enrollment.get('student_name'),
+        "final_fee": final_fee,
+        "old_total_paid": old_total,
+        "new_total_paid": actual_total_paid,
+        "old_status": old_status,
+        "new_status": new_status,
+        "payments_count": len(payments)
+    }
+
+@api_router.post("/payments/recalculate-all")
+async def recalculate_all_enrollment_payments(
+    branch_id: Optional[str] = None,
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """Recalculate total_paid and payment_status for all enrollments - Super Admin only"""
+    
+    query = {}
+    if branch_id:
+        query["branch_id"] = branch_id
+    
+    enrollments = await db.enrollments.find(query, {"_id": 0, "id": 1, "final_fee": 1, "student_name": 1, "total_paid": 1, "payment_status": 1}).to_list(None)
+    
+    updated_count = 0
+    issues_fixed = []
+    
+    for enrollment in enrollments:
+        enrollment_id = enrollment.get('id')
+        final_fee = enrollment.get('final_fee', 0) or 0
+        old_total = enrollment.get('total_paid', 0) or 0
+        old_status = enrollment.get('payment_status', 'Pending')
+        
+        # Calculate actual total from payments
+        payments = await db.payments.find({"enrollment_id": enrollment_id}, {"_id": 0, "amount": 1}).to_list(None)
+        actual_total = sum(p.get('amount', 0) or 0 for p in payments)
+        
+        # Determine correct status
+        new_status = "Paid" if actual_total >= final_fee else (
+            "Partial" if actual_total > 0 else "Pending"
+        )
+        
+        # Check if update needed
+        if abs(old_total - actual_total) > 1 or old_status != new_status:
+            await db.enrollments.update_one(
+                {"id": enrollment_id},
+                {"$set": {
+                    "total_paid": actual_total,
+                    "payment_status": new_status
+                }}
+            )
+            updated_count += 1
+            issues_fixed.append({
+                "enrollment_id": enrollment_id,
+                "student_name": enrollment.get('student_name'),
+                "old_total": old_total,
+                "new_total": actual_total,
+                "old_status": old_status,
+                "new_status": new_status
+            })
+    
+    return {
+        "total_enrollments": len(enrollments),
+        "updated_count": updated_count,
+        "issues_fixed": issues_fixed[:50]  # Return first 50 for readability
+    }
+
 
 # Push Notifications Endpoints
 @api_router.post("/notifications")

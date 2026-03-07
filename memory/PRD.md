@@ -4,6 +4,29 @@
 
 ## Latest Session Updates (March 7, 2026)
 
+### Payment Data Audit & Fix (P1 - COMPLETED)
+**Root Causes Identified:**
+1. When payments are deleted, enrollment's `total_paid` was NOT being recalculated
+2. When payments are updated (amount changed), enrollment's `total_paid` was NOT being recalculated
+3. Installment `paid_amount` was not updated on payment delete/update
+
+**Fixes Applied:**
+- ✅ **Fixed `delete_payment` endpoint** - Now recalculates enrollment totals and resets installment status
+- ✅ **Fixed `update_payment` endpoint** - Now recalculates enrollment totals when amount changes
+- ✅ **Added `POST /api/payments/recalculate-enrollment/{id}`** - Manual fix for single enrollment
+- ✅ **Added `POST /api/payments/recalculate-all`** - Bulk fix for all enrollments (Super Admin)
+- ✅ **Created `/app/backend/payment_audit.py`** - Standalone audit script for production
+
+**How to Fix Existing Data:**
+```bash
+# Option 1: Use the API (requires Super Admin login)
+curl -X POST "https://yourdomain.com/api/payments/recalculate-all" -H "Authorization: Bearer TOKEN"
+
+# Option 2: Use the standalone script on VPS
+cd /var/www/etieducom/backend
+python payment_audit.py --fix --mongo-url "YOUR_MONGO_URL" --db-name "crm_db"
+```
+
 ### Enhanced Branch Admin Insights Consolidation
 - ✅ **Consolidated 9 tabs** into single Insights page:
   - Overview (Business Health - What's Working vs Needs Attention)
