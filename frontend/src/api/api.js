@@ -320,6 +320,7 @@ export const quizAPI = {
   delete: (id) => api.delete(`/quiz-exams/${id}`),
   getQRCode: (id) => api.get(`/quiz-exams/${id}/qr-code`),
   getAttempts: (examId) => api.get('/quiz-attempts', { params: examId ? { exam_id: examId } : {} }),
+  importQuestions: (formData) => api.post('/quiz-exams/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   // Public endpoints (no auth required for students)
   getPublicQuiz: (id) => axios.get(`${API_URL}/api/public/quiz/${id}`),
   startAttempt: (id, data) => axios.post(`${API_URL}/api/public/quiz/${id}/start`, data),
@@ -373,6 +374,15 @@ export const royaltyAPI = {
 export const auditAPI = {
   getLogs: (params = {}) => api.get('/audit-logs', { params }),
   getSummary: (days = 7) => api.get('/audit-logs/summary', { params: { days } }),
+};
+
+// Responsibilities API
+export const responsibilitiesAPI = {
+  getMyResponsibilities: () => api.get('/responsibilities'),
+  getAll: (params = {}) => api.get('/responsibilities/all', { params }),
+  create: (data) => api.post('/responsibilities', data),
+  update: (id, data) => api.put(`/responsibilities/${id}`, data),
+  delete: (id) => api.delete(`/responsibilities/${id}`),
 };
 
 export default api;

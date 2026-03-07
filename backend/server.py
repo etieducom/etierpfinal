@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Request, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import StreamingResponse, PlainTextResponse
 from dotenv import load_dotenv
@@ -606,6 +606,39 @@ FIXED_BATCH_TIMINGS = [
     {"slot": 5, "name": "Batch 5", "timing": "3:30 PM to 5:00 PM"},
     {"slot": 6, "name": "Batch 6", "timing": "5:00 PM to 6:30 PM"},
 ]
+
+
+# User Responsibility Model
+class Responsibility(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: Optional[str] = None  # If None, applies to role
+    role: str  # Target role (Admin, Branch Admin, Counsellor, etc.)
+    branch_id: Optional[str] = None  # If None, applies to all branches
+    title: str
+    description: str
+    priority: str = "medium"  # high, medium, low
+    category: str = "general"  # general, daily, weekly, monthly
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    is_active: bool = True
+
+class ResponsibilityCreate(BaseModel):
+    user_id: Optional[str] = None
+    role: str
+    branch_id: Optional[str] = None
+    title: str
+    description: str
+    priority: str = "medium"
+    category: str = "general"
+
+class ResponsibilityUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[str] = None
+    category: Optional[str] = None
+    is_active: Optional[bool] = None
+
 
 # Payment Plan Edit Model
 class PaymentPlanEdit(BaseModel):
@@ -7141,12 +7174,139 @@ async def delete_quiz_exam(exam_id: str, current_user: User = Depends(require_ro
         raise HTTPException(status_code=404, detail="Quiz exam not found")
     return {"message": "Quiz exam deleted successfully"}
 
+@api_router.post("/quiz-exams/import")
+async def import_quiz_questions(
+    file: UploadFile = File(...),
+    exam_name: str = Form(...),
+    description: str = Form(""),
+    duration_minutes: int = Form(30),
+    pass_percentage: int = Form(60),
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.ACADEMIC_CONTROLLER]))
+):
+    """Import quiz questions from CSV or Excel file"""
+    import csv
+    import io
+    
+    if not file.filename.endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
+    
+    questions = []
+    
+    try:
+        contents = await file.read()
+        
+        if file.filename.endswith('.csv'):
+            # Parse CSV
+            decoded = contents.decode('utf-8')
+            reader = csv.DictReader(io.StringIO(decoded))
+            
+            for idx, row in enumerate(reader):
+                # Normalize column names (handle different cases)
+                row_lower = {k.lower().strip(): v for k, v in row.items()}
+                
+                question_text = row_lower.get('question_text', row_lower.get('question', ''))
+                option_a = row_lower.get('option_a', row_lower.get('a', ''))
+                option_b = row_lower.get('option_b', row_lower.get('b', ''))
+                option_c = row_lower.get('option_c', row_lower.get('c', ''))
+                option_d = row_lower.get('option_d', row_lower.get('d', ''))
+                correct = row_lower.get('correct_answer', row_lower.get('correct', row_lower.get('answer', ''))).upper().strip()
+                
+                if not question_text or not correct:
+                    continue
+                
+                # Map correct answer to index
+                answer_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
+                correct_idx = answer_map.get(correct, 0)
+                
+                questions.append({
+                    "question": question_text.strip(),
+                    "options": [
+                        option_a.strip(),
+                        option_b.strip(),
+                        option_c.strip(),
+                        option_d.strip()
+                    ],
+                    "correct_answer": correct_idx
+                })
+        else:
+            # Parse Excel using openpyxl
+            try:
+                import openpyxl
+                from io import BytesIO
+                
+                wb = openpyxl.load_workbook(BytesIO(contents))
+                ws = wb.active
+                
+                headers = [cell.value.lower().strip() if cell.value else '' for cell in ws[1]]
+                
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    row_dict = dict(zip(headers, row))
+                    
+                    question_text = row_dict.get('question_text', row_dict.get('question', ''))
+                    option_a = row_dict.get('option_a', row_dict.get('a', ''))
+                    option_b = row_dict.get('option_b', row_dict.get('b', ''))
+                    option_c = row_dict.get('option_c', row_dict.get('c', ''))
+                    option_d = row_dict.get('option_d', row_dict.get('d', ''))
+                    correct = str(row_dict.get('correct_answer', row_dict.get('correct', row_dict.get('answer', '')))).upper().strip()
+                    
+                    if not question_text or not correct:
+                        continue
+                    
+                    answer_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
+                    correct_idx = answer_map.get(correct, 0)
+                    
+                    questions.append({
+                        "question": str(question_text).strip(),
+                        "options": [
+                            str(option_a or '').strip(),
+                            str(option_b or '').strip(),
+                            str(option_c or '').strip(),
+                            str(option_d or '').strip()
+                        ],
+                        "correct_answer": correct_idx
+                    })
+            except ImportError:
+                raise HTTPException(status_code=400, detail="Excel support requires openpyxl. Please use CSV format.")
+        
+        if not questions:
+            raise HTTPException(status_code=400, detail="No valid questions found in the file")
+        
+        # Create the quiz exam
+        exam_id = str(uuid.uuid4())
+        exam_data = {
+            "id": exam_id,
+            "name": exam_name,
+            "description": description,
+            "duration_minutes": duration_minutes,
+            "pass_percentage": pass_percentage,
+            "questions": questions,
+            "created_by": current_user.id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "is_active": True
+        }
+        
+        await db.quiz_exams.insert_one(exam_data)
+        
+        return {
+            "message": "Quiz created successfully",
+            "exam_id": exam_id,
+            "question_count": len(questions)
+        }
+        
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File encoding error. Please use UTF-8 encoding.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse file: {str(e)}")
+
 @api_router.get("/quiz-exams/{exam_id}/qr-code")
 async def get_quiz_qr_code(exam_id: str, current_user: User = Depends(get_current_user)):
     """Generate QR code for quiz link"""
-    exam = await db.quiz_exams.find_one({"id": exam_id}, {"_id": 0, "name": 1})
+    exam = await db.quiz_exams.find_one({"id": exam_id}, {"_id": 0, "name": 1, "title": 1})
     if not exam:
         raise HTTPException(status_code=404, detail="Quiz exam not found")
+    
+    # Get exam name (support both 'name' and 'title' fields)
+    exam_name = exam.get('name') or exam.get('title') or 'Quiz'
     
     # Generate the public quiz URL - use /exam route which matches frontend App.js
     frontend_url = os.environ.get('FRONTEND_URL', 'https://educom-exams.preview.emergentagent.com')
@@ -7174,7 +7334,7 @@ async def get_quiz_qr_code(exam_id: str, current_user: User = Depends(get_curren
     img_base64 = base64.b64encode(img_bytes.read()).decode('utf-8')
     
     return {
-        "exam_name": exam['name'],
+        "exam_name": exam_name,
         "quiz_url": quiz_url,
         "qr_code_base64": f"data:image/png;base64,{img_base64}"
     }
@@ -7202,9 +7362,9 @@ async def get_public_quiz(exam_id: str):
     
     return {
         "id": exam['id'],
-        "name": exam['name'],
+        "name": exam.get('name') or exam.get('title') or 'Quiz',
         "description": exam.get('description'),
-        "duration_minutes": exam.get('duration_minutes', 30),
+        "duration_minutes": exam.get('duration_minutes') or exam.get('duration', 30),
         "total_questions": len(questions_for_student),
         "questions": questions_for_student
     }
@@ -7233,7 +7393,7 @@ async def start_quiz_attempt(exam_id: str, data: QuizAttemptCreate):
     # Create new attempt
     attempt = QuizAttempt(
         exam_id=exam_id,
-        exam_name=exam['name'],
+        exam_name=exam.get('name') or exam.get('title') or 'Quiz',
         enrollment_number=data.enrollment_number,
         student_name=student_name,
         total_questions=len(exam.get('questions', []))
@@ -8956,6 +9116,102 @@ async def get_audit_logs_summary(
         "entity_breakdown": entity_counts,
         "recent_logs": logs[:10]
     }
+
+# ======================
+# RESPONSIBILITIES ENDPOINTS
+# ======================
+
+@api_router.get("/responsibilities")
+async def get_responsibilities(current_user: User = Depends(get_current_user)):
+    """Get responsibilities for the current user based on their role"""
+    query = {
+        "is_active": True,
+        "$or": [
+            {"user_id": current_user.id},  # Assigned specifically to this user
+            {"user_id": None, "role": current_user.role}  # Assigned to their role
+        ]
+    }
+    
+    # If user has a branch, also include responsibilities for their branch
+    if current_user.branch_id:
+        query["$or"].append({"branch_id": current_user.branch_id, "role": current_user.role})
+    
+    responsibilities = await db.responsibilities.find(query, {"_id": 0}).to_list(100)
+    
+    # Sort by priority
+    priority_order = {"high": 0, "medium": 1, "low": 2}
+    responsibilities.sort(key=lambda x: priority_order.get(x.get("priority", "medium"), 1))
+    
+    return responsibilities
+
+@api_router.get("/responsibilities/all")
+async def get_all_responsibilities(
+    role: Optional[str] = None,
+    branch_id: Optional[str] = None,
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """Get all responsibilities (Super Admin only)"""
+    query = {}
+    if role:
+        query["role"] = role
+    if branch_id:
+        query["branch_id"] = branch_id
+    
+    responsibilities = await db.responsibilities.find(query, {"_id": 0}).to_list(500)
+    return responsibilities
+
+@api_router.post("/responsibilities")
+async def create_responsibility(
+    data: ResponsibilityCreate,
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """Create a new responsibility (Super Admin only)"""
+    responsibility = Responsibility(
+        **data.model_dump(),
+        created_by=current_user.id
+    )
+    
+    resp_dict = responsibility.model_dump()
+    resp_dict['created_at'] = resp_dict['created_at'].isoformat()
+    
+    await db.responsibilities.insert_one(resp_dict)
+    return responsibility
+
+@api_router.put("/responsibilities/{resp_id}")
+async def update_responsibility(
+    resp_id: str,
+    data: ResponsibilityUpdate,
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """Update a responsibility (Super Admin only)"""
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No update data provided")
+    
+    result = await db.responsibilities.update_one(
+        {"id": resp_id},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Responsibility not found")
+    
+    updated = await db.responsibilities.find_one({"id": resp_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/responsibilities/{resp_id}")
+async def delete_responsibility(
+    resp_id: str,
+    current_user: User = Depends(require_role([UserRole.ADMIN]))
+):
+    """Delete a responsibility (Super Admin only)"""
+    result = await db.responsibilities.delete_one({"id": resp_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Responsibility not found")
+    
+    return {"message": "Responsibility deleted successfully"}
 
 app.include_router(api_router)
 

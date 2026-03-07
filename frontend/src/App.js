@@ -38,6 +38,7 @@ import MetaAnalyticsPage from '@/pages/MetaAnalyticsPage';
 import RoyaltyCollectionPage from '@/pages/RoyaltyCollectionPage';
 import AuditLogsPage from '@/pages/AuditLogsPage';
 import InsightsPage from '@/pages/InsightsPage';
+import ResponsibilitiesPage from '@/pages/ResponsibilitiesPage';
 import Layout from '@/components/Layout';
 import ActivityTracker from '@/components/ActivityTracker';
 import { Toaster } from '@/components/ui/sonner';
@@ -377,6 +378,14 @@ function App() {
             element={
               <PrivateRoute branchAdminAllowed>
                 <Layout><AuditLogsPage /></Layout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/responsibilities"
+            element={
+              <PrivateRoute>
+                <Layout><ResponsibilitiesPage /></Layout>
               </PrivateRoute>
             }
           />

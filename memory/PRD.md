@@ -4,16 +4,51 @@
 
 ## Latest Session Updates (March 7, 2026)
 
-### FDE Dashboard Cleanup
-- ✅ **Removed "Lead Stats" section** from FDE dashboard (Total Leads, Conversion Rate, Converted, Lost, Deleted cards)
+### Enhanced Branch Admin Insights Consolidation
+- ✅ **Consolidated 9 tabs** into single Insights page:
+  - Overview (Business Health - What's Working vs Needs Attention)
+  - Branch Analytics
+  - Team Efficiency  
+  - Follow-ups (moved from sidebar)
+  - Student Feedback (moved from sidebar)
+  - Campaigns (moved from sidebar)
+  - Activity Logs (moved from sidebar)
+  - Attendance
+  - Meta Ads
+- ✅ **Enhanced AI Overview** - Business owner summary with "What's Going Well" and "Needs Attention" sections
+- ✅ **Removed from Branch Admin sidebar:** Activity Logs, Campaigns, Student Feedback, Pending Follow-ups
+
+### Deleted Leads → Reports Section
+- ✅ **Moved "Deleted Leads"** from sidebar to Reports page
+- ✅ **Search functionality** for deleted leads
+- ✅ **Restore button** to recover deleted leads
+
+### My Responsibilities Feature
+- ✅ **New sidebar item** for all roles - "My Responsibilities"
+- ✅ **Super Admin can assign responsibilities** to specific users or roles
+- ✅ **Categories:** Daily, Weekly, Monthly, General
+- ✅ **Priorities:** High, Medium, Low
+- ✅ **Branch-specific responsibilities** supported
+
+### Quiz Import from CSV/Excel
+- ✅ **New "Import from CSV" button** on Quiz Exams page
+- ✅ **Downloadable sample format** (CSV)
+- ✅ **Excel (.xlsx) support** added
+- ✅ **Backend endpoint** `POST /api/quiz-exams/import`
+
+### Quiz Functionality Fixes
+- ✅ **QR Code generation** now working (fixed 'name' vs 'title' field issue)
+- ✅ **Public quiz link** now working correctly
+- ✅ **Quiz start page** displays correctly with enrollment number input
+
+### FDE Dashboard Cleanup (Earlier)
+- ✅ **Removed "Lead Stats" section** from FDE dashboard
 - ✅ **Removed "Recent Leads" section** from FDE dashboard
-- ✅ FDE dashboard now shows only role-relevant widgets:
-  - Fee Due (current month)
-  - Unassigned Students (not in any batch)
-  - Cash Handling status
-  - Pending Tasks
+- ✅ FDE dashboard now shows only role-relevant widgets
 
 ---
+
+## Deployment Steps
 
 ## Previous Session Updates (March 6, 2026)
 

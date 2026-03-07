@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { reportsAPI, adminAPI } from '@/api/api';
+import { reportsAPI, adminAPI, deletedLeadsAPI } from '@/api/api';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Download, Filter, FileText, DollarSign, Users, CreditCard, Clock, Calendar, FileSpreadsheet } from 'lucide-react';
+import { Download, Filter, FileText, DollarSign, Users, CreditCard, Clock, Calendar, FileSpreadsheet, Trash2, RotateCcw, Search } from 'lucide-react';
 
 const STATUSES = ['All', 'New', 'Contacted', 'Demo Booked', 'Follow-up', 'Converted', 'Lost'];
 const SOURCES = ['All', 'Website', 'Social Media', 'Referral', 'Walk-in', 'Phone Call', 'Google'];
@@ -40,7 +41,14 @@ const ReportsPage = () => {
     { id: 'expenses', label: 'Expenses Report', icon: CreditCard, description: 'Expense records by category', roles: ['Admin', 'Branch Admin'] },
     { id: 'pending_payments', label: 'Pending Payments', icon: Clock, description: 'Outstanding installments', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
     { id: 'fee_collection', label: 'Monthly Fee Collection', icon: Calendar, description: 'Installments due in selected month', roles: ['Admin', 'Branch Admin'] },
+    { id: 'deleted_leads', label: 'Deleted Leads', icon: Trash2, description: 'View and restore deleted leads', roles: ['Admin', 'Branch Admin'] },
   ];
+
+  // Deleted Leads State
+  const [deletedLeads, setDeletedLeads] = useState([]);
+  const [deletedLeadsLoading, setDeletedLeadsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [restoringId, setRestoringId] = useState(null);
 
   // Filter report types based on user role
   const reportTypes = allReportTypes.filter(type => type.roles.includes(user.role));
@@ -48,6 +56,12 @@ const ReportsPage = () => {
   useEffect(() => {
     fetchOptions();
   }, []);
+
+  useEffect(() => {
+    if (reportType === 'deleted_leads') {
+      fetchDeletedLeads();
+    }
+  }, [reportType]);
 
   const fetchOptions = async () => {
     try {
@@ -61,6 +75,37 @@ const ReportsPage = () => {
       console.error('Error fetching options:', error);
     }
   };
+
+  const fetchDeletedLeads = async () => {
+    setDeletedLeadsLoading(true);
+    try {
+      const response = await deletedLeadsAPI.getAll();
+      setDeletedLeads(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch deleted leads');
+    } finally {
+      setDeletedLeadsLoading(false);
+    }
+  };
+
+  const handleRestoreLead = async (leadId) => {
+    setRestoringId(leadId);
+    try {
+      await deletedLeadsAPI.restore(leadId);
+      toast.success('Lead restored successfully!');
+      fetchDeletedLeads();
+    } catch (error) {
+      toast.error('Failed to restore lead');
+    } finally {
+      setRestoringId(null);
+    }
+  };
+
+  const filteredDeletedLeads = deletedLeads.filter(lead => 
+    lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    lead.number?.includes(searchTerm)
+  );
 
   const handleGenerateReport = async (customReportType = null, customStartDate = null) => {
     setGenerating(true);
@@ -335,6 +380,74 @@ const ReportsPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Deleted Leads Section */}
+      {reportType === 'deleted_leads' && (
+        <Card className="border-slate-200 shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-red-500" />
+              Deleted Leads
+            </CardTitle>
+            <CardDescription>
+              View and restore previously deleted leads
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="Search by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+                data-testid="deleted-leads-search"
+              />
+            </div>
+
+            {deletedLeadsLoading ? (
+              <div className="text-center py-8 text-slate-500">Loading deleted leads...</div>
+            ) : filteredDeletedLeads.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                {searchTerm ? 'No matching deleted leads found' : 'No deleted leads'}
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                {filteredDeletedLeads.map((lead) => (
+                  <div key={lead.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <div>
+                      <p className="font-semibold">{lead.name}</p>
+                      <p className="text-sm text-slate-500">{lead.email} • {lead.number}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">{lead.program || 'N/A'}</Badge>
+                        <Badge className="bg-red-100 text-red-700 text-xs">{lead.status || 'Deleted'}</Badge>
+                      </div>
+                      {lead.deleted_at && (
+                        <p className="text-xs text-slate-400 mt-1">
+                          Deleted: {new Date(lead.deleted_at).toLocaleDateString()}
+                          {lead.deleted_by_name && ` by ${lead.deleted_by_name}`}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRestoreLead(lead.id)}
+                      disabled={restoringId === lead.id}
+                      className="text-green-600 border-green-300 hover:bg-green-50"
+                      data-testid={`restore-lead-${lead.id}`}
+                    >
+                      <RotateCcw className={`w-4 h-4 mr-1 ${restoringId === lead.id ? 'animate-spin' : ''}`} />
+                      Restore
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Report Info */}
       <Card className="border-slate-200 shadow-soft">

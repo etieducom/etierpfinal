@@ -15,11 +15,14 @@ cffi==2.0.0
 charset-normalizer==3.4.4
 click==8.3.1
 cryptography==46.0.5
+curlify==3.0.0
 distro==1.9.0
 dnspython==2.8.0
 ecdsa==0.19.1
 email-validator==2.3.0
 emergentintegrations==0.1.0
+et_xmlfile==2.0.0
+facebook_business==24.0.1
 fastapi==0.110.1
 fastuuid==0.14.0
 filelock==3.24.2
@@ -65,6 +68,7 @@ mypy_extensions==1.1.0
 numpy==2.4.2
 oauthlib==3.3.1
 openai==1.99.9
+openpyxl==3.1.5
 packaging==26.0
 pandas==3.0.1
 passlib==1.7.4
@@ -78,6 +82,7 @@ protobuf==5.29.6
 pyasn1==0.6.2
 pyasn1_modules==0.4.2
 pycodestyle==2.14.0
+pycountry==26.2.16
 pycparser==3.0
 pydantic==2.12.5
 pydantic_core==2.41.5
@@ -93,6 +98,7 @@ python-jose==3.5.0
 python-multipart==0.0.22
 pytokens==0.4.1
 PyYAML==6.0.3
+qrcode==8.2
 referencing==0.37.0
 regex==2026.1.15
 requests==2.32.5
@@ -124,5 +130,3 @@ watchfiles==1.1.1
 websockets==15.0.1
 yarl==1.22.0
 zipp==3.23.0
-qrcode==8.2
-facebook-business==24.0.1

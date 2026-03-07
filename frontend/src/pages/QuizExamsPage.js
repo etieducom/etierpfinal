@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { quizAPI } from '@/api/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Clock, FileText, Users, Copy, Trash2, CheckCircle, XCircle, Eye, QrCode, Download } from 'lucide-react';
+import { Plus, Clock, FileText, Users, Copy, Trash2, CheckCircle, XCircle, Eye, QrCode, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import { format } from 'date-fns';
 
 const QuizExamsPage = () => {
@@ -22,6 +22,10 @@ const QuizExamsPage = () => {
   const [qrCodeData, setQrCodeData] = useState(null);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [selectedAttempts, setSelectedAttempts] = useState([]);
+  const [importDialog, setImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -183,6 +187,67 @@ const QuizExamsPage = () => {
     toast.success('QR code downloaded!');
   };
 
+  // Import questions from CSV/Excel
+  const downloadSampleFormat = () => {
+    const sampleCSV = `question_text,option_a,option_b,option_c,option_d,correct_answer
+"What is the capital of France?","London","Berlin","Paris","Madrid","C"
+"Which planet is closest to the Sun?","Venus","Mercury","Mars","Earth","B"
+"What is 2 + 2?","3","4","5","6","B"
+"Who wrote Romeo and Juliet?","Charles Dickens","William Shakespeare","Jane Austen","Mark Twain","B"`;
+    
+    const blob = new Blob([sampleCSV], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'quiz_questions_sample.csv';
+    link.click();
+    window.URL.revokeObjectURL(url);
+    toast.success('Sample format downloaded!');
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.name.endsWith('.csv') && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        toast.error('Please select a CSV or Excel file');
+        return;
+      }
+      setImportFile(file);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importFile) {
+      toast.error('Please select a file to import');
+      return;
+    }
+    if (!formData.name.trim()) {
+      toast.error('Please enter an exam name first');
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', importFile);
+      formDataUpload.append('exam_name', formData.name);
+      formDataUpload.append('description', formData.description || '');
+      formDataUpload.append('duration_minutes', formData.duration_minutes);
+      formDataUpload.append('pass_percentage', formData.pass_percentage);
+
+      const response = await quizAPI.importQuestions(formDataUpload);
+      toast.success(`Quiz created with ${response.data.question_count} questions!`);
+      setImportDialog(false);
+      setImportFile(null);
+      resetForm();
+      fetchQuizzes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to import questions');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const openEdit = async (quiz) => {
     try {
       const response = await quizAPI.getDetails(quiz.id);
@@ -309,13 +374,22 @@ const QuizExamsPage = () => {
           <p className="text-slate-600">Create and manage MCQ-based quiz exams</p>
         </div>
         {canCreateQuiz && (
-          <Button
-            onClick={() => { resetForm(); setCreateDialog(true); }}
-            className="bg-slate-900 hover:bg-slate-800"
-            data-testid="create-quiz-btn"
-          >
-            <Plus className="w-4 h-4 mr-2" /> Create Quiz
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => { resetForm(); setImportDialog(true); }}
+              data-testid="import-quiz-btn"
+            >
+              <Upload className="w-4 h-4 mr-2" /> Import from CSV
+            </Button>
+            <Button
+              onClick={() => { resetForm(); setCreateDialog(true); }}
+              className="bg-slate-900 hover:bg-slate-800"
+              data-testid="create-quiz-btn"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Create Quiz
+            </Button>
+          </div>
         )}
       </div>
 
@@ -629,6 +703,127 @@ const QuizExamsPage = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Questions Dialog */}
+      <Dialog open={importDialog} onOpenChange={setImportDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5" />
+              Import Questions from CSV/Excel
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Sample Format Download */}
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-blue-800">Download Sample Format</p>
+                    <p className="text-sm text-blue-600">Use this template to prepare your questions</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={downloadSampleFormat}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Exam Details */}
+            <div className="space-y-3">
+              <div>
+                <Label>Exam Name *</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Python Programming Quiz"
+                />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Input
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Optional description"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Duration (minutes)</Label>
+                  <Input
+                    type="number"
+                    value={formData.duration_minutes}
+                    onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 30 })}
+                  />
+                </div>
+                <div>
+                  <Label>Pass Percentage</Label>
+                  <Input
+                    type="number"
+                    value={formData.pass_percentage}
+                    onChange={(e) => setFormData({ ...formData, pass_percentage: parseInt(e.target.value) || 60 })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* File Upload */}
+            <div className="space-y-2">
+              <Label>Upload Questions File (CSV or Excel)</Label>
+              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept=".csv,.xlsx,.xls"
+                  className="hidden"
+                />
+                {importFile ? (
+                  <div className="space-y-2">
+                    <FileSpreadsheet className="w-12 h-12 text-green-500 mx-auto" />
+                    <p className="font-medium text-green-700">{importFile.name}</p>
+                    <Button variant="outline" size="sm" onClick={() => setImportFile(null)}>
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className="w-12 h-12 text-slate-400 mx-auto" />
+                    <p className="text-slate-600">Drag and drop or click to select</p>
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                      Select File
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Format Instructions */}
+            <Card className="bg-slate-50">
+              <CardContent className="pt-4 text-sm">
+                <p className="font-medium mb-2">CSV Format Instructions:</p>
+                <ul className="list-disc list-inside text-slate-600 space-y-1">
+                  <li>Columns: question_text, option_a, option_b, option_c, option_d, correct_answer</li>
+                  <li>correct_answer should be: A, B, C, or D</li>
+                  <li>First row should be the header</li>
+                  <li>Enclose text with commas in quotes</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setImportDialog(false); setImportFile(null); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleImport} disabled={importing || !importFile}>
+              {importing ? 'Importing...' : 'Import & Create Quiz'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

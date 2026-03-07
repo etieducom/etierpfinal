@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet, GraduationCap, Globe, ClipboardList, CheckSquare, BookOpen, Award, Building2, UsersRound, Target, MessageSquare, Banknote, Brain, DollarSign, History, Facebook } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet, GraduationCap, Globe, ClipboardList, CheckSquare, BookOpen, Award, Building2, UsersRound, Target, MessageSquare, Banknote, Brain, DollarSign, History, Facebook, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -71,20 +71,18 @@ const Layout = ({ children }) => {
     // 12. Resources - NOT for Certificate Manager, Trainer, or Academic Controller
     { icon: Folder, label: 'Resources', path: '/resources', show: !isCertManager && !isTrainer && !isAcademicController },
     // --- Additional items below the main navigation ---
-    // Pending Follow-ups - For Counsellors and Branch Admins only
-    { icon: Bell, label: 'Pending Follow-ups', path: '/followups', show: isCounsellor || isBranchAdmin },
-    // Student Feedback - For Counsellors and Branch Admins
-    { icon: MessageSquare, label: 'Student Feedback', path: '/student-feedback', show: isCounsellor || isBranchAdmin },
+    // Pending Follow-ups - For Counsellors only (Branch Admin sees it in Insights)
+    { icon: Bell, label: 'Pending Follow-ups', path: '/followups', show: isCounsellor },
+    // Student Feedback - For Counsellors only (Branch Admin sees it in Insights)
+    { icon: MessageSquare, label: 'Student Feedback', path: '/student-feedback', show: isCounsellor },
     // Finances - For Branch Admin and FDE (combines Expenses & Cash Handling)
     { icon: Wallet, label: 'Finances', path: '/finances', show: isBranchAdmin || isFDE },
-    // Insights - Consolidated AI Analytics for Branch Admin only
+    // Insights - Consolidated AI Analytics for Branch Admin only (includes Follow-ups, Feedback, Campaigns, Activity Logs)
     { icon: Brain, label: 'Insights', path: '/insights', show: isBranchAdmin },
-    // Audit Logs - For Branch Admin (see team activity) and Super Admin (see branch admin activity)
-    { icon: History, label: 'Activity Logs', path: '/audit-logs', show: isBranchAdmin || isSuperAdmin },
-    // Campaign Management - For Branch Admin only
-    { icon: Target, label: 'Campaigns', path: '/campaigns', show: isBranchAdmin },
-    // Deleted Leads - For Branch Admin only (NOT Super Admin)
-    { icon: Trash2, label: 'Deleted Leads', path: '/deleted-leads', show: isBranchAdmin },
+    // Audit Logs - For Super Admin only (Branch Admin sees it in Insights)
+    { icon: History, label: 'Activity Logs', path: '/audit-logs', show: isSuperAdmin },
+    // My Responsibilities - For all roles
+    { icon: Shield, label: 'My Responsibilities', path: '/responsibilities', show: true },
     // Schools/Colleges Outreach - For all roles except Certificate Manager, Trainer, Academic Controller
     { icon: Building2, label: 'Schools/Colleges', path: '/organizations', show: !isCertManager && !isTrainer && !isAcademicController },
     // Batch Management - For Branch Admin, Super Admin, Front Desk, Counsellor
