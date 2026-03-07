@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, TrendingUp, CheckCircle, XCircle, Bell, DollarSign, ArrowUpRight, ArrowDownRight, Building, Award, AlertTriangle, Trash2, Wallet, CreditCard, Receipt, GraduationCap, Gift, Clock, Ban, Calendar } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle, XCircle, Bell, DollarSign, ArrowUpRight, ArrowDownRight, Building, Award, AlertTriangle, Trash2, Wallet, CreditCard, Receipt, GraduationCap, Gift, Clock, Ban, Calendar, IndianRupee, Banknote, ClipboardList, Phone } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,12 +33,15 @@ const Dashboard = () => {
   const [branchIncentiveStats, setBranchIncentiveStats] = useState(null);
   const [royaltyData, setRoyaltyData] = useState(null);
   const [admissionData, setAdmissionData] = useState(null);
+  const [fdeDashboard, setFdeDashboard] = useState(null);
+  const [counsellorDashboard, setCounsellorDashboard] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   
   const isSuperAdmin = user.role === 'Admin';
   const isBranchAdmin = user.role === 'Branch Admin';
   const isCounsellor = user.role === 'Counsellor';
+  const isFDE = user.role === 'Front Desk Executive';
   const showAIInsights = isBranchAdmin || isCounsellor;
 
   useEffect(() => {
@@ -114,8 +117,22 @@ const Dashboard = () => {
         try {
           const incentivesRes = await incentivesAPI.getCounsellorIncentives();
           setCounsellorIncentives(incentivesRes.data);
+          
+          // Fetch counsellor dashboard data
+          const counsellorDashRes = await analyticsAPI.getCounsellorDashboard();
+          setCounsellorDashboard(counsellorDashRes.data);
         } catch (e) {
-          console.error('Error fetching counsellor incentives:', e);
+          console.error('Error fetching counsellor data:', e);
+        }
+      }
+      
+      // Fetch FDE dashboard data
+      if (isFDE) {
+        try {
+          const fdeDashRes = await analyticsAPI.getFDEDashboard();
+          setFdeDashboard(fdeDashRes.data);
+        } catch (e) {
+          console.error('Error fetching FDE dashboard:', e);
         }
       }
     } catch (error) {
@@ -166,6 +183,148 @@ const Dashboard = () => {
           {isSuperAdmin ? 'Super Admin Overview - All Branches' : `Welcome back! Here's your ${isBranchAdmin ? 'branch ' : ''}overview`}
         </p>
       </div>
+
+      {/* FDE Dashboard Cards */}
+      {isFDE && fdeDashboard && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="fde-dashboard">
+          {/* Fee Due This Month */}
+          <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 shadow-soft hover:shadow-lifted transition-shadow cursor-pointer" onClick={() => navigate('/students')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-orange-800">Fee Due ({fdeDashboard.fee_due?.month})</CardTitle>
+              <IndianRupee className="w-4 h-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">₹{(fdeDashboard.fee_due?.amount || 0).toLocaleString()}</div>
+              <p className="text-xs text-orange-600 mt-1">{fdeDashboard.fee_due?.count || 0} installments pending</p>
+            </CardContent>
+          </Card>
+
+          {/* Students Without Batch */}
+          <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-violet-50 shadow-soft hover:shadow-lifted transition-shadow cursor-pointer" onClick={() => navigate('/students')}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-purple-800">Unassigned Students</CardTitle>
+              <Users className="w-4 h-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{fdeDashboard.students_without_batch || 0}</div>
+              <p className="text-xs text-purple-600 mt-1">Not assigned to any batch</p>
+            </CardContent>
+          </Card>
+
+          {/* Cash Handling Status */}
+          <Card 
+            className={`shadow-soft hover:shadow-lifted transition-shadow cursor-pointer ${
+              fdeDashboard.cash_handling?.updated_today 
+                ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50' 
+                : 'border-red-200 bg-gradient-to-br from-red-50 to-rose-50'
+            }`}
+            onClick={() => navigate('/finances')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className={`text-sm font-medium ${fdeDashboard.cash_handling?.updated_today ? 'text-green-800' : 'text-red-800'}`}>
+                Cash Handling
+              </CardTitle>
+              <Banknote className={`w-4 h-4 ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`}>
+                {fdeDashboard.cash_handling?.updated_today ? 'Updated' : 'Pending'}
+              </div>
+              <p className={`text-xs mt-1 ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`}>
+                Today's cash: ₹{(fdeDashboard.cash_handling?.today_cash_total || 0).toLocaleString()}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Pending Tasks */}
+          <Card 
+            className={`shadow-soft hover:shadow-lifted transition-shadow cursor-pointer ${
+              fdeDashboard.tasks?.overdue > 0 
+                ? 'border-red-200 bg-gradient-to-br from-red-50 to-rose-50' 
+                : 'border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50'
+            }`}
+            onClick={() => navigate('/tasks')}
+          >
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className={`text-sm font-medium ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-800' : 'text-blue-800'}`}>
+                Pending Tasks
+              </CardTitle>
+              <ClipboardList className={`w-4 h-4 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                {fdeDashboard.tasks?.pending || 0}
+              </div>
+              <p className={`text-xs mt-1 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                {fdeDashboard.tasks?.overdue > 0 ? `${fdeDashboard.tasks.overdue} overdue!` : 'No overdue tasks'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Counsellor Dashboard Cards */}
+      {isCounsellor && counsellorDashboard && (
+        <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-soft" data-testid="counsellor-dashboard">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold flex items-center gap-2 text-indigo-800">
+              <Phone className="w-5 h-5" /> Follow-up Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="bg-white p-4 rounded-lg border border-indigo-200 text-center">
+                <p className="text-sm text-indigo-600">Today's Follow-ups</p>
+                <p className="text-3xl font-bold text-indigo-700">{counsellorDashboard.today_count || 0}</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-orange-200 text-center">
+                <p className="text-sm text-orange-600">Total Pending</p>
+                <p className="text-3xl font-bold text-orange-700">{counsellorDashboard.total_pending || 0}</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-red-200 text-center">
+                <p className="text-sm text-red-600">Overdue</p>
+                <p className="text-3xl font-bold text-red-700">{counsellorDashboard.overdue_count || 0}</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-green-200 text-center">
+                <p className="text-sm text-green-600">This Week</p>
+                <p className="text-3xl font-bold text-green-700">{counsellorDashboard.this_week_count || 0}</p>
+              </div>
+            </div>
+
+            {/* Today's Follow-ups List */}
+            {counsellorDashboard.today_followups?.length > 0 && (
+              <div className="mt-4">
+                <p className="font-medium text-indigo-800 mb-2">Today's Scheduled Calls:</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {counsellorDashboard.today_followups.map((fu, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-100 hover:shadow-sm transition-shadow">
+                      <div>
+                        <p className="font-medium text-slate-800">{fu.lead_name}</p>
+                        <p className="text-sm text-slate-500">{fu.lead_number}</p>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={`${
+                          fu.lead_status === 'Hot' ? 'bg-red-100 text-red-700' :
+                          fu.lead_status === 'Warm' ? 'bg-orange-100 text-orange-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>{fu.lead_status}</Badge>
+                        <p className="text-xs text-slate-500 mt-1">{fu.note?.slice(0, 30)}...</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-3 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                  onClick={() => navigate('/followups')}
+                >
+                  View All Follow-ups
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Super Admin Branch Performance Overview */}
       {isSuperAdmin && superAdminData && (
@@ -266,8 +425,8 @@ const Dashboard = () => {
         </Card>
       )}
 
-      {/* Stats Cards - For non-Super Admin */}
-      {!isSuperAdmin && (
+      {/* Stats Cards - For non-Super Admin (except FDE) */}
+      {!isSuperAdmin && !isFDE && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {pendingCount > 0 && (
             <Card 
@@ -1117,43 +1276,45 @@ const Dashboard = () => {
         </Card>
       )}
 
-      {/* Recent Leads */}
-      <Card className="border-slate-200 shadow-soft">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">Recent Leads</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentLeads.map((lead) => (
-              <div
-                key={lead.id}
-                className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
-                data-testid={`recent-lead-${lead.id}`}
-              >
-                <div>
-                  <p className="font-semibold">{lead.name}</p>
-                  <p className="text-sm text-slate-600">{lead.program}</p>
+      {/* Recent Leads - Hidden for FDE */}
+      {!isFDE && (
+        <Card className="border-slate-200 shadow-soft">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">Recent Leads</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentLeads.map((lead) => (
+                <div
+                  key={lead.id}
+                  className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                  data-testid={`recent-lead-${lead.id}`}
+                >
+                  <div>
+                    <p className="font-semibold">{lead.name}</p>
+                    <p className="text-sm text-slate-600">{lead.program}</p>
+                  </div>
+                  <div className="text-right">
+                    <span
+                      className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
+                      style={{
+                        backgroundColor: `${STATUS_COLORS[lead.status]}15`,
+                        color: STATUS_COLORS[lead.status],
+                      }}
+                    >
+                      {lead.status}
+                    </span>
+                    <p className="text-xs text-slate-500 mt-1">{lead.lead_source}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span
-                    className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
-                    style={{
-                      backgroundColor: `${STATUS_COLORS[lead.status]}15`,
-                      color: STATUS_COLORS[lead.status],
-                    }}
-                  >
-                    {lead.status}
-                  </span>
-                  <p className="text-xs text-slate-500 mt-1">{lead.lead_source}</p>
-                </div>
-              </div>
-            ))}
-            {recentLeads.length === 0 && (
-              <p className="text-center text-slate-500 py-8">No leads yet</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+              {recentLeads.length === 0 && (
+                <p className="text-center text-slate-500 py-8">No leads yet</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

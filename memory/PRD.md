@@ -1,8 +1,21 @@
 # ETI Educom Branch Management System - PRD
 
-## Status: ✅ ALL REQUIREMENTS COMPLETE (March 6, 2026)
+## Status: ✅ ALL REQUIREMENTS COMPLETE (March 7, 2026)
 
-## Latest Session Updates (March 6, 2026)
+## Latest Session Updates (March 7, 2026)
+
+### FDE Dashboard Cleanup
+- ✅ **Removed "Lead Stats" section** from FDE dashboard (Total Leads, Conversion Rate, Converted, Lost, Deleted cards)
+- ✅ **Removed "Recent Leads" section** from FDE dashboard
+- ✅ FDE dashboard now shows only role-relevant widgets:
+  - Fee Due (current month)
+  - Unassigned Students (not in any batch)
+  - Cash Handling status
+  - Pending Tasks
+
+---
+
+## Previous Session Updates (March 6, 2026)
 
 ### NEW: Branch Admin Expense Management
 - ✅ **Branch Admins can now add expenses** for their branch

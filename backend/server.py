@@ -808,6 +808,38 @@ class FollowUpCreate(BaseModel):
     followup_date: datetime
     reminder_time: Optional[str] = None
 
+class FollowUpOutcome(str, Enum):
+    CONNECTED = "Connected"
+    NOT_CONNECTED = "Not Connected"
+    BUSY = "Busy"
+    NO_ANSWER = "No Answer"
+    SWITCHED_OFF = "Switched Off"
+    WRONG_NUMBER = "Wrong Number"
+    CALLBACK_REQUESTED = "Callback Requested"
+
+class FollowUpLogCreate(BaseModel):
+    """Model for logging follow-up call attempts"""
+    followup_id: str
+    outcome: FollowUpOutcome
+    notes: str
+    next_action: Optional[str] = None
+    next_followup_date: Optional[datetime] = None
+
+class FollowUpLog(BaseModel):
+    """Trail/history entry for a follow-up"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    followup_id: str
+    lead_id: str
+    branch_id: Optional[str] = None
+    outcome: FollowUpOutcome
+    notes: str
+    next_action: Optional[str] = None
+    next_followup_date: Optional[datetime] = None
+    logged_by: str
+    logged_by_name: Optional[str] = None
+    logged_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class FollowUp(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -822,6 +854,10 @@ class FollowUp(BaseModel):
     created_by_name: Optional[str] = None
     lead_name: Optional[str] = None
     lead_number: Optional[str] = None
+    # Enhanced fields
+    call_attempts: int = 0
+    last_outcome: Optional[str] = None
+    last_call_at: Optional[datetime] = None
 
 # Notification Model
 class Notification(BaseModel):
@@ -2313,6 +2349,110 @@ async def update_followup_status(followup_id: str, status: FollowUpStatus, curre
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Follow-up not found")
     return {"message": "Follow-up status updated"}
+
+@api_router.post("/followups/{followup_id}/log")
+async def log_followup_outcome(followup_id: str, log_data: FollowUpLogCreate, current_user: User = Depends(get_current_user)):
+    """Log a follow-up call outcome with trail history"""
+    # Get the follow-up
+    followup = await db.followups.find_one({"id": followup_id}, {"_id": 0})
+    if not followup:
+        raise HTTPException(status_code=404, detail="Follow-up not found")
+    
+    # Create the log entry
+    log_entry = FollowUpLog(
+        followup_id=followup_id,
+        lead_id=followup.get('lead_id'),
+        branch_id=followup.get('branch_id'),
+        outcome=log_data.outcome,
+        notes=log_data.notes,
+        next_action=log_data.next_action,
+        next_followup_date=log_data.next_followup_date,
+        logged_by=current_user.id,
+        logged_by_name=current_user.name
+    )
+    
+    log_dict = log_entry.model_dump()
+    log_dict['logged_at'] = log_dict['logged_at'].isoformat()
+    if log_dict.get('next_followup_date'):
+        log_dict['next_followup_date'] = log_dict['next_followup_date'].isoformat()
+    
+    await db.followup_logs.insert_one(log_dict)
+    
+    # Update the follow-up with latest outcome
+    update_data = {
+        "call_attempts": (followup.get('call_attempts', 0) or 0) + 1,
+        "last_outcome": log_data.outcome.value,
+        "last_call_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    # If connected and completed, mark as completed
+    if log_data.outcome == FollowUpOutcome.CONNECTED and not log_data.next_followup_date:
+        update_data["status"] = FollowUpStatus.COMPLETED
+    
+    await db.followups.update_one({"id": followup_id}, {"$set": update_data})
+    
+    # If next follow-up date specified, create a new follow-up
+    if log_data.next_followup_date:
+        new_followup = FollowUp(
+            lead_id=followup.get('lead_id'),
+            branch_id=followup.get('branch_id'),
+            note=f"Follow-up from previous call: {log_data.notes}. Next action: {log_data.next_action or 'Call again'}",
+            followup_date=log_data.next_followup_date,
+            created_by=current_user.id,
+            created_by_name=current_user.name,
+            lead_name=followup.get('lead_name'),
+            lead_number=followup.get('lead_number')
+        )
+        new_fu_dict = new_followup.model_dump()
+        new_fu_dict['created_at'] = new_fu_dict['created_at'].isoformat()
+        new_fu_dict['followup_date'] = new_fu_dict['followup_date'].isoformat()
+        await db.followups.insert_one(new_fu_dict)
+        
+        # Mark current follow-up as completed since new one is created
+        await db.followups.update_one({"id": followup_id}, {"$set": {"status": FollowUpStatus.COMPLETED}})
+    
+    return {"message": "Follow-up logged successfully", "log_id": log_entry.id}
+
+@api_router.get("/followups/{followup_id}/logs")
+async def get_followup_logs(followup_id: str, current_user: User = Depends(get_current_user)):
+    """Get all log entries (trail) for a follow-up"""
+    logs = await db.followup_logs.find({"followup_id": followup_id}, {"_id": 0}).sort("logged_at", -1).to_list(100)
+    return logs
+
+@api_router.get("/leads/{lead_id}/followup-trail")
+async def get_lead_followup_trail(lead_id: str, current_user: User = Depends(get_current_user)):
+    """Get complete follow-up trail for a lead including all calls and outcomes"""
+    # Get all follow-ups for this lead
+    followups = await db.followups.find({"lead_id": lead_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    # Get all logs for this lead
+    logs = await db.followup_logs.find({"lead_id": lead_id}, {"_id": 0}).sort("logged_at", -1).to_list(500)
+    
+    # Build timeline
+    timeline = []
+    for fu in followups:
+        timeline.append({
+            "type": "followup_created",
+            "date": fu.get('created_at'),
+            "data": fu
+        })
+    
+    for log in logs:
+        timeline.append({
+            "type": "call_logged",
+            "date": log.get('logged_at'),
+            "data": log
+        })
+    
+    # Sort by date
+    timeline.sort(key=lambda x: x['date'] if x['date'] else '', reverse=True)
+    
+    return {
+        "lead_id": lead_id,
+        "total_followups": len(followups),
+        "total_calls": len(logs),
+        "timeline": timeline
+    }
 
 # ========== NOTIFICATIONS ==========
 
@@ -4497,6 +4637,153 @@ async def get_super_admin_dashboard(current_user: User = Depends(require_role([U
             "total_income": total_income,
             "average_income_per_branch": avg_income
         }
+    }
+
+@api_router.get("/analytics/fde-dashboard")
+async def get_fde_dashboard(current_user: User = Depends(get_current_user)):
+    """Get FDE (Front Desk Executive) dashboard data"""
+    if current_user.role not in [UserRole.FRONT_DESK, UserRole.BRANCH_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    branch_id = current_user.branch_id
+    today = datetime.now().strftime('%Y-%m-%d')
+    current_month = datetime.now().strftime('%Y-%m')
+    
+    # 1. Fee due for the month (installments due this month)
+    from calendar import monthrange
+    year, month = datetime.now().year, datetime.now().month
+    _, last_day = monthrange(year, month)
+    month_start = f"{year}-{str(month).zfill(2)}-01"
+    month_end = f"{year}-{str(month).zfill(2)}-{str(last_day).zfill(2)}"
+    
+    installments_due = await db.installment_schedule.find({
+        "due_date": {"$gte": month_start, "$lte": month_end},
+        "status": {"$ne": "Paid"}
+    }, {"_id": 0}).to_list(1000)
+    
+    # Filter by branch if not super admin
+    fee_due_amount = 0
+    fee_due_count = 0
+    for inst in installments_due:
+        plan = await db.payment_plans.find_one({"id": inst.get('payment_plan_id')}, {"_id": 0, "branch_id": 1})
+        if plan and (current_user.role == UserRole.ADMIN or plan.get('branch_id') == branch_id):
+            fee_due_amount += inst.get('amount', 0)
+            fee_due_count += 1
+    
+    # 2. Students not assigned to batches
+    branch_filter = {} if current_user.role == UserRole.ADMIN else {"branch_id": branch_id}
+    students_without_batch = await db.enrollments.count_documents({
+        **branch_filter,
+        "status": "Active",
+        "$or": [{"batch_id": {"$exists": False}}, {"batch_id": None}, {"batch_id": ""}]
+    })
+    
+    # 3. Cash handling status for today
+    cash_record = await db.cash_handling.find_one({
+        "date": today,
+        "branch_id": branch_id if current_user.role != UserRole.ADMIN else {"$exists": True}
+    }, {"_id": 0})
+    
+    cash_updated_today = cash_record is not None and cash_record.get('status') == 'Deposited'
+    
+    # Get today's cash total from payments
+    today_payments = await db.payments.find({
+        **branch_filter,
+        "payment_date": today,
+        "payment_mode": "Cash"
+    }, {"_id": 0, "amount": 1}).to_list(1000)
+    today_cash_total = sum(p.get('amount', 0) for p in today_payments)
+    
+    # 4. Tasks not responded/pending
+    pending_tasks = await db.tasks.count_documents({
+        **branch_filter,
+        "status": {"$in": ["Pending", "In Progress"]}
+    })
+    
+    overdue_tasks = await db.tasks.count_documents({
+        **branch_filter,
+        "status": {"$in": ["Pending", "In Progress"]},
+        "due_date": {"$lt": today}
+    })
+    
+    return {
+        "fee_due": {
+            "amount": fee_due_amount,
+            "count": fee_due_count,
+            "month": datetime.now().strftime('%B %Y')
+        },
+        "students_without_batch": students_without_batch,
+        "cash_handling": {
+            "updated_today": cash_updated_today,
+            "today_cash_total": today_cash_total
+        },
+        "tasks": {
+            "pending": pending_tasks,
+            "overdue": overdue_tasks
+        }
+    }
+
+@api_router.get("/analytics/counsellor-dashboard")
+async def get_counsellor_dashboard(current_user: User = Depends(get_current_user)):
+    """Get Counsellor dashboard data with follow-up info"""
+    if current_user.role not in [UserRole.COUNSELLOR, UserRole.BRANCH_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    branch_id = current_user.branch_id
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    # Build query based on role
+    if current_user.role == UserRole.COUNSELLOR:
+        followup_query = {"created_by": current_user.id, "status": "Pending"}
+        today_query = {"created_by": current_user.id, "status": "Pending"}
+    elif current_user.role == UserRole.BRANCH_ADMIN:
+        followup_query = {"branch_id": branch_id, "status": "Pending"}
+        today_query = {"branch_id": branch_id, "status": "Pending"}
+    else:  # Admin
+        followup_query = {"status": "Pending"}
+        today_query = {"status": "Pending"}
+    
+    # Total pending follow-ups
+    total_pending = await db.followups.count_documents(followup_query)
+    
+    # Today's follow-ups
+    today_followups = await db.followups.find({
+        **today_query,
+        "followup_date": {"$regex": f"^{today}"}
+    }, {"_id": 0}).to_list(100)
+    
+    # Overdue follow-ups (before today)
+    overdue_followups = await db.followups.count_documents({
+        **followup_query,
+        "followup_date": {"$lt": today}
+    })
+    
+    # This week's follow-ups
+    from datetime import timedelta
+    week_end = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+    this_week_count = await db.followups.count_documents({
+        **followup_query,
+        "followup_date": {"$gte": today, "$lte": week_end}
+    })
+    
+    # Get detailed today's follow-ups with lead info
+    today_followups_detailed = []
+    for fu in today_followups:
+        lead = await db.leads.find_one({"id": fu.get('lead_id')}, {"_id": 0, "name": 1, "number": 1, "status": 1})
+        if lead:
+            today_followups_detailed.append({
+                **fu,
+                "lead_name": lead.get('name'),
+                "lead_number": lead.get('number'),
+                "lead_status": lead.get('status')
+            })
+    
+    return {
+        "total_pending": total_pending,
+        "today_count": len(today_followups),
+        "today_followups": today_followups_detailed,
+        "overdue_count": overdue_followups,
+        "this_week_count": this_week_count
     }
 
 # Branch Admin specific endpoints
@@ -6862,7 +7149,7 @@ async def get_quiz_qr_code(exam_id: str, current_user: User = Depends(get_curren
         raise HTTPException(status_code=404, detail="Quiz exam not found")
     
     # Generate the public quiz URL - use /exam route which matches frontend App.js
-    frontend_url = os.environ.get('FRONTEND_URL', 'https://expense-tracking-2.preview.emergentagent.com')
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://educom-exams.preview.emergentagent.com')
     quiz_url = f"{frontend_url}/exam/{exam_id}"
     
     # Generate QR code

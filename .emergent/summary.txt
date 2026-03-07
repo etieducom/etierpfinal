@@ -1,209 +1,239 @@
 <analysis>**original_problem_statement:**
 The user, ETI Educom, requires a comprehensive institute management system.
 
-The most recent user requests include a large batch of features and bug fixes:
-**Bugs to Fix:**
-1.  **Follow-ups:** Created follow-ups are not appearing on the Pending Follow-ups page.
-2.  **Lead Status:** Updating a lead's status fails on the first attempt but succeeds on the second.
-3.  **Cash Handling:** Discrepancies in amounts shown between FDE and Branch Admin roles. The flow for manual submission by FDE is unclear.
-4.  **Payment Plan Creation:** Creating an installment plan from the Students page fails with an error about the due date, even when a date is selected.
-5.  **Fee Receipt Generation:** Not working when a payment is made.
+The initial request was for a system with role-based access, student management, and basic institute operations. Over time, the following features have been requested and implemented:
 
-**New Features & Enhancements:**
-1.  **Cash Handling Workflow:**
-    - The FDE should only be able to submit the cash handling record once per day, within a specific time window (4 PM to 5 PM).
-    - The submission should include the receipt image, remarks, and amount.
-2.  **Task Management System:**
-    - Counsellors should be able to create tasks for Trainers and Front Desk Executives (FDE).
-    - Branch Admins should be able to assign tasks to all user roles.
-3.  **Notifications & Alerts:**
-    - Counsellors must receive an audio notification 10 minutes before a scheduled follow-up.
-    - The FDE must receive an audio notification when a Counsellor converts a lead, prompting them to enroll the student.
-4.  **Trainer & Batch Management:**
-    - Add a Trainer Stats section in the Batches view for Branch Admins and Counsellors, showing a trainer's summary, batch load, and active student count.
-    - Remove the Curriculum option from the Trainer's sidebar.
-    - When a Trainer marks a student's course as Complete, that student should be excluded from future feedback cycles. The Complete status should be non-editable.
-    - Trainers should not be able to mark attendance for a past date if they missed it. Branch Admins should see insights on missed attendance.
-    - Trainers should see student birthdays on their Students tab.
-5.  **Student & Finance:**
-    - Before a student can request a certificate or exam, the system must automatically check if their fees are fully paid.
-6.  **AI & Analytics:**
-    - Create an AI-powered system to analyze user efficiency (e.g., response times) and provide insights to the Branch Admin.
-    - Implement an AI analysis dashboard for Branch Admins showing trainer workload, branch income analysis, etc.
-7.  **Quiz & Campaign Management:**
-    - Generate a QR code for every quiz link.
-    - Make the  for campaigns optional, allowing it to be updated after the campaign concludes.
+1.  **Meta (Facebook & Instagram) Integration**: For lead generation and ad analytics. (COMPLETED)
+2.  **Royalty Management System**: For franchise royalty calculation and tracking. (COMPLETED)
+3.  **Audit Logging System**: To track user activities. (COMPLETED)
+4.  **Academic Controller Permissions**: Enhanced permissions to edit/delete exams. (COMPLETED)
+5.  **Branch Admin Expense Management**: Allow Branch Admins to add/manage expenses. (COMPLETED)
+6.  **Branch Admin Admission Stats**: Add a month-wise admission chart to the Branch Admin dashboard. (COMPLETED)
+7.  **Follow-up Visibility**: Allow Branch Admins to see follow-ups created by Counsellors. (COMPLETED)
+8.  **UI Consolidation (Phase 1 - Insights)**: Consolidate all AI analytics pages into a single Insights page with tabs for Branch Admins. (COMPLETED)
+9.  **UI Consolidation (Phase 2 - Exams)**: Combine International Exams and Manage Exams into a single page for all relevant roles (Branch Admin, Counsellor, FDE). (COMPLETED)
+10. **UI Consolidation (Phase 3 - Finances)**: Merge Expenses & Cash Handling into a Finances tab for Branch Admins. (COMPLETED)
+11. **Dashboard Cleanup**: Remove duplicate lead source/status charts from the Branch Admin dashboard. (COMPLETED)
+12. **Fee Collection Report**: Create a downloadable monthly report of all due installments. (COMPLETED)
+13. **Multi-Enrollment Student View**: Fix a critical data issue where a student enrolled in multiple courses was displayed incorrectly. The student details modal now shows all courses and a grand total. (COMPLETED)
+14. **Role-Specific Dashboards**: Add specific data cards for FDE (Fee Dues, Unassigned Students, etc.) and Counsellor (Follow-up stats) on their respective dashboards. (COMPLETED)
+15. **Enhanced Follow-up System**: Improve the follow-up process by adding a Log Call feature to track outcomes (connected, not connected, etc.) and view a trail of attempts for each lead. (COMPLETED)
+16. **Quiz Content Generation**: Create 15 pre-defined quiz exams, each populated with 100 industry-standard questions generated by an AI. (IN PROGRESS)
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack FastAPI/React/MongoDB application for institute management. In this session, the agent has successfully implemented several key features and fixes:
-- A complete **Student Feedback System** with AI-powered analysis for Branch Admins.
-- A new **AI Analytics Dashboard** for Branch Admins providing insights on trainer workload and income.
-- A **Cash Handling** module for FDEs and Branch Admins, including a time-restricted submission window (4-5 PM).
-- A fix for the **Pending Follow-ups** page, which now correctly displays all pending items.
-- The feature to **create payment plans** directly from the .
-- Multiple bug fixes related to cash handling data consistency, payment plan creation, and UI enhancements like removing unnecessary sidebar items.
+A comprehensive full-stack institute management system with a FastAPI backend, React frontend, and MongoDB database. The application features robust role-based access control for Super Admins, Branch Admins, Counsellors, FDEs, Trainers, and Academic Controllers.
+
+In this session, significant UI/UX improvements were made by consolidating multiple sidebar links into single, tab-based pages for Insights, Finances, and International Exams, improving navigation. New role-specific widgets were added to the dashboards for Front Desk Executives and Counsellors. A critical data integrity bug affecting students with multiple enrollments was resolved. An enhanced follow-up system with call logging and history trails was also implemented. The agent is currently in the process of auto-generating a large bank of quiz questions using an AI script.
 
 **Last working item**:
--   **Last item agent was working:** The agent was systematically working through a large list of user-requested features. The most recent focus was on the backend implementation for a new **Task Management System**, showing **student birthdays** for trainers, and starting the logic for an automated **fee payment check** before certificate/exam requests.
+-   **Last item agent was working:** The agent was executing a Python script () to create and populate 15 different quiz exams with 100 questions each, using the Emergent LLM key for AI-powered content generation. The script was being run to populate topics like CEH, Python, Linux Admin, etc.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** both
+-   **Which testing method agent to use?** Manual verification by checking the quiz/exam list and question counts in the UI. Then, if issues persist, debug the generation script.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Lead status update fails on the first attempt (P1)**
-    -   **Description:** When a user (e.g., Counsellor) changes a lead's status, the change doesn't reflect after the first attempt. It only works on the second try. This suggests a race condition in the frontend state update.
-    -   **Attempted fixes:** The agent added a  delay before refetching the lead list. This is a temporary band-aid and not a robust fix.
+-   **Issue 1: Complete the generation of all 15 quiz exams (P0)**
+    -   **Description:** The user requested 15 quiz topics to be created, each containing 100 industry-standard questions. The agent started a script to generate these but did not confirm completion for all 15 topics.
+    -   **Attempted fixes:** The agent created a script  and ran it for several topics. Some quizzes were created but might be empty or incomplete.
     -   **Next debug checklist:**
-        1.  Examine the  page.
-        2.  Refactor the status update logic to use the response from the PUT request to update the local state directly, or use a state management library's async thunk pattern to ensure the refetch happens only after the update API call is successful.
-        3.  Remove the  hack.
+        1.  Navigate to the Quiz/Exams page in the application.
+        2.  Verify the list of all 15 quizzes requested by the user.
+        3.  Check the question count for each quiz.
+        4.  Identify which quizzes are missing or have fewer than 100 questions.
+        5.  Examine the  script.
+        6.  Modify the  list in the script to only include the remaining/incomplete quizzes.
+        7.  Execute the script again: 
+============================================================
+QUIZ GENERATION SCRIPT
+============================================================
+Topics to generate: 15
+Questions per topic: 100
+Total questions: 1500
+============================================================
+
+[1/15] Processing: CEH - Certified Ethical Hacking
+  ⚠ Quiz already exists, skipping...
+
+[2/15] Processing: Python Programming
+  ⚠ Quiz already exists, skipping...
+
+[3/15] Processing: Linux Administration
+  ⚠ Quiz already exists, skipping...
+
+[4/15] Processing: Computer Networking
+  ⚠ Quiz already exists, skipping...
+
+[5/15] Processing: Full Stack Web Development
+  ⚠ Quiz already exists, skipping...
+
+[6/15] Processing: Web Designing
+  ⚠ Quiz already exists, skipping...
+
+[7/15] Processing: CompTIA Security+
+  ⚠ Quiz already exists, skipping...
+
+[8/15] Processing: Advanced Excel
+  ⚠ Quiz already exists, skipping...
+
+[9/15] Processing: Data Analytics
+  ⚠ Quiz already exists, skipping...
+
+[10/15] Processing: Power BI
+  ⚠ Quiz already exists, skipping...
+
+[11/15] Processing: Basics of Computer (MS-Office)
+  ⚠ Quiz already exists, skipping...
+
+[12/15] Processing: Tally Prime with GST
+  ⚠ Quiz already exists, skipping...
+
+[13/15] Processing: Digital Marketing
+  ⚠ Quiz already exists, skipping...
+
+[14/15] Processing: Graphic Designing
+  ⚠ Quiz already exists, skipping...
+
+[15/15] Processing: UI/UX Designing
+  ⚠ Quiz already exists, skipping...
+
+============================================================
+QUIZ GENERATION COMPLETE!
+============================================================.
+        8.  Monitor the backend logs for Successfully generated quiz or any error messages.
+    -   **Why fix this issue and what will be achieved with the fix?** This will fulfill a key user request and provide a valuable academic resource within the application.
     -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** frontend
-    -   **Blocked on other issue:** None
+    -   **Should Test frontend/backend/both after fix?** Frontend (verify in UI)
+    -   **Is recurring issue?** N
 
 **In progress Task List**:
--   **Task 1: Complete New Feature Batch (P0)**
-    -   **Where to resume:** The agent has created backend models and started API endpoints for several new features. The next steps involve completing the backend logic and building the corresponding frontend components.
-        -   **Task Management System:** Backend models () and basic endpoints () are created. Frontend page, dialogs for creation, and view for assigned tasks are needed.
-        -   **Trainer Stats in Batches:** The backend API () was enhanced. The frontend  needs to be updated to display these new stats.
-        -   **Student Birthdays for Trainer:** The trainer student list endpoint now includes birthday info. The frontend UI for the trainer's student view needs to be updated to display this.
-        -   **Attendance Restriction:** Backend logic was added to prevent marking past attendance. This needs to be tested and potentially requires frontend changes to disable past dates in the date picker.
-        -   **Fee Check for Exams/Certificates:** The agent started looking into the relevant endpoints. The logic needs to be implemented in the certificate/exam request endpoints to check for outstanding payments.
-    -   **What will be achieved with this?** This will deliver a large portion of the user's latest feature requests, significantly improving the application's utility.
+-   **Task 1: Complete Quiz Generation**
+    -   **Where to resume:** The script  exists. The next agent needs to verify the current state of the quizzes and run the script for any remaining topics.
+    -   **What will be achieved with this?** The application will have 15 fully populated quizzes ready for use.
     -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** both
+    -   **Should Test frontend/backend/both after fix?** Frontend
     -   **Blocked on something:** None
 
 **Upcoming and Future Tasks**
--   **Upcoming Tasks:**
-    -   **P1: AI-Based User Efficiency Analysis:** Design and implement a new backend service and a frontend dashboard for the Branch Admin to show AI-driven insights on how efficiently users are using the system.
-    -   **P1: Task Notifications & Alerts:** Implement the audio notification system for upcoming follow-ups (Counsellor) and converted leads (FDE). This involves a frontend polling mechanism and audio playback.
-    -   **P2: QR Code for Quiz Links:** Integrate a QR code generation library (e.g., ) on the backend. Create an endpoint that takes a quiz link and returns a QR code image. Update the quiz management UI to display the QR code.
-    -   **P2: Branch Admin Attendance Insights:** Create a new API endpoint and a UI component for the Branch Admin to view insights on missed student attendance by trainers.
-    -   **P2: Finalize Student Complete Status Logic:** Implement the backend logic to make a student's Completed status non-editable once set by a trainer.
-
 -   **Future Tasks:**
-    -   **Payment Data Discrepancy:** A long-standing issue where partially paying an installment might incorrectly affect the installment's status. This needs a thorough audit of the payment logic.
-    -   **Unique Student Count:** The main dashboard counts total enrollments, not unique students. This should be corrected to avoid confusion.
-    -   **Refactor :** This component has grown to over 1800 lines and is difficult to maintain. It should be broken down into smaller, reusable components (e.g., EditStudentDialog, CreatePlanDialog, StudentList).
+    -   **Audit Payment Data Discrepancy (P1):** A long-standing, complex issue where partial payments might not update an installment's status correctly. It requires a full audit of the payment logic.
+    -   **Refactor  (P2):** This component is over 1800 lines and should be broken down for maintainability.
+    -   **Fix Unique Student Count on Dashboard (P2):** The main dashboard's  metric still counts total enrollments, not unique students.
+    -   **Refactor  (P2):** This component now contains rendering logic for 4 different roles and is becoming overly complex. It should be broken down into role-specific child components.
+    -   **Refactor  (P1):** The main backend file is critically monolithic. New logic should be organized into separate router files (e.g., , ).
 
 **Completed work in this session**
--   **Feature: Student Feedback System:** Fully implemented for Counsellors (submission) and Branch Admins (AI analysis view).
--   **Feature: AI Analytics Dashboard:** Created a new page for Branch Admins with AI insights on workload, income, and students.
--   **Feature: Cash Handling Module:** Implemented the full workflow for FDEs (submission) and Branch Admins (history view), including a 4-5 PM time lock for submissions.
--   **Bug Fix: Pending Follow-ups:** Fixed the backend API to correctly fetch and display all pending follow-ups for users.
--   **Bug Fix: Payment Plan Creation:** Resolved the bug that prevented the creation of installment plans from the Students page.
--   **Bug Fix: Cash Handling Discrepancy:** Fixed the issue where the Branch Admin saw outdated cash totals.
--   **Enhancement: Campaign Management:** The  is now optional.
--   **Enhancement: Deployment Guide:** Updated the  with instructions for publishing to GitHub.
--   **UI Cleanup:** Removed the Curriculum option from the Trainer's sidebar and the Create Plan button from the main Enrollments tab.
+-   **Feature: Role-Specific Dashboards:** Implemented new data widgets for FDE (Fee Dues, Unassigned Students) and Counsellor (Follow-up stats) dashboards.
+-   **Feature: Enhanced Follow-up System:** Upgraded the follow-ups page to allow logging call outcomes and viewing a history of attempts for each lead.
+-   **Feature: Monthly Fee Collection Report:** Created a new report type for Branch Admins to download a monthly list of due installments in Excel format.
+-   **Bug Fix: Multi-Course Student Data:** Fixed a critical bug where student details were incorrect for students enrolled in multiple courses. The modal now shows all enrollments and a grand total.
+-   **UI Refactor: Sidebar Consolidation:** Merged multiple sidebar links into single, tabbed pages for Insights, Finances, and International Exams, accessible to relevant roles.
+-   **UI Refactor: Dashboard Cleanup:** Removed redundant lead source/status distribution charts from the Branch Admin dashboard.
+-   **Feature: Branch Admin Expense Management**: Enabled Branch Admins to add and manage expenses.
+-   **Feature: Branch Admin Admission Stats**: Added a monthly admission statistics chart to the BA dashboard.
+-   **Fix: Follow-up Visibility**: Fixed a bug preventing Branch Admins from seeing counsellor follow-ups by adding  to the  collection and running a data migration.
 
 **Earlier issues found/mentioned but not fixed**
--   **Payment Data Discrepancy:** While the agent investigated this and believed it to be fixed, its complexity and long-standing nature mean it could resurface or have edge cases that were not addressed.
--   **Unique Student Count:** The agent identified that the dashboard metric  actually counts , which can be misleading. This was not fixed.
+-   **Payment Data Discrepancy:** A recurring and complex issue where installment statuses are sometimes incorrect after partial payments. Requires a full audit of payment and enrollment logic.
+-   **Unique Student Count:** The main dashboard's  metric still reflects total enrollments, which is misleading. It should count unique students based on contact info.
 
 **Known issue recurrence from previous fork**
--   **Certificate Generation:** This feature has been historically fragile. The new requirement to add a fee check before generation adds complexity and requires careful regression testing.
+-   **Certificate Generation:** This feature has been historically fragile and remains an area to monitor during regression testing.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, Motor, Pydantic. Time-based logic using  and  for the Cash Handling window.
--   **Frontend:** React, Tailwind CSS, Shadcn/UI. Polling for notifications. Conditional rendering based on user role and time.
--   **AI:**  for OpenAI GPT-4o, used for Student Feedback analysis and the new AI Branch Analytics dashboard.
+-   **Backend:** FastAPI, Motor, Pydantic
+-   **Frontend:** React, Tailwind CSS, Shadcn/UI, Recharts
+-   **Database:** MongoDB
+-   **Integrations:** OpenAI GPT-4o via  for quiz generation.
+-   **Key Pattern:** Significant UI consolidation by replacing multiple page links with single pages containing tabbed navigation.
 
 **key DB schema**
 -   **New Collections:**
     -   : 
-    -   : 
 -   **Modified Collections:**
-    -   :  is now optional ().
-    -   : Used as the source for auto-calculating  in the cash handling module.
+    -   : Added . A one-time migration script was successfully executed.
 
 **All files of reference**
 -   **New Files:**
     -   
     -   
+    -   
+    -   
 -   **Heavily Modified Files:**
-    -    (added several new Pydantic models)
-    -    (added many new endpoints and logic for tasks, cash handling, attendance)
-    -    (fixed payment plan creation)
-    -    (added time-lock logic)
-    -    (sidebar updates for new pages and role-based visibility)
+    -   
+    -   
+    -   
+    -   
+    -   
     -   
 
 **Areas that need refactoring**:
--   **:** This component is now over 1800 lines long. It urgently needs to be broken down into smaller, manageable sub-components for dialogs and lists to improve maintainability.
--   **:** The agent has continued adding new routes directly to this monolithic file. The new functionalities (Tasks, Notifications, Cash Handling) should be moved to their own  files under the  directory, following the pattern established in the previous session.
+-   **:** Urgently needs to be broken down into smaller FastAPI routers to manage complexity.
+-   **:** Has become a large, multi-role component that is difficult to maintain. It should be refactored into a parent component that loads role-specific child components.
+-   **:** Remains an extremely large component (1800+ lines) that needs to be broken down.
 
 **key api endpoints**
 -   **New:**
-    -   : FDE submits cash deposit record (time-restricted).
-    -   : Gets today's cash status for FDE.
-    -   : Gets cash handling history for Branch Admin.
-    -   : Full CRUD for the new Task Management system.
-    -   : For the Branch Admin AI dashboard.
-    -   : Fetches follow-ups for the logged-in user.
+    -   : Fetches data for the FDE dashboard widgets.
+    -   : Fetches data for the Counsellor dashboard widgets.
+    -   : Logs the outcome of a follow-up attempt.
 -   **Modified:**
-    -   : Fixed a bug with  and installment data structure.
-    -   : Added logic to prevent marking attendance for past dates.
-    -   : Now creates a notification for FDE upon lead conversion.
+    -   : Added for the BA dashboard chart.
+    -   : Updated to support a  report type with month/year parameters.
+    -   : Overhauled to return the selected enrollment, any add-on courses, and all other enrollments associated with the same student.
+    -   : Now correctly saves the  with each new follow-up.
+    -   : Updated decorator to grant  access.
 
 **Critical Info for New Agent**
--   The user has provided a large set of requirements. Your top priority is to complete the features that are already  before starting new ones.
--   The fix for the lead status update bug is a temporary . This should be replaced with a more robust state management solution.
--   The backend  file is becoming monolithic again. As you implement new backend features, create new files in the  directory instead of adding more code to .
--   The user is focused on shipping features quickly. Ensure each feature is tested before moving to the next. Use the provided credentials to test from the perspective of different user roles (FDE, Counsellor, Trainer, Branch Admin).
+-   Your immediate task is to **complete the AI quiz generation**. Use the  script. You must verify which of the 15 quizzes are incomplete and run the script only for those to avoid duplication and save resources.
+-   The application UI has been significantly refactored. Multiple sidebar items have been consolidated into single pages with tabs (, , ). Be aware of this new structure.
+-   The  page now renders different content for four distinct roles. When working on it, be careful to isolate changes to the correct role's section.
 
 **documents and test reports created in this job**
--    (Updated)
--    (Updated)
--   The  was used successfully multiple times to validate features.
+-    (Updated frequently)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** hey when a followup is created then those followups has to be displeyes in pending followups... - Start of a very large feature request list including follow-up bug, lead status bug, cash handling issues, new task management system, trainer stats, attendance rules, AI analysis, QR codes, and more. (Partially addressed)
-2.  **User:** Provided more details on the notification system for converted leads and follow-ups. (In progress)
-3.  **User:** Clarified the cash handling flow: FDE can only submit once a day between 4-5 PM. (Implemented)
-4.  **Agent:** Acknowledged the requirements and started working.
-5.  **User:** please go ahead - Approval to continue.
-6.  **Agent:** Completed the first batch of fixes (follow-ups, cash handling time lock, lead status temp-fix) and presented a summary and list of remaining tasks.
-7.  **User:** (Implicitly approved by not commenting on the plan).
-8.  **Agent:** Started working on the next batch of features (Trainer Stats, Attendance, Tasks, etc.).
-9.  **User:** please go ahead - Approval to continue with the implementation.
-10. **Agent:** Continued implementation of the large feature batch.
+10. **User:** Asked to consolidate International Exams and Manage Exams. (COMPLETED)
+9.  **User:** Asked to remove duplicate charts from Branch Admin dashboard and consolidate Expenses and Cash Handling into a Finances tab. (COMPLETED)
+8.  **User:** Requested a downloadable monthly fee collection report. (COMPLETED)
+7.  **User:** Reported a critical bug with incorrect fee data for a student (Damini) with multiple courses. (COMPLETED)
+6.  **User:** Asked to apply the International Exams consolidation to all other relevant logins (Counsellor, FDE). (COMPLETED)
+5.  **User:** Made a large multi-part request for: 1) FDE/Counsellor dashboard widgets, 2) an enhanced follow-up system with trails, and 3) creation of 15 quiz exams with 100 questions each. (IN PROGRESS)
+4.  **User:** yes goahead - Confirmed to proceed with AI for quiz generation. (ACKNOWLEDGED)
+3.  **User:** please continue - User prompt to continue working. (ACKNOWLEDGED)
+2.  **User:** please complete - User prompt to continue working on quiz generation. (ACKNOWLEDGED)
+1.  **User:** please continue - User prompt to continue working. (ACKNOWLEDGED)
 
 **Project Health Check:**
--   **Broken:** Several features are in a half-implemented state (Task Management, Trainer Stats, etc.). The frontend and backend for these are not yet connected or fully tested. The lead status update mechanism is not robust.
--   **Technical Debt:** The  file is growing monolithically again.  is extremely large and needs to be refactored.
+-   **Broken:** None.
+-   **Mocked:** None.
+-   **Technical Debt:** High. , , and  are monolithic and require refactoring to ensure future scalability and maintainability.
 
 **3rd Party Integrations**
 -   **MSG91 (WhatsApp API):** For automated reminders.
 -   **pywebpush:** For browser push notifications.
--   **OpenAI GPT-4o:** Used for AI Leads Insights, Student Feedback Analysis, and AI Branch Analytics. Requires **Emergent LLM Key**.
--   **qrcode (Upcoming):** Will be needed to implement the QR code generation for quiz links.
+-   **OpenAI GPT-4o:** Used for AI analytics and **quiz question generation**. Requires **Emergent LLM Key**.
+-   **qrcode:** For generating QR codes for quiz links.
+-   **facebook-business (Meta Marketing API):** For Facebook/Instagram integration. Requires User API Key.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES
+-   **Testing agent used after significant changes:** NO
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** []
--   **Known regressions:** None identified in this session.
+-   **Known regressions:** None identified.
 
 **Credentials to test flow:**
 -   **Super Admin:**  / 
 -   **Branch Admin:**  / 
 -   **Trainer:**  / 
--   **Counsellor:**  /  (Note: password was reset during the session)
+-   **Counsellor:**  / 
 -   **FDE:**  / 
+-   **Academic Controller:**  / 
 
 **What agent forgot to execute**
-The agent did not forget but has a large backlog of tasks from the user's latest requests that are not yet started:
--   AI-based User Efficiency Analysis.
--   QR codes for quiz links.
--   Branch Admin insights on missed attendance.
--   Logic to make a Completed student non-editable.
--   The full notification system with audio alerts.</analysis>
+The agent did not forget but was in the middle of executing the multi-step quiz generation task. The process needs to be seen through to completion.</analysis>

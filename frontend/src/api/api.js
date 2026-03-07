@@ -86,6 +86,8 @@ export const analyticsAPI = {
   getBranchWiseFinancial: () => api.get('/analytics/financial/branch-wise'),
   getSuperAdminDashboard: () => api.get('/analytics/super-admin-dashboard'),
   getAILeadsInsights: () => api.get('/analytics/ai-leads-insights'),
+  getFDEDashboard: () => api.get('/analytics/fde-dashboard'),
+  getCounsellorDashboard: () => api.get('/analytics/counsellor-dashboard'),
 };
 
 export const whatsappAPI = {
@@ -257,6 +259,9 @@ export const followupAPI = {
   updateStatus: (id, status) => api.put(`/followups/${id}/status`, null, { params: { status } }),
   getDueSoon: () => api.get('/followups/due-soon'),
   getOverdue: () => api.get('/followups/overdue'),
+  logOutcome: (id, data) => api.post(`/followups/${id}/log`, data),
+  getLogs: (id) => api.get(`/followups/${id}/logs`),
+  getLeadTrail: (leadId) => api.get(`/leads/${leadId}/followup-trail`),
 };
 
 export const pushSubscriptionAPI = {
