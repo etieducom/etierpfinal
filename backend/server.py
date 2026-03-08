@@ -2278,6 +2278,37 @@ async def delete_lead(lead_id: str, delete_request: Optional[LeadDeleteRequest] 
     )
     return {"message": "Lead deleted successfully"}
 
+@api_router.put("/leads/{lead_id}/restore")
+async def restore_lead(lead_id: str, current_user: User = Depends(require_role([UserRole.BRANCH_ADMIN, UserRole.ADMIN]))):
+    """Restore a soft-deleted lead"""
+    lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    if not lead.get('is_deleted'):
+        raise HTTPException(status_code=400, detail="Lead is not deleted")
+    
+    # Branch Admin can only restore leads from their branch
+    if current_user.role == UserRole.BRANCH_ADMIN and lead.get('branch_id') != current_user.branch_id:
+        raise HTTPException(status_code=403, detail="You can only restore leads from your branch")
+    
+    # Restore the lead
+    await db.leads.update_one(
+        {"id": lead_id},
+        {"$set": {
+            "is_deleted": False,
+            "deleted_at": None,
+            "deleted_by": None,
+            "deleted_by_name": None,
+            "deletion_reason": None,
+            "restored_at": datetime.now(timezone.utc).isoformat(),
+            "restored_by": current_user.id,
+            "restored_by_name": current_user.name
+        }}
+    )
+    return {"message": "Lead restored successfully"}
+
+
 # Follow-up Management
 @api_router.post("/followups", response_model=FollowUp)
 async def create_followup(followup: FollowUpCreate, current_user: User = Depends(get_current_user)):
@@ -7564,7 +7595,7 @@ async def get_quiz_qr_code(exam_id: str, current_user: User = Depends(get_curren
     exam_name = exam.get('name') or exam.get('title') or 'Quiz'
     
     # Generate the public quiz URL - use /exam route which matches frontend App.js
-    frontend_url = os.environ.get('FRONTEND_URL', 'https://educom-exams.preview.emergentagent.com')
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://eti-admin-suite.preview.emergentagent.com')
     quiz_url = f"{frontend_url}/exam/{exam_id}"
     
     # Generate QR code

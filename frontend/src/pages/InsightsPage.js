@@ -160,6 +160,10 @@ const InsightsPage = () => {
 
   // Meta Analytics
   const fetchMetaData = async () => {
+    if (!branchId) {
+      setMetaLoading(false);
+      return;
+    }
     setMetaLoading(true);
     try {
       const [analyticsRes, leadsRes] = await Promise.all([
@@ -172,6 +176,7 @@ const InsightsPage = () => {
       if (error.response?.status === 404) {
         toast.error('Meta not configured for your branch');
       }
+      console.error('Meta fetch error:', error);
     } finally {
       setMetaLoading(false);
     }
@@ -1226,7 +1231,7 @@ const InsightsPage = () => {
               <div className="flex items-center gap-2 text-slate-500 text-sm">
                 <Users className="w-4 h-4" /> Total Leads
               </div>
-              <p className="text-2xl font-bold mt-1">{metaAnalytics?.total_leads || 0}</p>
+              <p className="text-2xl font-bold mt-1">{metaAnalytics?.summary?.total_leads || metaAnalytics?.total_leads || 0}</p>
             </CardContent>
           </Card>
           <Card>
@@ -1234,7 +1239,7 @@ const InsightsPage = () => {
               <div className="flex items-center gap-2 text-slate-500 text-sm">
                 <Eye className="w-4 h-4" /> Impressions
               </div>
-              <p className="text-2xl font-bold mt-1">{metaAnalytics?.impressions?.toLocaleString() || 0}</p>
+              <p className="text-2xl font-bold mt-1">{(metaAnalytics?.summary?.total_impressions || metaAnalytics?.impressions || 0).toLocaleString()}</p>
             </CardContent>
           </Card>
           <Card>
@@ -1242,7 +1247,7 @@ const InsightsPage = () => {
               <div className="flex items-center gap-2 text-slate-500 text-sm">
                 <MousePointer className="w-4 h-4" /> Clicks
               </div>
-              <p className="text-2xl font-bold mt-1">{metaAnalytics?.clicks?.toLocaleString() || 0}</p>
+              <p className="text-2xl font-bold mt-1">{(metaAnalytics?.summary?.total_clicks || metaAnalytics?.clicks || 0).toLocaleString()}</p>
             </CardContent>
           </Card>
           <Card>
@@ -1250,12 +1255,12 @@ const InsightsPage = () => {
               <div className="flex items-center gap-2 text-slate-500 text-sm">
                 <DollarSign className="w-4 h-4" /> Spend
               </div>
-              <p className="text-2xl font-bold mt-1">₹{metaAnalytics?.spend?.toLocaleString() || 0}</p>
+              <p className="text-2xl font-bold mt-1">₹{(metaAnalytics?.summary?.total_spend || metaAnalytics?.spend || 0).toLocaleString()}</p>
             </CardContent>
           </Card>
         </div>
 
-        {metaAnalytics?.ai_insights && (
+        {(metaAnalytics?.ai_analysis || metaAnalytics?.ai_insights) && (
           <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -1263,7 +1268,19 @@ const InsightsPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-slate-700 whitespace-pre-line">{metaAnalytics.ai_insights}</p>
+              <p className="text-slate-700 whitespace-pre-line">
+                {metaAnalytics?.ai_analysis?.performance_summary || metaAnalytics?.ai_insights}
+              </p>
+              {metaAnalytics?.ai_analysis?.recommendations && (
+                <div className="mt-4">
+                  <p className="font-semibold text-slate-700 mb-2">Recommendations:</p>
+                  <ul className="list-disc list-inside text-slate-600 space-y-1">
+                    {metaAnalytics.ai_analysis.recommendations.map((rec, idx) => (
+                      <li key={idx}>{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

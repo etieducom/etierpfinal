@@ -150,7 +150,8 @@ export const paymentAPI = {
 };
 
 export const deletedLeadsAPI = {
-  getDeleted: () => api.get('/leads/deleted'),
+  getAll: () => api.get('/leads/deleted'),
+  restore: (leadId) => api.put(`/leads/${leadId}/restore`),
 };
 
 export const studentsAPI = {
