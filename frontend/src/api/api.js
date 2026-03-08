@@ -233,6 +233,7 @@ export const campaignAPI = {
 // Student Feedback API
 export const feedbackAPI = {
   getList: (month) => api.get(`/feedback/list${month ? `?month=${month}` : ''}`),
+  getAll: (params = {}) => api.get('/feedback/all', { params }),
   submit: (data) => api.post('/feedback', data),
   getSummary: (month) => api.get(`/feedback/summary${month ? `?month=${month}` : ''}`),
   getMonths: () => api.get('/feedback/months'),

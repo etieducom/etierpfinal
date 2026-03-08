@@ -255,15 +255,37 @@ const InsightsPage = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
+      // Helper to safely parse dates - support both scheduled_date and followup_date
+      const parseDate = (item) => {
+        const dateStr = item.scheduled_date || item.followup_date;
+        if (!dateStr) return null;
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? null : date;
+      };
+      
       const stats = {
         total: response.data.length,
         today: response.data.filter(f => {
-          const d = new Date(f.scheduled_date);
-          d.setHours(0, 0, 0, 0);
-          return d.getTime() === today.getTime();
+          const d = parseDate(f);
+          if (!d) return false;
+          const dCopy = new Date(d);
+          dCopy.setHours(0, 0, 0, 0);
+          return dCopy.getTime() === today.getTime();
         }).length,
-        overdue: response.data.filter(f => new Date(f.scheduled_date) < today).length,
-        upcoming: response.data.filter(f => new Date(f.scheduled_date) > today).length
+        overdue: response.data.filter(f => {
+          const d = parseDate(f);
+          if (!d) return false;
+          const dCopy = new Date(d);
+          dCopy.setHours(0, 0, 0, 0);
+          return dCopy < today;
+        }).length,
+        upcoming: response.data.filter(f => {
+          const d = parseDate(f);
+          if (!d) return false;
+          const dCopy = new Date(d);
+          dCopy.setHours(0, 0, 0, 0);
+          return dCopy > today;
+        }).length
       };
       setFollowupsStats(stats);
     } catch (error) {
@@ -290,7 +312,13 @@ const InsightsPage = () => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
-    return format(new Date(dateStr), 'dd MMM yyyy, h:mm a');
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '-';
+      return format(date, 'dd MMM yyyy, h:mm a');
+    } catch {
+      return '-';
+    }
   };
 
   // Business Overview Tab - What's Working & What Needs Attention
@@ -495,23 +523,23 @@ const InsightsPage = () => {
 
         {/* Filters */}
         <div className="flex gap-4">
-          <Select value={logsFilters.entity_type} onValueChange={(v) => setLogsFilters({ ...logsFilters, entity_type: v })}>
+          <Select value={logsFilters.entity_type || 'all'} onValueChange={(v) => setLogsFilters({ ...logsFilters, entity_type: v === 'all' ? '' : v })}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Entity Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Types</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="lead">Lead</SelectItem>
               <SelectItem value="payment">Payment</SelectItem>
               <SelectItem value="enrollment">Enrollment</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={logsFilters.action} onValueChange={(v) => setLogsFilters({ ...logsFilters, action: v })}>
+          <Select value={logsFilters.action || 'all'} onValueChange={(v) => setLogsFilters({ ...logsFilters, action: v === 'all' ? '' : v })}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Action" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Actions</SelectItem>
+              <SelectItem value="all">All Actions</SelectItem>
               <SelectItem value="create">Created</SelectItem>
               <SelectItem value="update">Updated</SelectItem>
               <SelectItem value="delete">Deleted</SelectItem>
@@ -753,6 +781,24 @@ const InsightsPage = () => {
       );
     }
 
+    // Helper function to safely parse date
+    const parseDate = (dateStr) => {
+      if (!dateStr) return null;
+      const date = new Date(dateStr);
+      return isNaN(date.getTime()) ? null : date;
+    };
+
+    // Helper function to format date safely
+    const safeFormatDate = (dateStr, formatStr) => {
+      const date = parseDate(dateStr);
+      if (!date) return 'N/A';
+      try {
+        return format(date, formatStr);
+      } catch {
+        return 'N/A';
+      }
+    };
+
     return (
       <div className="space-y-6">
         {/* Stats */}
@@ -800,8 +846,21 @@ const InsightsPage = () => {
             ) : (
               <div className="space-y-3">
                 {followups.slice(0, 15).map((followup) => {
-                  const isOverdue = new Date(followup.scheduled_date) < new Date();
-                  const isToday = new Date(followup.scheduled_date).toDateString() === new Date().toDateString();
+                  // Support both scheduled_date and followup_date
+                  const dateStr = followup.scheduled_date || followup.followup_date;
+                  const scheduledDate = parseDate(dateStr);
+                  const now = new Date();
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  
+                  let isOverdue = false;
+                  let isToday = false;
+                  if (scheduledDate) {
+                    const schedCopy = new Date(scheduledDate);
+                    schedCopy.setHours(0, 0, 0, 0);
+                    isOverdue = schedCopy < today;
+                    isToday = schedCopy.getTime() === today.getTime();
+                  }
                   
                   return (
                     <div key={followup.id} className={`flex items-center justify-between p-4 rounded-lg border ${
@@ -824,10 +883,10 @@ const InsightsPage = () => {
                         <Badge className={
                           isOverdue ? 'bg-red-100 text-red-700' : isToday ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
                         }>
-                          {isOverdue ? 'Overdue' : isToday ? 'Today' : format(new Date(followup.scheduled_date), 'dd MMM')}
+                          {isOverdue ? 'Overdue' : isToday ? 'Today' : safeFormatDate(dateStr, 'dd MMM')}
                         </Badge>
-                        {followup.counsellor_name && (
-                          <p className="text-xs text-slate-500 mt-1">{followup.counsellor_name}</p>
+                        {(followup.counsellor_name || followup.created_by_name) && (
+                          <p className="text-xs text-slate-500 mt-1">{followup.counsellor_name || followup.created_by_name}</p>
                         )}
                       </div>
                     </div>
@@ -858,7 +917,7 @@ const InsightsPage = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-500">
-            Last updated: {branchAnalytics?.generated_at ? format(new Date(branchAnalytics.generated_at), 'dd MMM yyyy, h:mm a') : 'N/A'}
+            Last updated: {branchAnalytics?.generated_at ? formatDate(branchAnalytics.generated_at) : 'N/A'}
           </p>
           <Button onClick={() => { setBranchRefreshing(true); fetchBranchAnalytics(); }} disabled={branchRefreshing} variant="outline" size="sm">
             <RefreshCw className={`w-4 h-4 mr-2 ${branchRefreshing ? 'animate-spin' : ''}`} />
@@ -961,7 +1020,7 @@ const InsightsPage = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <p className="text-sm text-slate-500">
-            Last updated: {efficiencyData?.generated_at ? format(new Date(efficiencyData.generated_at), 'dd MMM yyyy, h:mm a') : 'N/A'}
+            Last updated: {efficiencyData?.generated_at ? formatDate(efficiencyData.generated_at) : 'N/A'}
           </p>
           <Button onClick={() => { setEfficiencyRefreshing(true); fetchEfficiencyData(); }} disabled={efficiencyRefreshing} variant="outline" size="sm">
             <RefreshCw className={`w-4 h-4 mr-2 ${efficiencyRefreshing ? 'animate-spin' : ''}`} />

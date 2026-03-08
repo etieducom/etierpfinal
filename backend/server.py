@@ -6039,6 +6039,34 @@ async def submit_feedback(feedback: StudentFeedbackCreate, current_user: User = 
     await db.student_feedbacks.insert_one(new_feedback.model_dump())
     return {"message": "Feedback submitted successfully", "id": new_feedback.id}
 
+
+@api_router.get("/feedback/all")
+async def get_all_feedback(
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all student feedbacks for the branch"""
+    query = {}
+    if current_user.role not in [UserRole.ADMIN]:
+        query["branch_id"] = current_user.branch_id
+    
+    feedbacks = await db.student_feedbacks.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    
+    # Enrich with student and course details
+    for fb in feedbacks:
+        enrollment = await db.enrollments.find_one({"id": fb.get("enrollment_id")}, {"_id": 0, "student_name": 1, "program_name": 1})
+        if enrollment:
+            fb["student_name"] = enrollment.get("student_name", "Unknown")
+            fb["course_name"] = enrollment.get("program_name", "Unknown")
+        
+        # Calculate average rating
+        ratings = [fb.get("doubt_clearance", 0), fb.get("trainer_rating", 0), fb.get("facility_rating", 0)]
+        ratings = [r for r in ratings if r > 0]
+        fb["rating"] = round(sum(ratings) / len(ratings), 1) if ratings else 0
+    
+    return feedbacks
+
+
 @api_router.get("/feedback/summary")
 async def get_feedback_summary(month: Optional[str] = None, current_user: User = Depends(require_role([UserRole.BRANCH_ADMIN, UserRole.ADMIN]))):
     """Get AI-analyzed feedback summary - Branch Admin only"""
