@@ -230,12 +230,12 @@ const ResponsibilitiesPage = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Branch (Optional)</Label>
-                    <Select value={formData.branch_id} onValueChange={(v) => setFormData({ ...formData, branch_id: v })}>
+                    <Select value={formData.branch_id || 'all_branches'} onValueChange={(v) => setFormData({ ...formData, branch_id: v === 'all_branches' ? '' : v })}>
                       <SelectTrigger>
                         <SelectValue placeholder="All branches" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Branches</SelectItem>
+                        <SelectItem value="all_branches">All Branches</SelectItem>
                         {branches.map(b => (
                           <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                         ))}
@@ -246,12 +246,12 @@ const ResponsibilitiesPage = () => {
 
                 <div className="space-y-2">
                   <Label>Specific User (Optional)</Label>
-                  <Select value={formData.user_id} onValueChange={(v) => setFormData({ ...formData, user_id: v })}>
+                  <Select value={formData.user_id || 'all_users'} onValueChange={(v) => setFormData({ ...formData, user_id: v === 'all_users' ? '' : v })}>
                     <SelectTrigger>
                       <SelectValue placeholder="All users with this role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All users with this role</SelectItem>
+                      <SelectItem value="all_users">All users with this role</SelectItem>
                       {users.filter(u => !formData.role || u.role === formData.role).map(u => (
                         <SelectItem key={u.id} value={u.id}>{u.name} ({u.email})</SelectItem>
                       ))}
@@ -372,12 +372,12 @@ const ResponsibilitiesPage = () => {
                 <CardTitle className="text-xl">Manage All Responsibilities</CardTitle>
                 <CardDescription>View and manage responsibilities across all roles</CardDescription>
               </div>
-              <Select value={filterRole} onValueChange={setFilterRole}>
+              <Select value={filterRole || 'all_roles'} onValueChange={(v) => setFilterRole(v === 'all_roles' ? '' : v)}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filter by role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Roles</SelectItem>
+                  <SelectItem value="all_roles">All Roles</SelectItem>
                   {ROLES.map(role => (
                     <SelectItem key={role} value={role}>{role}</SelectItem>
                   ))}
