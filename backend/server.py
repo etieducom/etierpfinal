@@ -4829,6 +4829,95 @@ async def get_super_admin_dashboard(request: Request, session: Optional[str] = N
         }
     }
 
+@api_router.get("/analytics/session-comparison")
+async def get_session_comparison(request: Request, session: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    """Get session comparison data - current vs previous session metrics"""
+    
+    # Get current session from request or use default
+    session_val = session or await get_session_from_request(request)
+    if not session_val or session_val == "all":
+        session_val = get_current_academic_session()
+    
+    current_session = int(session_val)
+    prev_session = current_session - 1
+    
+    # Branch filter
+    branch_filter = {}
+    if current_user.role != UserRole.ADMIN:
+        branch_filter["branch_id"] = current_user.branch_id
+    
+    # Get date ranges
+    current_start, current_end = get_session_date_range(str(current_session))
+    prev_start, prev_end = get_session_date_range(str(prev_session))
+    
+    # Current session metrics
+    current_leads_query = {**branch_filter, "is_deleted": {"$ne": True}, "created_at": {"$gte": current_start.isoformat(), "$lte": current_end.isoformat()}}
+    current_leads = await db.leads.count_documents(current_leads_query)
+    
+    current_converted_query = {**current_leads_query, "status": "Converted"}
+    current_converted = await db.leads.count_documents(current_converted_query)
+    
+    current_enrollments_query = {**branch_filter, "enrollment_date": {"$gte": current_start.isoformat(), "$lte": current_end.isoformat()}}
+    current_enrollments = await db.enrollments.count_documents(current_enrollments_query)
+    
+    current_payments_query = {**branch_filter, "payment_date": {"$gte": current_start.isoformat(), "$lte": current_end.isoformat()}}
+    current_payments = await db.payments.find(current_payments_query, {"_id": 0, "amount": 1}).to_list(10000)
+    current_income = sum(p.get('amount', 0) for p in current_payments)
+    
+    # Previous session metrics
+    prev_leads_query = {**branch_filter, "is_deleted": {"$ne": True}, "created_at": {"$gte": prev_start.isoformat(), "$lte": prev_end.isoformat()}}
+    prev_leads = await db.leads.count_documents(prev_leads_query)
+    
+    prev_converted_query = {**prev_leads_query, "status": "Converted"}
+    prev_converted = await db.leads.count_documents(prev_converted_query)
+    
+    prev_enrollments_query = {**branch_filter, "enrollment_date": {"$gte": prev_start.isoformat(), "$lte": prev_end.isoformat()}}
+    prev_enrollments = await db.enrollments.count_documents(prev_enrollments_query)
+    
+    prev_payments_query = {**branch_filter, "payment_date": {"$gte": prev_start.isoformat(), "$lte": prev_end.isoformat()}}
+    prev_payments = await db.payments.find(prev_payments_query, {"_id": 0, "amount": 1}).to_list(10000)
+    prev_income = sum(p.get('amount', 0) for p in prev_payments)
+    
+    # Calculate percentage changes
+    def calc_change(current, previous):
+        if previous == 0:
+            return 100 if current > 0 else 0
+        return round(((current - previous) / previous) * 100, 1)
+    
+    # Conversion rates
+    current_conversion_rate = round((current_converted / current_leads * 100), 1) if current_leads > 0 else 0
+    prev_conversion_rate = round((prev_converted / prev_leads * 100), 1) if prev_leads > 0 else 0
+    
+    return {
+        "current_session": {
+            "year": current_session,
+            "label": f"{current_session}-{str(current_session + 1)[2:]}",
+            "period": f"Apr {current_session} - Mar {current_session + 1}",
+            "leads": current_leads,
+            "converted": current_converted,
+            "conversion_rate": current_conversion_rate,
+            "enrollments": current_enrollments,
+            "income": current_income
+        },
+        "previous_session": {
+            "year": prev_session,
+            "label": f"{prev_session}-{str(prev_session + 1)[2:]}",
+            "period": f"Apr {prev_session} - Mar {prev_session + 1}",
+            "leads": prev_leads,
+            "converted": prev_converted,
+            "conversion_rate": prev_conversion_rate,
+            "enrollments": prev_enrollments,
+            "income": prev_income
+        },
+        "changes": {
+            "leads": calc_change(current_leads, prev_leads),
+            "converted": calc_change(current_converted, prev_converted),
+            "conversion_rate": round(current_conversion_rate - prev_conversion_rate, 1),
+            "enrollments": calc_change(current_enrollments, prev_enrollments),
+            "income": calc_change(current_income, prev_income)
+        }
+    }
+
 @api_router.get("/analytics/fde-dashboard")
 async def get_fde_dashboard(request: Request, session: Optional[str] = None, current_user: User = Depends(get_current_user)):
     """Get FDE (Front Desk Executive) dashboard data"""

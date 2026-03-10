@@ -101,6 +101,7 @@ export const analyticsAPI = {
   getAILeadsInsights: () => api.get('/analytics/ai-leads-insights'),
   getFDEDashboard: () => api.get('/analytics/fde-dashboard'),
   getCounsellorDashboard: () => api.get('/analytics/counsellor-dashboard'),
+  getSessionComparison: () => api.get('/analytics/session-comparison'),
 };
 
 export const whatsappAPI = {

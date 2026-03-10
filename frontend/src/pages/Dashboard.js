@@ -35,8 +35,10 @@ const Dashboard = () => {
   const [admissionData, setAdmissionData] = useState(null);
   const [fdeDashboard, setFdeDashboard] = useState(null);
   const [counsellorDashboard, setCounsellorDashboard] = useState(null);
+  const [sessionComparison, setSessionComparison] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const currentSession = localStorage.getItem('session') || '';
   
   const isSuperAdmin = user.role === 'Admin';
   const isBranchAdmin = user.role === 'Branch Admin';
@@ -61,14 +63,15 @@ const Dashboard = () => {
         promises.push(analyticsAPI.getMonthlyFinancial(selectedYear));
       } else if (isBranchAdmin || user.role === 'Front Desk Executive') {
         promises.push(analyticsAPI.getMonthlyFinancial(selectedYear));
-        promises.push(null);
+        promises.push(Promise.resolve({ data: null })); // Placeholder for branch admin
       } else {
         promises.push(followupAPI.getPendingCount());
       }
       
       const results = await Promise.all(promises);
-      setAnalytics(results[0].data);
-      setRecentLeads(results[1].data.slice(0, 5));
+      setAnalytics(results[0]?.data || null);
+      const leadsData = results[1]?.data;
+      setRecentLeads(Array.isArray(leadsData) ? leadsData.slice(0, 5) : []);
       
       if (isSuperAdmin) {
         setSuperAdminData(results[2].data);
@@ -135,6 +138,16 @@ const Dashboard = () => {
           console.error('Error fetching FDE dashboard:', e);
         }
       }
+      
+      // Fetch session comparison for all roles (except certificate manager, trainer, academic controller)
+      if (!['Certificate Manager', 'Trainer', 'Academic Controller'].includes(user.role)) {
+        try {
+          const sessionCompRes = await analyticsAPI.getSessionComparison();
+          setSessionComparison(sessionCompRes.data);
+        } catch (e) {
+          console.error('Error fetching session comparison:', e);
+        }
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -183,6 +196,82 @@ const Dashboard = () => {
           {isSuperAdmin ? 'Super Admin Overview - All Branches' : `Welcome back! Here's your ${isBranchAdmin ? 'branch ' : ''}overview`}
         </p>
       </div>
+
+      {/* Session Summary Card - Shows for all roles except Certificate Manager, Trainer, Academic Controller */}
+      {sessionComparison && (
+        <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-purple-50 shadow-lg" data-testid="session-summary-card">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-600" />
+                <CardTitle className="text-lg font-semibold text-indigo-900">Session Summary</CardTitle>
+              </div>
+              <Badge className="bg-indigo-100 text-indigo-700 text-xs">
+                {sessionComparison.current_session?.label} vs {sessionComparison.previous_session?.label}
+              </Badge>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">{sessionComparison.current_session?.period}</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {/* Leads */}
+              <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Leads</p>
+                <p className="text-xl font-bold text-slate-800">{sessionComparison.current_session?.leads || 0}</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.leads >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {sessionComparison.changes?.leads >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{Math.abs(sessionComparison.changes?.leads || 0)}%</span>
+                </div>
+              </div>
+              
+              {/* Converted */}
+              <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Converted</p>
+                <p className="text-xl font-bold text-green-600">{sessionComparison.current_session?.converted || 0}</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.converted >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {sessionComparison.changes?.converted >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{Math.abs(sessionComparison.changes?.converted || 0)}%</span>
+                </div>
+              </div>
+              
+              {/* Conversion Rate */}
+              <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Conversion Rate</p>
+                <p className="text-xl font-bold text-purple-600">{sessionComparison.current_session?.conversion_rate || 0}%</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.conversion_rate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {sessionComparison.changes?.conversion_rate >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{Math.abs(sessionComparison.changes?.conversion_rate || 0)} pts</span>
+                </div>
+              </div>
+              
+              {/* Enrollments */}
+              <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Enrollments</p>
+                <p className="text-xl font-bold text-blue-600">{sessionComparison.current_session?.enrollments || 0}</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.enrollments >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {sessionComparison.changes?.enrollments >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{Math.abs(sessionComparison.changes?.enrollments || 0)}%</span>
+                </div>
+              </div>
+              
+              {/* Income */}
+              <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Income</p>
+                <p className="text-xl font-bold text-amber-600">₹{((sessionComparison.current_session?.income || 0) / 1000).toFixed(0)}K</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.income >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {sessionComparison.changes?.income >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{Math.abs(sessionComparison.changes?.income || 0)}%</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Previous Session Reference */}
+            <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+              <span>Previous ({sessionComparison.previous_session?.label}): {sessionComparison.previous_session?.leads || 0} leads, {sessionComparison.previous_session?.enrollments || 0} enrollments, ₹{((sessionComparison.previous_session?.income || 0) / 1000).toFixed(0)}K income</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* FDE Dashboard Cards */}
       {isFDE && fdeDashboard && (
