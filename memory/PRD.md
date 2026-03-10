@@ -4,7 +4,7 @@
 Build a comprehensive institute management system with role-based access, student management, lead tracking, payments, academics, and business analytics.
 
 ## User Personas
-- **Super Admin**: Full system access, manages all branches
+- **Super Admin**: Full system access, manages all branches, can view all sessions
 - **Branch Admin**: Branch-level management and analytics
 - **Counsellor**: Lead management and follow-ups
 - **Front Desk Executive (FDE)**: Student intake, payments
@@ -34,15 +34,27 @@ Build a comprehensive institute management system with role-based access, studen
 - [x] Deleted Leads report
 - [x] Payment data discrepancy fix
 
+### Phase 4 - Academic Session Feature (COMPLETED - Mar 2026)
+- [x] Session selector on login page (2016 onwards)
+- [x] Auto-select current session
+- [x] Session badge in header for all users
+- [x] Session switcher dropdown for Super Admin
+- [x] "All Sessions" option for Super Admin
+- [x] Data filtering by session (Leads, Enrollments, Students, Payments, Reports)
+- [x] API support for session via header and query param
+
+## Academic Session Logic
+- **Format**: Session "2024" = April 1, 2024 → March 31, 2025
+- **Available**: 2016-17 to current (2025-26)
+- **Default**: Auto-selects current session based on today's date
+- **Super Admin**: Can switch sessions and view "All Sessions"
+- **Other Roles**: Locked to session selected at login
+
 ## Current Status (March 2026)
 
 ### Recently Completed
-- Meta Tab fix verified
-- All Insights tabs functional
-- My Responsibilities CRUD working
-- Quiz Import feature working
-- Deleted Leads restore working
-- Testing agent fixes applied
+- Academic Session feature fully implemented and tested
+- 100% test pass rate (16/16 backend, all frontend verified)
 
 ### Pending Issues
 1. **(P0) Complete Quiz Content Generation** - Several quizzes need more questions
@@ -50,7 +62,7 @@ Build a comprehensive institute management system with role-based access, studen
 3. **(P2) Unique Student Count** - Dashboard shows enrollments, not unique students
 
 ### Technical Debt (CRITICAL)
-- `server.py` (8,500+ lines) - Must split into routers
+- `server.py` (9,600+ lines) - Must split into routers
 - `InsightsPage.js` (1,300+ lines) - Extract tab components
 - `StudentsPage.js` (1,800+ lines) - Break down
 - `Dashboard.js` - Extract role-specific components
@@ -75,6 +87,15 @@ Build a comprehensive institute management system with role-based access, studen
 - facebook-business (Meta API)
 - openpyxl (Excel parsing)
 
+## Key API Endpoints (Session-Aware)
+- `GET /api/auth/sessions` - Returns available sessions
+- `POST /api/auth/login` - Accepts session parameter
+- `GET /api/leads?session=2024` - Filter leads by session
+- `GET /api/enrollments?session=2024` - Filter enrollments
+- `GET /api/payments/all?session=2024` - Filter payments
+- `GET /api/students?session=2024` - Filter students
+- All APIs accept `X-Academic-Session` header
+
 ## Key Credentials (Testing)
 - Super Admin: admin@etieducom.com / admin@123
 - Branch Admin: branchadmin@etieducom.com / admin@123
@@ -82,6 +103,6 @@ Build a comprehensive institute management system with role-based access, studen
 - FDE: fde@etieducom.com / password
 
 ## Test Reports
-- Latest: `/app/test_reports/iteration_22.json`
-- Backend: 100% pass rate (20/20 tests)
+- Latest: `/app/test_reports/iteration_23.json`
+- Backend: 100% pass rate (16/16 tests)
 - Frontend: All features verified
