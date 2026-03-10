@@ -8,8 +8,20 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
+  const session = localStorage.getItem('session');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  // Add session to all requests (as query param or header)
+  if (session) {
+    config.headers['X-Academic-Session'] = session;
+    // Also add to query params for GET requests
+    if (config.method === 'get' || config.method === 'GET') {
+      config.params = config.params || {};
+      if (!config.params.session) {
+        config.params.session = session;
+      }
+    }
   }
   return config;
 });
@@ -33,6 +45,7 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   getMe: () => api.get('/auth/me'),
   changePassword: (data) => api.put('/auth/change-password', data),
+  getSessions: () => api.get('/auth/sessions'),
 };
 
 export const adminAPI = {

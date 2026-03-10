@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '@/api/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Calendar } from 'lucide-react';
 
 const ETI_LOGO = 'https://customer-assets.emergentagent.com/job_4e0bdddc-c844-4374-a91a-dfbddecb14b1/artifacts/4ane8ulw_eti%20.png';
 
@@ -13,9 +15,41 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    session: '',
   });
   const [loading, setLoading] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [currentSession, setCurrentSession] = useState('');
   const navigate = useNavigate();
+
+  // Fetch available sessions on mount
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const response = await authAPI.getSessions();
+        setSessions(response.data.sessions);
+        setCurrentSession(response.data.current_session);
+        setFormData(prev => ({ ...prev, session: response.data.current_session }));
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error);
+        // Fallback: generate sessions client-side
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        const currentSessionYear = currentMonth >= 4 ? currentYear : currentYear - 1;
+        const fallbackSessions = [];
+        for (let year = 2016; year <= currentSessionYear; year++) {
+          fallbackSessions.push({
+            value: String(year),
+            label: `${year}-${String(year + 1).slice(2)}`
+          });
+        }
+        setSessions(fallbackSessions);
+        setCurrentSession(String(currentSessionYear));
+        setFormData(prev => ({ ...prev, session: String(currentSessionYear) }));
+      }
+    };
+    fetchSessions();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,16 +59,23 @@ const Login = () => {
       const response = await authAPI.login({
         username: formData.email,
         password: formData.password,
+        session: formData.session,
       });
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      toast.success('Welcome back!');
+      localStorage.setItem('session', response.data.session);
+      toast.success(`Welcome back! Session: ${formData.session}-${String(parseInt(formData.session) + 1).slice(2)}`);
       navigate('/');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Authentication failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const getSessionLabel = (value) => {
+    const session = sessions.find(s => s.value === value);
+    return session ? session.label : value;
   };
 
   return (
@@ -73,6 +114,34 @@ const Login = () => {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="session" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Academic Session
+              </Label>
+              <Select
+                value={formData.session}
+                onValueChange={(value) => setFormData({ ...formData, session: value })}
+              >
+                <SelectTrigger data-testid="session-select" className="w-full">
+                  <SelectValue placeholder="Select session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.map((session) => (
+                    <SelectItem key={session.value} value={session.value}>
+                      {session.label}
+                      {session.value === currentSession && (
+                        <span className="ml-2 text-xs text-green-600 font-medium">(Current)</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500">
+                Session {getSessionLabel(formData.session)}: April {formData.session} - March {parseInt(formData.session) + 1}
+              </p>
             </div>
 
             <Button

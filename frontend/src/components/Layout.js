@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet, GraduationCap, Globe, ClipboardList, CheckSquare, BookOpen, Award, Building2, UsersRound, Target, MessageSquare, Banknote, Brain, DollarSign, History, Facebook, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, BarChart3, LogOut, Menu, X, Bell, FileText, Settings, Folder, CreditCard, Clock, Trash2, Wallet, FileSpreadsheet, GraduationCap, Globe, ClipboardList, CheckSquare, BookOpen, Award, Building2, UsersRound, Target, MessageSquare, Banknote, Brain, DollarSign, History, Facebook, Shield, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { followupAPI } from '@/api/api';
+import { followupAPI, authAPI } from '@/api/api';
 import NotificationCenter from './NotificationCenter';
 
 const ETI_LOGO = 'https://customer-assets.emergentagent.com/job_4e0bdddc-c844-4374-a91a-dfbddecb14b1/artifacts/4ane8ulw_eti%20.png';
@@ -14,6 +15,8 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [sessions, setSessions] = useState([]);
+  const [currentSession, setCurrentSession] = useState(localStorage.getItem('session') || '');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   // Role-based navigation flags
@@ -34,6 +37,24 @@ const Layout = ({ children }) => {
     }
   }, []);
 
+  // Fetch available sessions for Super Admin
+  useEffect(() => {
+    if (isSuperAdmin) {
+      const fetchSessions = async () => {
+        try {
+          const response = await authAPI.getSessions();
+          setSessions([
+            { value: 'all', label: 'All Sessions' },
+            ...response.data.sessions
+          ]);
+        } catch (error) {
+          console.error('Failed to fetch sessions');
+        }
+      };
+      fetchSessions();
+    }
+  }, [isSuperAdmin]);
+
   const fetchPendingCount = async () => {
     try {
       const response = await followupAPI.getPendingCount();
@@ -41,6 +62,20 @@ const Layout = ({ children }) => {
     } catch (error) {
       console.error('Failed to fetch pending count');
     }
+  };
+
+  const handleSessionChange = (value) => {
+    localStorage.setItem('session', value);
+    setCurrentSession(value);
+    toast.success(`Switched to session: ${value === 'all' ? 'All Sessions' : `${value}-${String(parseInt(value) + 1).slice(2)}`}`);
+    // Reload the page to refresh data with new session
+    window.location.reload();
+  };
+
+  const getSessionLabel = () => {
+    if (!currentSession) return '';
+    if (currentSession === 'all') return 'All Sessions';
+    return `${currentSession}-${String(parseInt(currentSession) + 1).slice(2)}`;
   };
 
   // Sidebar menu ordered as per user specification:
@@ -107,6 +142,7 @@ const Layout = ({ children }) => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('session');
     toast.success('Logged out successfully');
     navigate('/login');
   };
@@ -127,6 +163,27 @@ const Layout = ({ children }) => {
           <span className="text-lg font-semibold text-slate-700 hidden md:block">Branch Management System</span>
         </div>
         <div className="flex items-center gap-4">
+          {/* Session Indicator/Selector */}
+          {isSuperAdmin ? (
+            <Select value={currentSession} onValueChange={handleSessionChange}>
+              <SelectTrigger className="w-[140px] h-9 text-xs" data-testid="session-switcher">
+                <Calendar className="w-3 h-3 mr-1" />
+                <SelectValue placeholder="Session" />
+              </SelectTrigger>
+              <SelectContent>
+                {sessions.map((session) => (
+                  <SelectItem key={session.value} value={session.value}>
+                    {session.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 rounded-md border border-blue-200" data-testid="session-badge">
+              <Calendar className="w-3.5 h-3.5 text-blue-600" />
+              <span className="text-xs font-medium text-blue-700">{getSessionLabel()}</span>
+            </div>
+          )}
           <NotificationCenter />
           <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold">{user.name}</p>

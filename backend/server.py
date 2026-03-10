@@ -758,6 +758,68 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+    session: Optional[str] = None  # Academic session (e.g., "2024" for April 2024 - March 2025)
+
+# Academic Session Helper Functions
+def get_current_academic_session() -> str:
+    """Get current academic session based on today's date.
+    Session runs from April 1 to March 31.
+    E.g., if today is Jan 2025, session is "2024" (April 2024 - March 2025)
+    """
+    today = datetime.now()
+    if today.month >= 4:  # April onwards
+        return str(today.year)
+    else:  # Jan-March
+        return str(today.year - 1)
+
+def get_session_date_range(session: str) -> tuple:
+    """Get start and end dates for an academic session.
+    Session "2024" = April 1, 2024 to March 31, 2025
+    Returns (start_date, end_date) as datetime objects
+    """
+    if session == "all":
+        return None, None
+    year = int(session)
+    start_date = datetime(year, 4, 1, 0, 0, 0)
+    end_date = datetime(year + 1, 3, 31, 23, 59, 59)
+    return start_date, end_date
+
+def get_available_sessions() -> list:
+    """Get list of available academic sessions from 2016 to current."""
+    current_session = int(get_current_academic_session())
+    sessions = []
+    for year in range(2016, current_session + 1):
+        sessions.append({
+            "value": str(year),
+            "label": f"{year}-{str(year+1)[2:]}"  # e.g., "2024-25"
+        })
+    return sessions
+
+def get_session_filter(session: Optional[str], date_field: str = "created_at") -> dict:
+    """Generate MongoDB date filter for academic session.
+    Returns a dict that can be merged into a query.
+    """
+    if not session or session == "all":
+        return {}
+    
+    start_date, end_date = get_session_date_range(session)
+    if start_date and end_date:
+        return {
+            date_field: {
+                "$gte": start_date.isoformat(),
+                "$lte": end_date.isoformat()
+            }
+        }
+    return {}
+
+async def get_session_from_request(request: Request) -> Optional[str]:
+    """Extract session from request header or query param."""
+    # Try header first
+    session = request.headers.get('X-Academic-Session')
+    if session:
+        return session
+    # Try query param
+    return request.query_params.get('session')
 
 class LeadCreate(BaseModel):
     name: str
@@ -1759,7 +1821,7 @@ async def register(user: UserCreate):
     return UserResponse(**{k: v for k, v in new_user.model_dump().items() if k != 'hashed_password'})
 
 @api_router.post("/auth/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Optional[str] = Form(None)):
     user_doc = await db.users.find_one({"email": form_data.username}, {"_id": 0})
     if not user_doc:
         raise HTTPException(status_code=401, detail="Incorrect email or password")
@@ -1768,12 +1830,26 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     if not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     
-    access_token = create_access_token(data={"sub": user.email})
+    # Use provided session or default to current session
+    selected_session = session if session else get_current_academic_session()
+    
+    # Include session in JWT token
+    access_token = create_access_token(data={"sub": user.email, "session": selected_session})
     return Token(
         access_token=access_token,
         token_type="bearer",
-        user=UserResponse(**{k: v for k, v in user.model_dump().items() if k != 'hashed_password'})
+        user=UserResponse(**{k: v for k, v in user.model_dump().items() if k != 'hashed_password'}),
+        session=selected_session
     )
+
+# Get available academic sessions
+@api_router.get("/auth/sessions")
+async def get_sessions():
+    """Get list of available academic sessions."""
+    return {
+        "sessions": get_available_sessions(),
+        "current_session": get_current_academic_session()
+    }
 
 @api_router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
@@ -2061,12 +2137,14 @@ async def create_lead(lead: LeadCreate, request: Request, current_user: User = D
 
 @api_router.get("/leads", response_model=List[Lead])
 async def get_leads(
+    request: Request,
     status: Optional[str] = None,
     source: Optional[str] = None,
     program_id: Optional[str] = None,
     branch_id: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    session: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
     query = {"is_deleted": {"$ne": True}}  # Exclude soft-deleted leads
@@ -2083,13 +2161,21 @@ async def get_leads(
         query["program_id"] = program_id
     if branch_id and current_user.role == UserRole.ADMIN:
         query["branch_id"] = branch_id
-    if start_date:
-        query["created_at"] = {"$gte": start_date}
-    if end_date:
-        if "created_at" in query:
-            query["created_at"]["$lte"] = end_date
-        else:
-            query["created_at"] = {"$lte": end_date}
+    
+    # Session filtering (takes precedence over manual date filters)
+    session_val = session or await get_session_from_request(request)
+    if session_val and session_val != "all":
+        session_filter = get_session_filter(session_val, "created_at")
+        query.update(session_filter)
+    elif start_date or end_date:
+        # Manual date filter only if no session filter
+        if start_date:
+            query["created_at"] = {"$gte": start_date}
+        if end_date:
+            if "created_at" in query:
+                query["created_at"]["$lte"] = end_date
+            else:
+                query["created_at"] = {"$lte": end_date}
     
     leads = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     for lead in leads:
@@ -3482,6 +3568,7 @@ async def generate_leads_report(
 # Unified Reports Endpoint
 @api_router.get("/reports/generate")
 async def generate_report(
+    request: Request,
     report_type: str = "leads",
     branch_id: Optional[str] = None,
     status: Optional[str] = None,
@@ -3490,6 +3577,7 @@ async def generate_report(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     format: str = "csv",
+    session: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
     """Generate various types of reports"""
@@ -3503,8 +3591,13 @@ async def generate_report(
     elif branch_id and branch_id != "All":
         branch_filter["branch_id"] = branch_id
     
-    # Date filter helper
+    # Session filter
+    session_val = session or await get_session_from_request(request)
+    
+    # Date filter helper - uses session if provided, otherwise manual dates
     def get_date_query(date_field):
+        if session_val and session_val != "all":
+            return get_session_filter(session_val, date_field)
         date_query = {}
         if start_date:
             date_query["$gte"] = start_date
@@ -3914,10 +4007,16 @@ async def create_enrollment(enrollment: EnrollmentCreate, current_user: User = D
     return new_enrollment
 
 @api_router.get("/enrollments", response_model=List[Enrollment])
-async def get_enrollments(current_user: User = Depends(get_current_user)):
+async def get_enrollments(request: Request, session: Optional[str] = None, current_user: User = Depends(get_current_user)):
     query = {}
     if current_user.role != UserRole.ADMIN:
         query["branch_id"] = current_user.branch_id
+    
+    # Session filtering
+    session_val = session or await get_session_from_request(request)
+    if session_val and session_val != "all":
+        session_filter = get_session_filter(session_val, "enrollment_date")
+        query.update(session_filter)
     
     enrollments = await db.enrollments.find(query, {"_id": 0}).sort("enrollment_date", -1).to_list(1000)
     for enr in enrollments:
@@ -4227,12 +4326,14 @@ async def generate_receipt(payment_id: str, current_user: User = Depends(get_cur
 # All Payments Page with filters
 @api_router.get("/payments/all")
 async def get_all_payments(
+    request: Request,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     student_name: Optional[str] = None,
     contact_number: Optional[str] = None,
     payment_mode: Optional[str] = None,
     branch_id: Optional[str] = None,
+    session: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
     """Get all payments with filters"""
@@ -4244,13 +4345,20 @@ async def get_all_payments(
     elif branch_id:
         query["branch_id"] = branch_id
     
-    if start_date:
-        query["payment_date"] = {"$gte": start_date}
-    if end_date:
-        if "payment_date" in query:
-            query["payment_date"]["$lte"] = end_date
-        else:
-            query["payment_date"] = {"$lte": end_date}
+    # Session filtering (takes precedence over manual date filters)
+    session_val = session or await get_session_from_request(request)
+    if session_val and session_val != "all":
+        session_filter = get_session_filter(session_val, "payment_date")
+        query.update(session_filter)
+    elif start_date or end_date:
+        if start_date:
+            query["payment_date"] = {"$gte": start_date}
+        if end_date:
+            if "payment_date" in query:
+                query["payment_date"]["$lte"] = end_date
+            else:
+                query["payment_date"] = {"$lte": end_date}
+    
     if payment_mode:
         query["payment_mode"] = payment_mode
     
@@ -4286,11 +4394,13 @@ async def get_all_payments(
 # Pending Payments (Both One-time and Installments)
 @api_router.get("/payments/pending")
 async def get_pending_payments(
+    request: Request,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     student_name: Optional[str] = None,
     contact_number: Optional[str] = None,
     branch_id: Optional[str] = None,
+    session: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
     """Get all pending payments - both one-time and installments"""
@@ -4303,6 +4413,12 @@ async def get_pending_payments(
         branch_filter["branch_id"] = current_user.branch_id
     elif branch_id:
         branch_filter["branch_id"] = branch_id
+    
+    # Session filtering for enrollments
+    session_val = session or await get_session_from_request(request)
+    if session_val and session_val != "all":
+        session_filter = get_session_filter(session_val, "enrollment_date")
+        branch_filter.update(session_filter)
     
     # Get all enrollments for the branch
     enrollments = await db.enrollments.find(branch_filter, {"_id": 0}).to_list(10000)
@@ -4640,26 +4756,36 @@ async def update_whatsapp_settings(
 
 # Super Admin Dashboard Analytics
 @api_router.get("/analytics/super-admin-dashboard")
-async def get_super_admin_dashboard(current_user: User = Depends(require_role([UserRole.ADMIN]))):
+async def get_super_admin_dashboard(request: Request, session: Optional[str] = None, current_user: User = Depends(require_role([UserRole.ADMIN]))):
     """Get comprehensive dashboard data for Super Admin"""
     branches = await db.branches.find({}, {"_id": 0}).to_list(100)
+    
+    # Get session filter
+    session_val = session or await get_session_from_request(request)
+    leads_session_filter = get_session_filter(session_val, "created_at") if session_val and session_val != "all" else {}
+    enrollment_session_filter = get_session_filter(session_val, "enrollment_date") if session_val and session_val != "all" else {}
+    payment_session_filter = get_session_filter(session_val, "payment_date") if session_val and session_val != "all" else {}
     
     branch_data = []
     for branch in branches:
         branch_id = branch["id"]
         
-        # Leads count
-        leads_count = await db.leads.count_documents({"branch_id": branch_id, "is_deleted": {"$ne": True}})
+        # Leads count with session filter
+        leads_query = {"branch_id": branch_id, "is_deleted": {"$ne": True}, **leads_session_filter}
+        leads_count = await db.leads.count_documents(leads_query)
         
-        # Enrollments count
-        enrollments_count = await db.enrollments.count_documents({"branch_id": branch_id})
+        # Enrollments count with session filter
+        enrollments_query = {"branch_id": branch_id, **enrollment_session_filter}
+        enrollments_count = await db.enrollments.count_documents(enrollments_query)
         
-        # Total income
-        payments = await db.payments.find({"branch_id": branch_id}, {"_id": 0, "amount": 1}).to_list(10000)
+        # Total income with session filter
+        payments_query = {"branch_id": branch_id, **payment_session_filter}
+        payments = await db.payments.find(payments_query, {"_id": 0, "amount": 1}).to_list(10000)
         total_income = sum(p.get('amount', 0) for p in payments)
         
-        # Converted leads
-        converted_count = await db.leads.count_documents({"branch_id": branch_id, "status": "Converted", "is_deleted": {"$ne": True}})
+        # Converted leads with session filter
+        converted_query = {"branch_id": branch_id, "status": "Converted", "is_deleted": {"$ne": True}, **leads_session_filter}
+        converted_count = await db.leads.count_documents(converted_query)
         
         # Conversion rate
         conversion_rate = (converted_count / leads_count * 100) if leads_count > 0 else 0
@@ -4704,7 +4830,7 @@ async def get_super_admin_dashboard(current_user: User = Depends(require_role([U
     }
 
 @api_router.get("/analytics/fde-dashboard")
-async def get_fde_dashboard(current_user: User = Depends(get_current_user)):
+async def get_fde_dashboard(request: Request, session: Optional[str] = None, current_user: User = Depends(get_current_user)):
     """Get FDE (Front Desk Executive) dashboard data"""
     if current_user.role not in [UserRole.FRONT_DESK, UserRole.BRANCH_ADMIN, UserRole.ADMIN]:
         raise HTTPException(status_code=403, detail="Access denied")
@@ -4712,6 +4838,10 @@ async def get_fde_dashboard(current_user: User = Depends(get_current_user)):
     branch_id = current_user.branch_id
     today = datetime.now().strftime('%Y-%m-%d')
     current_month = datetime.now().strftime('%Y-%m')
+    
+    # Get session filter
+    session_val = session or await get_session_from_request(request)
+    enrollment_session_filter = get_session_filter(session_val, "enrollment_date") if session_val and session_val != "all" else {}
     
     # 1. Fee due for the month (installments due this month)
     from calendar import monthrange
@@ -4734,10 +4864,11 @@ async def get_fde_dashboard(current_user: User = Depends(get_current_user)):
             fee_due_amount += inst.get('amount', 0)
             fee_due_count += 1
     
-    # 2. Students not assigned to batches
+    # 2. Students not assigned to batches (with session filter)
     branch_filter = {} if current_user.role == UserRole.ADMIN else {"branch_id": branch_id}
     students_without_batch = await db.enrollments.count_documents({
         **branch_filter,
+        **enrollment_session_filter,
         "status": "Active",
         "$or": [{"batch_id": {"$exists": False}}, {"batch_id": None}, {"batch_id": ""}]
     })
@@ -5193,11 +5324,17 @@ async def get_unread_count(current_user: User = Depends(get_current_user)):
 
 # Students (Enrolled) Endpoints
 @api_router.get("/students")
-async def get_students(current_user: User = Depends(get_current_user)):
+async def get_students(request: Request, session: Optional[str] = None, current_user: User = Depends(get_current_user)):
     """Get enrolled students with full details"""
     query = {}
     if current_user.role not in [UserRole.ADMIN]:
         query["branch_id"] = current_user.branch_id
+    
+    # Session filtering
+    session_val = session or await get_session_from_request(request)
+    if session_val and session_val != "all":
+        session_filter = get_session_filter(session_val, "enrollment_date")
+        query.update(session_filter)
     
     enrollments = await db.enrollments.find(query, {"_id": 0}).sort("enrollment_date", -1).to_list(1000)
     
