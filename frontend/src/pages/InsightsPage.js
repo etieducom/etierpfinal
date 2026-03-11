@@ -342,39 +342,123 @@ const InsightsPage = () => {
     const branchData = businessOverview?.branch;
     const efficiencyData = businessOverview?.efficiency;
     const aiAnalysis = branchData?.ai_analysis;
-    const healthScore = aiAnalysis?.overall_health?.score || 0;
-    const metrics = branchData?.metrics || {};
+    // AI overall_health score is 1-10, convert to 0-100 for display
+    const rawScore = aiAnalysis?.overall_health?.score || 0;
+    const healthScore = rawScore <= 10 ? rawScore * 10 : rawScore;
+    
+    // Build metrics from actual response structure
+    const metrics = {
+      total_leads: branchData?.leads?.total || 0,
+      total_enrollments: branchData?.students?.active || 0,
+      conversion_rate: branchData?.leads?.conversion_rate || 0,
+      total_revenue: branchData?.income?.this_month || 0
+    };
 
-    // Categorize insights
+    // Categorize insights - AI-powered when available
     const goingWell = [];
     const needsAttention = [];
 
-    // Analyze metrics
-    if (metrics.conversion_rate >= 20) {
-      goingWell.push({ title: 'Strong Conversion Rate', detail: `${metrics.conversion_rate}% - Above industry average`, icon: TrendingUp });
-    } else if (metrics.conversion_rate < 10) {
-      needsAttention.push({ title: 'Low Conversion Rate', detail: `Only ${metrics.conversion_rate}% leads converting`, icon: TrendingDown, priority: 'high' });
+    // If AI analysis is available, use AI insights
+    if (aiAnalysis && branchData?.ai_powered) {
+      // Income insights
+      if (aiAnalysis.income_insights?.trend === 'growing') {
+        goingWell.push({ 
+          title: 'Revenue Growing', 
+          detail: aiAnalysis.income_insights.forecast || 'Positive trend in collections',
+          icon: TrendingUp 
+        });
+      } else if (aiAnalysis.income_insights?.trend === 'declining') {
+        needsAttention.push({ 
+          title: 'Revenue Declining', 
+          detail: aiAnalysis.income_insights.recommendation || 'Focus on improving collections',
+          icon: TrendingDown, 
+          priority: 'high' 
+        });
+      }
+
+      // Student/retention insights
+      if (aiAnalysis.student_insights?.retention_risk === 'low') {
+        goingWell.push({ 
+          title: 'Low Retention Risk', 
+          detail: 'Student engagement is healthy',
+          icon: UserCheck 
+        });
+      } else if (aiAnalysis.student_insights?.retention_risk === 'high') {
+        needsAttention.push({ 
+          title: 'High Retention Risk', 
+          detail: aiAnalysis.student_insights.recommendation || 'Focus on student engagement',
+          icon: AlertTriangle, 
+          priority: 'high' 
+        });
+      }
+
+      // Fee collection status
+      if (aiAnalysis.student_insights?.fee_collection_status === 'healthy') {
+        goingWell.push({ 
+          title: 'Fee Collection Healthy', 
+          detail: `${branchData?.students?.fee_efficiency_percent || 0}% collection efficiency`,
+          icon: IndianRupee 
+        });
+      } else if (aiAnalysis.student_insights?.fee_collection_status === 'critical') {
+        needsAttention.push({ 
+          title: 'Critical Fee Collection', 
+          detail: `₹${(branchData?.students?.pending_fees || 0).toLocaleString()} pending`,
+          icon: IndianRupee, 
+          priority: 'high' 
+        });
+      }
+
+      // Trainer workload insights
+      if (aiAnalysis.trainer_analysis?.overloaded?.length > 0) {
+        needsAttention.push({ 
+          title: 'Trainer Overload', 
+          detail: aiAnalysis.trainer_analysis.recommendation || 'Review workload distribution',
+          icon: Users, 
+          priority: 'medium' 
+        });
+      }
+      if (aiAnalysis.trainer_analysis?.underutilized?.length > 0 && aiAnalysis.trainer_analysis?.underutilized?.length > 0) {
+        needsAttention.push({ 
+          title: 'Underutilized Trainers', 
+          detail: `${aiAnalysis.trainer_analysis.underutilized.join(', ')} have capacity`,
+          icon: Users, 
+          priority: 'low' 
+        });
+      }
+
+      // Add AI summary as a top priority item if score is low
+      if (aiAnalysis.overall_health?.top_priority) {
+        needsAttention.unshift({ 
+          title: 'Top Priority', 
+          detail: aiAnalysis.overall_health.top_priority,
+          icon: Zap, 
+          priority: 'high' 
+        });
+      }
     }
 
+    // Fallback rule-based analysis if AI not available
+    if (!branchData?.ai_powered) {
+      if (metrics.conversion_rate >= 20) {
+        goingWell.push({ title: 'Strong Conversion Rate', detail: `${metrics.conversion_rate}% - Above industry average`, icon: TrendingUp });
+      } else if (metrics.conversion_rate < 10) {
+        needsAttention.push({ title: 'Low Conversion Rate', detail: `Only ${metrics.conversion_rate}% leads converting`, icon: TrendingDown, priority: 'high' });
+      }
+
+      if (metrics.total_enrollments > 0) {
+        goingWell.push({ title: 'Active Enrollments', detail: `${metrics.total_enrollments} students enrolled`, icon: GraduationCap });
+      }
+
+      if (metrics.total_revenue > 100000) {
+        goingWell.push({ title: 'Revenue Growth', detail: `₹${metrics.total_revenue?.toLocaleString()} collected`, icon: IndianRupee });
+      }
+    }
+
+    // Follow-ups (always check)
     if (businessOverview?.pendingFollowups > 10) {
       needsAttention.push({ title: 'Pending Follow-ups', detail: `${businessOverview.pendingFollowups} follow-ups waiting`, icon: Bell, priority: 'medium' });
     } else if (businessOverview?.pendingFollowups <= 5) {
       goingWell.push({ title: 'Follow-ups On Track', detail: 'Team is staying on top of follow-ups', icon: CheckCircle });
-    }
-
-    if (metrics.total_enrollments > 0) {
-      goingWell.push({ title: 'Active Enrollments', detail: `${metrics.total_enrollments} students enrolled`, icon: GraduationCap });
-    }
-
-    if (metrics.total_revenue > 100000) {
-      goingWell.push({ title: 'Revenue Growth', detail: `₹${metrics.total_revenue?.toLocaleString()} collected`, icon: IndianRupee });
-    }
-
-    // Add AI recommendations to needs attention
-    if (aiAnalysis?.recommendations) {
-      aiAnalysis.recommendations.slice(0, 2).forEach(rec => {
-        needsAttention.push({ title: 'AI Recommendation', detail: rec, icon: Lightbulb, priority: 'low' });
-      });
     }
 
     return (
@@ -383,14 +467,27 @@ const InsightsPage = () => {
         <Card className={`border-2 ${getScoreBgColor(healthScore)}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <h2 className="text-2xl font-bold text-slate-800">Business Health Score</h2>
                 <p className="text-slate-600 mt-1">AI-powered analysis of your branch performance</p>
+                {aiAnalysis?.overall_health?.summary && (
+                  <p className="text-sm text-slate-700 mt-3 bg-slate-50 p-3 rounded-lg border-l-4 border-indigo-400">
+                    <Sparkles className="w-4 h-4 inline-block mr-1 text-indigo-500" />
+                    {aiAnalysis.overall_health.summary}
+                  </p>
+                )}
               </div>
-              <div className="text-right">
+              <div className="text-right ml-6">
                 <span className={`text-6xl font-bold ${getScoreColor(healthScore)}`}>{healthScore}</span>
                 <span className="text-2xl text-slate-400">/100</span>
-                <p className="text-sm text-slate-500 mt-1">{aiAnalysis?.overall_health?.assessment}</p>
+                <p className={`text-sm mt-1 font-medium ${
+                  aiAnalysis?.overall_health?.status === 'excellent' ? 'text-green-600' :
+                  aiAnalysis?.overall_health?.status === 'good' ? 'text-blue-600' :
+                  aiAnalysis?.overall_health?.status === 'needs improvement' ? 'text-amber-600' :
+                  'text-red-600'
+                }`}>
+                  {aiAnalysis?.overall_health?.status?.toUpperCase() || 'ANALYZING...'}
+                </p>
               </div>
             </div>
           </CardContent>
