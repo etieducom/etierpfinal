@@ -539,55 +539,63 @@ const Dashboard = () => {
 
       {/* ==================== FDE DASHBOARD - CLEAN LAYOUT ==================== */}
       {isFDE && (
-        <div className="space-y-6" data-testid="fde-dashboard">
+        <div className="space-y-8" data-testid="fde-dashboard">
           
           {/* Quick Stats Row */}
           {fdeDashboard && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-white border-orange-200 hover:border-orange-400 transition-colors cursor-pointer" onClick={() => navigate('/students')}>
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <IndianRupee className="w-5 h-5 text-orange-500" />
-                    <span className="text-xs text-orange-600 font-medium">Fee Due ({fdeDashboard.fee_due?.month})</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <Card className="bg-white border-slate-200 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/students')}>
+                <CardContent className="pt-6 pb-5 px-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-orange-100 rounded-lg">
+                      <IndianRupee className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <span className="text-sm text-slate-600 font-medium">Fee Due</span>
                   </div>
-                  <p className="text-2xl font-bold text-orange-600">₹{((fdeDashboard.fee_due?.amount || 0) / 1000).toFixed(0)}K</p>
-                  <p className="text-xs text-slate-500 mt-1">{fdeDashboard.fee_due?.count || 0} installments</p>
+                  <p className="text-3xl font-bold text-slate-800">₹{((fdeDashboard.fee_due?.amount || 0) / 1000).toFixed(0)}K</p>
+                  <p className="text-sm text-slate-500 mt-2">{fdeDashboard.fee_due?.count || 0} installments • {fdeDashboard.fee_due?.month}</p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white border-purple-200 hover:border-purple-400 transition-colors cursor-pointer" onClick={() => navigate('/students')}>
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Users className="w-5 h-5 text-purple-500" />
-                    <span className="text-xs text-purple-600 font-medium">Unassigned</span>
+              <Card className="bg-white border-slate-200 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer" onClick={() => navigate('/students')}>
+                <CardContent className="pt-6 pb-5 px-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Users className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <span className="text-sm text-slate-600 font-medium">Unassigned</span>
                   </div>
-                  <p className="text-2xl font-bold text-purple-600">{fdeDashboard.students_without_batch || 0}</p>
-                  <p className="text-xs text-slate-500 mt-1">No batch assigned</p>
+                  <p className="text-3xl font-bold text-slate-800">{fdeDashboard.students_without_batch || 0}</p>
+                  <p className="text-sm text-slate-500 mt-2">Students without batch</p>
                 </CardContent>
               </Card>
               
-              <Card className={`bg-white border-${fdeDashboard.cash_handling?.updated_today ? 'green' : 'red'}-200 hover:border-${fdeDashboard.cash_handling?.updated_today ? 'green' : 'red'}-400 transition-colors cursor-pointer`} onClick={() => navigate('/finances')}>
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Banknote className={`w-5 h-5 ${fdeDashboard.cash_handling?.updated_today ? 'text-green-500' : 'text-red-500'}`} />
-                    <span className={`text-xs font-medium ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`}>Cash Handling</span>
+              <Card className={`bg-white border-slate-200 hover:shadow-md transition-all cursor-pointer ${!fdeDashboard.cash_handling?.updated_today ? 'border-red-300' : ''}`} onClick={() => navigate('/finances')}>
+                <CardContent className="pt-6 pb-5 px-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`p-2 rounded-lg ${fdeDashboard.cash_handling?.updated_today ? 'bg-green-100' : 'bg-red-100'}`}>
+                      <Banknote className={`w-5 h-5 ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`} />
+                    </div>
+                    <span className="text-sm text-slate-600 font-medium">Cash Handling</span>
                   </div>
-                  <p className={`text-2xl font-bold ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className={`text-3xl font-bold ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`}>
                     {fdeDashboard.cash_handling?.updated_today ? 'Done' : 'Pending'}
                   </p>
-                  <p className="text-xs text-slate-500 mt-1">₹{(fdeDashboard.cash_handling?.today_cash_total || 0).toLocaleString()}</p>
+                  <p className="text-sm text-slate-500 mt-2">Today: ₹{(fdeDashboard.cash_handling?.today_cash_total || 0).toLocaleString()}</p>
                 </CardContent>
               </Card>
               
-              <Card className={`bg-white border-${fdeDashboard.tasks?.overdue > 0 ? 'red' : 'blue'}-200 transition-colors cursor-pointer`} onClick={() => navigate('/tasks')}>
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ClipboardList className={`w-5 h-5 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-500' : 'text-blue-500'}`} />
-                    <span className={`text-xs font-medium ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`}>Tasks</span>
+              <Card className={`bg-white border-slate-200 hover:shadow-md transition-all cursor-pointer ${fdeDashboard.tasks?.overdue > 0 ? 'border-red-300' : ''}`} onClick={() => navigate('/tasks')}>
+                <CardContent className="pt-6 pb-5 px-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`p-2 rounded-lg ${fdeDashboard.tasks?.overdue > 0 ? 'bg-red-100' : 'bg-blue-100'}`}>
+                      <ClipboardList className={`w-5 h-5 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`} />
+                    </div>
+                    <span className="text-sm text-slate-600 font-medium">Tasks</span>
                   </div>
-                  <p className={`text-2xl font-bold ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`}>{fdeDashboard.tasks?.pending || 0}</p>
-                  <p className={`text-xs mt-1 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                    {fdeDashboard.tasks?.overdue > 0 ? `${fdeDashboard.tasks.overdue} overdue!` : 'pending'}
+                  <p className={`text-3xl font-bold ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-slate-800'}`}>{fdeDashboard.tasks?.pending || 0}</p>
+                  <p className={`text-sm mt-2 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-500 font-medium' : 'text-slate-500'}`}>
+                    {fdeDashboard.tasks?.overdue > 0 ? `${fdeDashboard.tasks.overdue} overdue!` : 'Pending tasks'}
                   </p>
                 </CardContent>
               </Card>
@@ -599,84 +607,91 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* Overdue Payments */}
-              <Card className="border-red-200">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-red-700 flex items-center gap-2">
+              <Card className="border-slate-200">
+                <CardHeader className="pb-3 pt-5">
+                  <CardTitle className="text-base font-semibold text-red-700 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4" /> Overdue Payments
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   {fdeDashboardEnhanced.overdue_payments?.length > 0 ? (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {fdeDashboardEnhanced.overdue_payments.slice(0, 8).map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-red-50 rounded-lg border border-red-100">
+                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                      {fdeDashboardEnhanced.overdue_payments.slice(0, 6).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-red-50/50 rounded-xl border border-red-100">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-800 truncate">{item.student_name}</p>
-                            <p className="text-xs text-slate-500">{item.program_name}</p>
+                            <p className="font-medium text-slate-800 truncate">{item.student_name}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{item.program_name}</p>
                           </div>
-                          <div className="text-right ml-2">
-                            <p className="text-sm font-bold text-red-600">₹{item.amount?.toLocaleString()}</p>
-                            <Badge className="bg-red-100 text-red-700 text-[10px]">{item.days_overdue}d overdue</Badge>
+                          <div className="text-right ml-3">
+                            <p className="font-bold text-red-600">₹{item.amount?.toLocaleString()}</p>
+                            <Badge className="bg-red-100 text-red-700 text-[10px] mt-1">{item.days_overdue}d overdue</Badge>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500 text-center py-4">No overdue payments</p>
+                    <div className="text-center py-8">
+                      <CheckCircle className="w-10 h-10 text-green-300 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500">No overdue payments</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Ready to Enroll */}
-              <Card className="border-green-200">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-green-700 flex items-center gap-2">
+              <Card className="border-slate-200">
+                <CardHeader className="pb-3 pt-5">
+                  <CardTitle className="text-base font-semibold text-green-700 flex items-center gap-2">
                     <UserPlus className="w-4 h-4" /> Ready to Enroll
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   {fdeDashboardEnhanced.ready_to_enroll?.length > 0 ? (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {fdeDashboardEnhanced.ready_to_enroll.slice(0, 8).map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-100 cursor-pointer hover:bg-green-100" onClick={() => navigate(`/enrollments/new?lead_id=${item.lead_id}`)}>
+                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                      {fdeDashboardEnhanced.ready_to_enroll.slice(0, 6).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-green-50/50 rounded-xl border border-green-100 cursor-pointer hover:bg-green-100/50 transition-colors" onClick={() => navigate(`/enrollments/new?lead_id=${item.lead_id}`)}>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-800 truncate">{item.student_name}</p>
-                            <p className="text-xs text-slate-500">{item.contact_no}</p>
+                            <p className="font-medium text-slate-800 truncate">{item.student_name}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{item.contact_no}</p>
                           </div>
-                          <div className="text-right ml-2">
-                            <Badge className="bg-green-100 text-green-700 text-xs">{item.program_name || 'N/A'}</Badge>
-                          </div>
+                          <Badge className="bg-green-100 text-green-700 text-xs ml-3">{item.program_name || 'N/A'}</Badge>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500 text-center py-4">No pending enrollments</p>
+                    <div className="text-center py-8">
+                      <CheckCircle className="w-10 h-10 text-green-300 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500">All leads enrolled</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Pending Exams */}
-              <Card className="border-purple-200">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+              <Card className="border-slate-200">
+                <CardHeader className="pb-3 pt-5">
+                  <CardTitle className="text-base font-semibold text-purple-700 flex items-center gap-2">
                     <Award className="w-4 h-4" /> Pending Exams
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                   {fdeDashboardEnhanced.pending_exams?.length > 0 ? (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {fdeDashboardEnhanced.pending_exams.slice(0, 8).map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-purple-50 rounded-lg border border-purple-100">
+                    <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                      {fdeDashboardEnhanced.pending_exams.slice(0, 6).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-purple-50/50 rounded-xl border border-purple-100">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-800 truncate">{item.student_name}</p>
-                            <p className="text-xs text-slate-500">{item.program_name}</p>
+                            <p className="font-medium text-slate-800 truncate">{item.student_name}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{item.program_name}</p>
                           </div>
-                          <Badge className="bg-purple-100 text-purple-700 text-xs ml-2">Course Done</Badge>
+                          <Badge className="bg-purple-100 text-purple-700 text-xs ml-3">Course Done</Badge>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500 text-center py-4">No pending exams</p>
+                    <div className="text-center py-8">
+                      <CheckCircle className="w-10 h-10 text-green-300 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500">No pending exams</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -688,77 +703,90 @@ const Dashboard = () => {
 
       {/* ==================== COUNSELLOR DASHBOARD - CLEAN LAYOUT ==================== */}
       {isCounsellor && (
-        <div className="space-y-6" data-testid="counsellor-dashboard">
+        <div className="space-y-8" data-testid="counsellor-dashboard">
           
           {/* 1. Lead Stats - Top */}
           {counsellorDashboardEnhanced?.lead_stats && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-white border-blue-200">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Users className="w-5 h-5 text-blue-500" />
-                    <span className="text-xs text-blue-600 font-medium">Total Leads</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <Card className="bg-white border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
+                <CardContent className="pt-6 pb-5 px-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <span className="text-sm text-slate-600 font-medium">Total Leads</span>
                   </div>
-                  <p className="text-2xl font-bold text-blue-600">{counsellorDashboardEnhanced.lead_stats.total_leads}</p>
+                  <p className="text-3xl font-bold text-slate-800">{counsellorDashboardEnhanced.lead_stats.total_leads}</p>
+                  <p className="text-sm text-slate-500 mt-2">All assigned leads</p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white border-green-200">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-xs text-green-600 font-medium">Converted</span>
+              <Card className="bg-white border-slate-200 hover:border-green-300 hover:shadow-md transition-all">
+                <CardContent className="pt-6 pb-5 px-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    </div>
+                    <span className="text-sm text-slate-600 font-medium">Converted</span>
                   </div>
-                  <p className="text-2xl font-bold text-green-600">{counsellorDashboardEnhanced.lead_stats.total_converted}</p>
+                  <p className="text-3xl font-bold text-green-600">{counsellorDashboardEnhanced.lead_stats.total_converted}</p>
+                  <p className="text-sm text-slate-500 mt-2">Successfully enrolled</p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white border-red-200">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <XCircle className="w-5 h-5 text-red-500" />
-                    <span className="text-xs text-red-600 font-medium">Lost</span>
+              <Card className="bg-white border-slate-200 hover:border-red-300 hover:shadow-md transition-all">
+                <CardContent className="pt-6 pb-5 px-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-red-100 rounded-lg">
+                      <XCircle className="w-5 h-5 text-red-600" />
+                    </div>
+                    <span className="text-sm text-slate-600 font-medium">Lost</span>
                   </div>
-                  <p className="text-2xl font-bold text-red-600">{counsellorDashboardEnhanced.lead_stats.total_lost}</p>
+                  <p className="text-3xl font-bold text-red-600">{counsellorDashboardEnhanced.lead_stats.total_lost}</p>
+                  <p className="text-sm text-slate-500 mt-2">Did not convert</p>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white border-purple-200">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-5 h-5 text-purple-500" />
-                    <span className="text-xs text-purple-600 font-medium">Conversion Rate</span>
+              <Card className="bg-white border-slate-200 hover:border-purple-300 hover:shadow-md transition-all">
+                <CardContent className="pt-6 pb-5 px-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <TrendingUp className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <span className="text-sm text-slate-600 font-medium">Conversion Rate</span>
                   </div>
-                  <p className="text-2xl font-bold text-purple-600">{counsellorDashboardEnhanced.lead_stats.conversion_rate}%</p>
+                  <p className="text-3xl font-bold text-purple-600">{counsellorDashboardEnhanced.lead_stats.conversion_rate}%</p>
+                  <p className="text-sm text-slate-500 mt-2">Success ratio</p>
                 </CardContent>
               </Card>
             </div>
           )}
 
           {/* 2. Alerts Row - Missed Follow-ups, Pending Feedbacks, Missed Tasks */}
-          {counsellorDashboardEnhanced && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {counsellorDashboardEnhanced && (counsellorDashboardEnhanced.missed_followups?.length > 0 || counsellorDashboardEnhanced.pending_feedbacks?.length > 0 || counsellorDashboardEnhanced.missed_tasks?.length > 0) && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Missed Follow-ups Alert */}
               {counsellorDashboardEnhanced.missed_followups?.length > 0 && (
-                <Card className="border-red-300 bg-red-50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold text-red-700 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" /> Missed Follow-ups ({counsellorDashboardEnhanced.missed_followups.length})
+                <Card className="border-red-200 bg-gradient-to-b from-red-50/50 to-white">
+                  <CardHeader className="pb-3 pt-5">
+                    <CardTitle className="text-base font-semibold text-red-700 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" /> Missed Follow-ups
+                      <Badge className="bg-red-100 text-red-700 ml-auto">{counsellorDashboardEnhanced.missed_followups.length}</Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {counsellorDashboardEnhanced.missed_followups.slice(0, 5).map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded border border-red-200">
+                  <CardContent className="pt-0">
+                    <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                      {counsellorDashboardEnhanced.missed_followups.slice(0, 4).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-xl border border-red-100">
                           <div>
-                            <p className="text-sm font-medium text-slate-800">{item.lead_name}</p>
-                            <p className="text-xs text-slate-500">{item.lead_number}</p>
+                            <p className="font-medium text-slate-800">{item.lead_name}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{item.lead_number}</p>
                           </div>
-                          <Badge className="bg-red-100 text-red-700 text-[10px]">{item.days_missed}d ago</Badge>
+                          <Badge className="bg-red-100 text-red-700 text-xs">{item.days_missed}d ago</Badge>
                         </div>
                       ))}
                     </div>
-                    <Button variant="outline" size="sm" className="w-full mt-2 text-red-700 border-red-300" onClick={() => navigate('/followups')}>
+                    <Button variant="outline" size="sm" className="w-full mt-4 text-red-700 border-red-200 hover:bg-red-50" onClick={() => navigate('/followups')}>
                       View All Missed
                     </Button>
                   </CardContent>
@@ -767,25 +795,26 @@ const Dashboard = () => {
 
               {/* Pending Feedbacks Alert */}
               {counsellorDashboardEnhanced.pending_feedbacks?.length > 0 && (
-                <Card className="border-yellow-300 bg-yellow-50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold text-yellow-700 flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" /> Feedback Pending ({counsellorDashboardEnhanced.pending_feedbacks.length})
+                <Card className="border-yellow-200 bg-gradient-to-b from-yellow-50/50 to-white">
+                  <CardHeader className="pb-3 pt-5">
+                    <CardTitle className="text-base font-semibold text-yellow-700 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" /> Feedback Pending
+                      <Badge className="bg-yellow-100 text-yellow-700 ml-auto">{counsellorDashboardEnhanced.pending_feedbacks.length}</Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {counsellorDashboardEnhanced.pending_feedbacks.slice(0, 5).map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded border border-yellow-200">
+                  <CardContent className="pt-0">
+                    <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                      {counsellorDashboardEnhanced.pending_feedbacks.slice(0, 4).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-xl border border-yellow-100">
                           <div>
-                            <p className="text-sm font-medium text-slate-800">{item.student_name}</p>
-                            <p className="text-xs text-slate-500">{item.program_name}</p>
+                            <p className="font-medium text-slate-800">{item.student_name}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{item.program_name}</p>
                           </div>
-                          <Badge className="bg-yellow-100 text-yellow-700 text-[10px]">{item.days_enrolled}d enrolled</Badge>
+                          <Badge className="bg-yellow-100 text-yellow-700 text-xs">{item.days_enrolled}d enrolled</Badge>
                         </div>
                       ))}
                     </div>
-                    <Button variant="outline" size="sm" className="w-full mt-2 text-yellow-700 border-yellow-300" onClick={() => navigate('/feedback')}>
+                    <Button variant="outline" size="sm" className="w-full mt-4 text-yellow-700 border-yellow-200 hover:bg-yellow-50" onClick={() => navigate('/feedback')}>
                       Submit Feedback
                     </Button>
                   </CardContent>
@@ -794,27 +823,28 @@ const Dashboard = () => {
 
               {/* Missed Tasks Alert */}
               {counsellorDashboardEnhanced.missed_tasks?.length > 0 && (
-                <Card className="border-orange-300 bg-orange-50">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold text-orange-700 flex items-center gap-2">
-                      <Clock className="w-4 h-4" /> Missed Tasks ({counsellorDashboardEnhanced.missed_tasks.length})
+                <Card className="border-orange-200 bg-gradient-to-b from-orange-50/50 to-white">
+                  <CardHeader className="pb-3 pt-5">
+                    <CardTitle className="text-base font-semibold text-orange-700 flex items-center gap-2">
+                      <Clock className="w-4 h-4" /> Missed Tasks
+                      <Badge className="bg-orange-100 text-orange-700 ml-auto">{counsellorDashboardEnhanced.missed_tasks.length}</Badge>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {counsellorDashboardEnhanced.missed_tasks.slice(0, 5).map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded border border-orange-200">
+                  <CardContent className="pt-0">
+                    <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                      {counsellorDashboardEnhanced.missed_tasks.slice(0, 4).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-xl border border-orange-100">
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-slate-800 truncate">{item.title}</p>
-                            <p className="text-xs text-slate-500">{item.priority} priority</p>
+                            <p className="font-medium text-slate-800 truncate">{item.title}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{item.priority} priority</p>
                           </div>
                           {item.days_overdue > 0 && (
-                            <Badge className="bg-orange-100 text-orange-700 text-[10px]">{item.days_overdue}d late</Badge>
+                            <Badge className="bg-orange-100 text-orange-700 text-xs ml-2">{item.days_overdue}d late</Badge>
                           )}
                         </div>
                       ))}
                     </div>
-                    <Button variant="outline" size="sm" className="w-full mt-2 text-orange-700 border-orange-300" onClick={() => navigate('/responsibilities')}>
+                    <Button variant="outline" size="sm" className="w-full mt-4 text-orange-700 border-orange-200 hover:bg-orange-50" onClick={() => navigate('/responsibilities')}>
                       View Tasks
                     </Button>
                   </CardContent>
@@ -825,19 +855,20 @@ const Dashboard = () => {
 
           {/* 3. Today's Follow-ups */}
           {counsellorDashboardEnhanced?.today_followups?.length > 0 && (
-            <Card className="border-indigo-200">
-              <CardHeader className="pb-2">
+            <Card className="border-slate-200">
+              <CardHeader className="pb-3 pt-5">
                 <CardTitle className="text-base font-semibold text-indigo-700 flex items-center gap-2">
-                  <Phone className="w-4 h-4" /> Today's Follow-ups ({counsellorDashboardEnhanced.today_followups.length})
+                  <Phone className="w-4 h-4" /> Today's Follow-ups
+                  <Badge className="bg-indigo-100 text-indigo-700 ml-2">{counsellorDashboardEnhanced.today_followups.length}</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {counsellorDashboardEnhanced.today_followups.map((fu, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-100 hover:bg-indigo-100 cursor-pointer" onClick={() => navigate(`/leads/${fu.lead_id}`)}>
+                    <div key={idx} className="flex items-center justify-between p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 hover:bg-indigo-100/50 cursor-pointer transition-colors" onClick={() => navigate(`/leads/${fu.lead_id}`)}>
                       <div>
-                        <p className="font-medium text-slate-800">{fu.lead_name}</p>
-                        <p className="text-sm text-slate-500">{fu.lead_number}</p>
+                        <p className="font-semibold text-slate-800">{fu.lead_name}</p>
+                        <p className="text-sm text-slate-500 mt-1">{fu.lead_number}</p>
                         <p className="text-xs text-slate-400 mt-1">{fu.program}</p>
                       </div>
                       <Badge className={`${
@@ -848,7 +879,7 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-                <Button variant="outline" className="w-full mt-3 border-indigo-300 text-indigo-700" onClick={() => navigate('/followups')}>
+                <Button variant="outline" className="w-full mt-5 border-indigo-200 text-indigo-700 hover:bg-indigo-50" onClick={() => navigate('/followups')}>
                   View All Follow-ups
                 </Button>
               </CardContent>
@@ -857,29 +888,29 @@ const Dashboard = () => {
 
           {/* 4. My Incentives - Last */}
           {counsellorDashboardEnhanced?.incentive && (
-            <Card className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
-              <CardHeader className="pb-2">
+            <Card className="border-slate-200 bg-gradient-to-r from-green-50/30 to-emerald-50/30">
+              <CardHeader className="pb-3 pt-5">
                 <CardTitle className="text-base font-semibold text-green-700 flex items-center gap-2">
                   <Gift className="w-4 h-4" /> My Incentives
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 bg-white rounded-lg border border-green-200">
-                    <p className="text-xs text-green-600">Total Bookings</p>
-                    <p className="text-xl font-bold text-green-700">{counsellorDashboardEnhanced.incentive.total_bookings}</p>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                  <div className="text-center p-4 bg-white rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-500 mb-2">Total Bookings</p>
+                    <p className="text-2xl font-bold text-slate-800">{counsellorDashboardEnhanced.incentive.total_bookings}</p>
                   </div>
-                  <div className="text-center p-3 bg-white rounded-lg border border-blue-200">
-                    <p className="text-xs text-blue-600">Completed Exams</p>
-                    <p className="text-xl font-bold text-blue-700">{counsellorDashboardEnhanced.incentive.completed_exams}</p>
+                  <div className="text-center p-4 bg-white rounded-xl border border-slate-200">
+                    <p className="text-sm text-slate-500 mb-2">Completed Exams</p>
+                    <p className="text-2xl font-bold text-blue-600">{counsellorDashboardEnhanced.incentive.completed_exams}</p>
                   </div>
-                  <div className="text-center p-3 bg-white rounded-lg border border-emerald-200">
-                    <p className="text-xs text-emerald-600">Earned</p>
-                    <p className="text-xl font-bold text-emerald-700">₹{counsellorDashboardEnhanced.incentive.earned_incentive?.toLocaleString()}</p>
+                  <div className="text-center p-4 bg-white rounded-xl border border-green-200">
+                    <p className="text-sm text-green-600 mb-2">Earned</p>
+                    <p className="text-2xl font-bold text-green-700">₹{counsellorDashboardEnhanced.incentive.earned_incentive?.toLocaleString()}</p>
                   </div>
-                  <div className="text-center p-3 bg-white rounded-lg border border-yellow-200">
-                    <p className="text-xs text-yellow-600">Pending</p>
-                    <p className="text-xl font-bold text-yellow-700">₹{counsellorDashboardEnhanced.incentive.pending_incentive?.toLocaleString()}</p>
+                  <div className="text-center p-4 bg-white rounded-xl border border-yellow-200">
+                    <p className="text-sm text-yellow-600 mb-2">Pending</p>
+                    <p className="text-2xl font-bold text-yellow-700">₹{counsellorDashboardEnhanced.incentive.pending_incentive?.toLocaleString()}</p>
                   </div>
                 </div>
               </CardContent>

@@ -8095,7 +8095,7 @@ async def get_quiz_qr_code(exam_id: str, current_user: User = Depends(get_curren
     exam_name = exam.get('name') or exam.get('title') or 'Quiz'
     
     # Generate the public quiz URL - use /exam route which matches frontend App.js
-    frontend_url = os.environ.get('FRONTEND_URL', 'https://eti-admin-suite.preview.emergentagent.com')
+    frontend_url = os.environ.get('FRONTEND_URL', 'https://campus-control-15.preview.emergentagent.com')
     quiz_url = f"{frontend_url}/exam/{exam_id}"
     
     # Generate QR code
