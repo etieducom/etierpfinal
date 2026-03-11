@@ -148,8 +148,8 @@ const Dashboard = () => {
         }
       }
       
-      // Fetch session comparison for all roles (except certificate manager, trainer, academic controller)
-      if (!['Certificate Manager', 'Trainer', 'Academic Controller'].includes(user.role)) {
+      // Fetch session comparison ONLY for Super Admin and Branch Admin
+      if (isSuperAdmin || isBranchAdmin) {
         try {
           const sessionCompRes = await analyticsAPI.getSessionComparison();
           setSessionComparison(sessionCompRes.data);
@@ -207,8 +207,8 @@ const Dashboard = () => {
         </p>
       </div>
 
-      {/* Session Summary Card - Shows for all roles except Certificate Manager, Trainer, Academic Controller */}
-      {sessionComparison && (
+      {/* Session Summary Card - Shows ONLY for Super Admin and Branch Admin */}
+      {(isSuperAdmin || isBranchAdmin) && sessionComparison && (
         <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-purple-50 shadow-lg" data-testid="session-summary-card">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -605,162 +605,148 @@ const Dashboard = () => {
       </div>
       )}
 
-      {/* Branch Admin Financial Stats */}
+      {/* Branch Admin Financial Stats - Compact Design */}
       {isBranchAdmin && branchFinancialStats && (
-        <Card className="border-slate-200 shadow-soft" data-testid="branch-financial-stats">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold flex items-center gap-2">
-              <Wallet className="w-5 h-5" /> Financial Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-green-600" />
-                    <span className="text-xs text-green-700">Total Collection</span>
-                  </div>
-                  <p className="text-xl font-bold text-green-700 mt-1">
-                    ₹{branchFinancialStats.total_collections?.toLocaleString() || 0}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-orange-50 border-orange-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <Receipt className="w-5 h-5 text-orange-600" />
-                    <span className="text-xs text-orange-700">Pending Amount</span>
-                  </div>
-                  <p className="text-xl font-bold text-orange-700 mt-1">
-                    ₹{branchFinancialStats.pending_amounts?.toLocaleString() || 0}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-blue-600" />
-                    <span className="text-xs text-blue-700">Monthly Revenue</span>
-                  </div>
-                  <p className="text-xl font-bold text-blue-700 mt-1">
-                    ₹{branchFinancialStats.monthly_revenue?.toLocaleString() || 0}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-purple-50 border-purple-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <GraduationCap className="w-5 h-5 text-purple-600" />
-                    <span className="text-xs text-purple-700">Exam Revenue</span>
-                  </div>
-                  <p className="text-xl font-bold text-purple-700 mt-1">
-                    ₹{branchFinancialStats.exam_revenue?.toLocaleString() || 0}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-red-50 border-red-200">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <ArrowDownRight className="w-5 h-5 text-red-600" />
-                    <span className="text-xs text-red-700">Total Expenses</span>
-                  </div>
-                  <p className="text-xl font-bold text-red-700 mt-1">
-                    ₹{branchFinancialStats.total_expenses?.toLocaleString() || 0}
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-slate-100 border-slate-300">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-slate-600" />
-                    <span className="text-xs text-slate-700">Net Revenue</span>
-                  </div>
-                  <p className={`text-xl font-bold mt-1 ${branchFinancialStats.net_revenue >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                    ₹{branchFinancialStats.net_revenue?.toLocaleString() || 0}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Trainer Stats */}
-            {branchFinancialStats.trainer_stats?.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-semibold text-slate-700 mb-3">Trainer-wise Student Count</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" data-testid="branch-financial-stats">
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <CreditCard className="w-4 h-4 text-green-600" />
+                <span className="text-xs text-green-700 font-medium">Total Collection</span>
+              </div>
+              <p className="text-xl font-bold text-green-700">
+                ₹{((branchFinancialStats.total_collections || 0) / 1000).toFixed(0)}K
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Receipt className="w-4 h-4 text-orange-600" />
+                <span className="text-xs text-orange-700 font-medium">Pending</span>
+              </div>
+              <p className="text-xl font-bold text-orange-700">
+                ₹{((branchFinancialStats.pending_amounts || 0) / 1000).toFixed(0)}K
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-blue-50 to-sky-50 border-blue-200">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                <span className="text-xs text-blue-700 font-medium">This Month</span>
+              </div>
+              <p className="text-xl font-bold text-blue-700">
+                ₹{((branchFinancialStats.monthly_revenue || 0) / 1000).toFixed(0)}K
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <GraduationCap className="w-4 h-4 text-purple-600" />
+                <span className="text-xs text-purple-700 font-medium">Exam Revenue</span>
+              </div>
+              <p className="text-xl font-bold text-purple-700">
+                ₹{((branchFinancialStats.exam_revenue || 0) / 1000).toFixed(0)}K
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200">
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <ArrowDownRight className="w-4 h-4 text-red-600" />
+                <span className="text-xs text-red-700 font-medium">Expenses</span>
+              </div>
+              <p className="text-xl font-bold text-red-700">
+                ₹{((branchFinancialStats.total_expenses || 0) / 1000).toFixed(0)}K
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className={`bg-gradient-to-br ${(branchFinancialStats.net_revenue || 0) >= 0 ? 'from-emerald-50 to-green-50 border-emerald-200' : 'from-red-50 to-rose-50 border-red-200'}`}>
+            <CardContent className="pt-4 pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <DollarSign className={`w-4 h-4 ${(branchFinancialStats.net_revenue || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
+                <span className={`text-xs font-medium ${(branchFinancialStats.net_revenue || 0) >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>Net Revenue</span>
+              </div>
+              <p className={`text-xl font-bold ${(branchFinancialStats.net_revenue || 0) >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                ₹{((branchFinancialStats.net_revenue || 0) / 1000).toFixed(0)}K
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Branch Admin - Trainer & Royalty Row */}
+      {isBranchAdmin && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Trainer Stats - Compact */}
+          {branchFinancialStats?.trainer_stats?.length > 0 && (
+            <Card className="border-slate-200">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" /> Trainer-wise Students
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex flex-wrap gap-2">
                   {branchFinancialStats.trainer_stats.map((trainer) => (
-                    <div key={trainer.trainer_id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
-                      <span className="text-sm font-medium text-slate-700">{trainer.trainer_name}</span>
-                      <Badge className="bg-blue-100 text-blue-700">{trainer.unique_student_count} students</Badge>
+                    <div key={trainer.trainer_id} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border text-sm">
+                      <span className="text-slate-700">{trainer.trainer_name}</span>
+                      <Badge variant="secondary" className="h-5">{trainer.unique_student_count}</Badge>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Royalty Widget for Branch Admin */}
-      {isBranchAdmin && royaltyData && royaltyData.royalty_percentage > 0 && (
-        <Card className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-soft" data-testid="royalty-widget">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2 text-amber-800">
-              <DollarSign className="w-5 h-5" /> Royalty Due
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <p className="text-sm text-amber-700">Royalty for {royaltyData.month_name}</p>
-                <p className="text-3xl font-bold text-amber-900 mt-1">
-                  ₹{royaltyData.royalty_amount?.toLocaleString()}
-                </p>
-                <p className="text-xs text-amber-600 mt-1">
-                  {royaltyData.royalty_percentage}% of ₹{royaltyData.total_collection?.toLocaleString()} collection
-                </p>
-              </div>
-              <div className="flex flex-col items-start md:items-end gap-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-amber-600" />
-                  <span className="text-sm text-amber-700">Due: {royaltyData.due_date_display}</span>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Royalty Widget - Compact */}
+          {royaltyData && royaltyData.royalty_percentage > 0 && (
+            <Card className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-amber-800">
+                  <DollarSign className="w-4 h-4" /> Royalty - {royaltyData.month_name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-bold text-amber-900">₹{royaltyData.royalty_amount?.toLocaleString()}</p>
+                    <p className="text-xs text-amber-600">{royaltyData.royalty_percentage}% of ₹{royaltyData.total_collection?.toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-amber-700 mb-1">Due: {royaltyData.due_date_display}</p>
+                    {royaltyData.is_paid ? (
+                      <Badge className="bg-green-100 text-green-700"><CheckCircle className="w-3 h-3 mr-1" /> Paid</Badge>
+                    ) : (
+                      <Badge className="bg-orange-100 text-orange-700"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>
+                    )}
+                  </div>
                 </div>
-                {royaltyData.is_paid ? (
-                  <Badge className="bg-green-100 text-green-700">
-                    <CheckCircle className="w-3 h-3 mr-1" /> Paid
-                  </Badge>
-                ) : royaltyData.royalty_amount > 0 ? (
-                  <Badge className="bg-orange-100 text-orange-700">
-                    <Clock className="w-3 h-3 mr-1" /> Pending
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">No Royalty</Badge>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
-      {/* Monthly Admission Stats Chart for Branch Admin */}
+      {/* Branch Admin - Charts Row */}
       {isBranchAdmin && admissionData && (
-        <Card className="border-slate-200 shadow-soft" data-testid="admission-stats-chart">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-purple-600" /> Monthly Admissions
-              </CardTitle>
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-slate-600">
-                  Total: <span className="font-bold text-purple-700">{admissionData.total_admissions}</span> admissions in {admissionData.year}
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Monthly Admissions Chart - Compact */}
+          <Card className="border-slate-200">
+            <CardHeader className="py-3">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-purple-600" /> Monthly Admissions ({admissionData.total_admissions})
+                </CardTitle>
                 <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                  <SelectTrigger className="w-28">
+                  <SelectTrigger className="w-20 h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -770,40 +756,81 @@ const Dashboard = () => {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={admissionData.monthly_data}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                <XAxis dataKey="month_name" stroke="#64748B" />
-                <YAxis stroke="#64748B" allowDecimals={false} />
-                <Tooltip 
-                  formatter={(value, name) => {
-                    const labels = { admissions: 'Admissions', active: 'Active', completed: 'Completed' };
-                    return [value, labels[name] || name];
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="admissions" name="Admissions" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-            
-            {/* Program-wise breakdown */}
-            {admissionData.program_breakdown && Object.keys(admissionData.program_breakdown).length > 0 && (
-              <div className="mt-6 pt-4 border-t border-slate-200">
-                <h4 className="text-sm font-semibold text-slate-700 mb-3">Program-wise Distribution</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={admissionData.monthly_data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis dataKey="month_name" stroke="#64748B" tick={{fontSize: 10}} />
+                  <YAxis stroke="#64748B" allowDecimals={false} tick={{fontSize: 10}} />
+                  <Tooltip />
+                  <Bar dataKey="admissions" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+          
+          {/* Program Distribution - Compact */}
+          {admissionData.program_breakdown && Object.keys(admissionData.program_breakdown).length > 0 && (
+            <Card className="border-slate-200">
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Award className="w-4 h-4 text-purple-600" /> Program Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 gap-2">
                   {Object.entries(admissionData.program_breakdown)
                     .sort((a, b) => b[1] - a[1])
-                    .slice(0, 8)
+                    .slice(0, 6)
                     .map(([program, count]) => (
-                      <div key={program} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100">
-                        <span className="text-sm font-medium text-slate-700 truncate mr-2">{program}</span>
-                        <Badge className="bg-purple-100 text-purple-700 flex-shrink-0">{count}</Badge>
+                      <div key={program} className="flex items-center justify-between p-2 bg-purple-50 rounded-lg border border-purple-100">
+                        <span className="text-xs font-medium text-slate-700 truncate mr-2">{program}</span>
+                        <Badge className="bg-purple-100 text-purple-700 text-xs">{count}</Badge>
                       </div>
                     ))}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Branch Admin Incentive Overview - Compact */}
+      {isBranchAdmin && branchIncentiveStats && (
+        <Card className="border-slate-200">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Gift className="w-4 h-4 text-purple-600" /> Counsellor Incentives
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+              <div className="text-center p-2 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-xs text-green-600">Earned</p>
+                <p className="text-lg font-bold text-green-700">₹{(branchIncentiveStats.branch_summary.total_earned_incentives || 0).toLocaleString()}</p>
+              </div>
+              <div className="text-center p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-xs text-yellow-600">Pending</p>
+                <p className="text-lg font-bold text-yellow-700">₹{(branchIncentiveStats.branch_summary.total_pending_incentives || 0).toLocaleString()}</p>
+              </div>
+              <div className="text-center p-2 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-xs text-blue-600">Exams Done</p>
+                <p className="text-lg font-bold text-blue-700">{branchIncentiveStats.branch_summary.completed_exams || 0}</p>
+              </div>
+              <div className="text-center p-2 bg-red-50 rounded-lg border border-red-200">
+                <p className="text-xs text-red-600">Refunds</p>
+                <p className="text-lg font-bold text-red-700">₹{(branchIncentiveStats.branch_summary.total_refunds_pending || 0).toLocaleString()}</p>
+              </div>
+            </div>
+            {branchIncentiveStats.counsellor_stats?.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {branchIncentiveStats.counsellor_stats.map((counsellor) => (
+                  <div key={counsellor.counsellor_id} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border text-xs">
+                    <span className="text-slate-700">{counsellor.counsellor_name}</span>
+                    <span className="text-green-600 font-medium">₹{counsellor.earned_incentive}</span>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
@@ -897,80 +924,6 @@ const Dashboard = () => {
                       <Badge className="bg-yellow-100 text-yellow-700">₹{Math.round(booking.exam_price * 0.10)} potential</Badge>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Branch Admin Incentive Stats */}
-      {isBranchAdmin && branchIncentiveStats && (
-        <Card className="border-slate-200 shadow-soft" data-testid="branch-incentive-stats">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold flex items-center gap-2">
-              <Gift className="w-5 h-5 text-purple-600" /> Counsellor Incentives Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Branch Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <Card className="bg-green-50 border-green-200">
-                <CardContent className="pt-3">
-                  <p className="text-xs text-green-700">Total Earned</p>
-                  <p className="text-lg font-bold text-green-700">₹{branchIncentiveStats.branch_summary.total_earned_incentives?.toLocaleString() || 0}</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-yellow-50 border-yellow-200">
-                <CardContent className="pt-3">
-                  <p className="text-xs text-yellow-700">Pending</p>
-                  <p className="text-lg font-bold text-yellow-700">₹{branchIncentiveStats.branch_summary.total_pending_incentives?.toLocaleString() || 0}</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="pt-3">
-                  <p className="text-xs text-blue-700">Completed Exams</p>
-                  <p className="text-lg font-bold text-blue-700">{branchIncentiveStats.branch_summary.completed_exams}</p>
-                </CardContent>
-              </Card>
-              <Card className="bg-red-50 border-red-200">
-                <CardContent className="pt-3">
-                  <p className="text-xs text-red-700">Pending Refunds</p>
-                  <p className="text-lg font-bold text-red-700">₹{branchIncentiveStats.branch_summary.total_refunds_pending?.toLocaleString() || 0}</p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Counsellor-wise Stats */}
-            {branchIncentiveStats.counsellor_stats?.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-slate-700 mb-2">Counsellor-wise Breakdown</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Counsellor</th>
-                        <th className="px-3 py-2 text-center">Bookings</th>
-                        <th className="px-3 py-2 text-center">Completed</th>
-                        <th className="px-3 py-2 text-right">Earned</th>
-                        <th className="px-3 py-2 text-right">Pending</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {branchIncentiveStats.counsellor_stats.map((c) => (
-                        <tr key={c.counsellor_id} className="hover:bg-slate-50">
-                          <td className="px-3 py-2">
-                            <p className="font-medium">{c.counsellor_name}</p>
-                            <p className="text-xs text-slate-500">{c.counsellor_email}</p>
-                          </td>
-                          <td className="px-3 py-2 text-center">{c.total_bookings}</td>
-                          <td className="px-3 py-2 text-center">{c.completed_exams}</td>
-                          <td className="px-3 py-2 text-right text-green-600 font-medium">₹{c.earned_incentive?.toLocaleString() || 0}</td>
-                          <td className="px-3 py-2 text-right text-yellow-600">₹{c.pending_incentive?.toLocaleString() || 0}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
               </div>
             )}
