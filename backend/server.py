@@ -5004,7 +5004,100 @@ async def get_fde_dashboard(request: Request, session: Optional[str] = None, cur
         "tasks": {
             "pending": pending_tasks,
             "overdue": overdue_tasks
-        }
+        },
+        "overdue_payments": [],  # Will be populated below
+        "ready_to_enroll": [],   # Leads that are converted but not enrolled
+        "pending_exams": []      # Course completed but exam pending
+    }
+
+@api_router.get("/analytics/fde-dashboard-enhanced")
+async def get_fde_dashboard_enhanced(request: Request, session: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    """Enhanced FDE dashboard with overdue payments, ready-to-enroll leads, and pending exams"""
+    if current_user.role not in [UserRole.FRONT_DESK, UserRole.BRANCH_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    branch_id = current_user.branch_id
+    today = datetime.now().strftime('%Y-%m-%d')
+    today_date = datetime.now().date()
+    
+    branch_filter = {} if current_user.role == UserRole.ADMIN else {"branch_id": branch_id}
+    
+    # 1. Students with overdue payments (with days overdue)
+    overdue_payments = []
+    installments = await db.installment_schedule.find({
+        "due_date": {"$lt": today},
+        "status": {"$ne": "Paid"}
+    }, {"_id": 0}).to_list(500)
+    
+    for inst in installments:
+        plan = await db.payment_plans.find_one({"id": inst.get('payment_plan_id')}, {"_id": 0})
+        if plan and (current_user.role == UserRole.ADMIN or plan.get('branch_id') == branch_id):
+            enrollment = await db.enrollments.find_one({"id": plan.get('enrollment_id')}, {"_id": 0})
+            if enrollment:
+                due_date = datetime.strptime(inst.get('due_date'), '%Y-%m-%d').date()
+                days_overdue = (today_date - due_date).days
+                overdue_payments.append({
+                    "student_name": enrollment.get('student_name', 'Unknown'),
+                    "contact_no": enrollment.get('contact_no', ''),
+                    "amount": inst.get('amount', 0),
+                    "due_date": inst.get('due_date'),
+                    "days_overdue": days_overdue,
+                    "enrollment_id": enrollment.get('id'),
+                    "program_name": enrollment.get('program_name', '')
+                })
+    
+    # Sort by days overdue (highest first)
+    overdue_payments.sort(key=lambda x: x['days_overdue'], reverse=True)
+    
+    # 2. Leads ready to enroll (Converted status but no enrollment)
+    ready_to_enroll = []
+    converted_leads = await db.leads.find({
+        **branch_filter,
+        "status": "Converted",
+        "is_deleted": {"$ne": True}
+    }, {"_id": 0}).to_list(500)
+    
+    for lead in converted_leads:
+        # Check if this lead has an enrollment
+        enrollment = await db.enrollments.find_one({
+            "lead_id": lead.get('id')
+        }, {"_id": 0})
+        if not enrollment:
+            ready_to_enroll.append({
+                "lead_id": lead.get('id'),
+                "student_name": lead.get('name', 'Unknown'),
+                "contact_no": lead.get('contact_no', ''),
+                "email": lead.get('email', ''),
+                "program_name": lead.get('program_name', ''),
+                "converted_date": lead.get('updated_at', lead.get('created_at', ''))
+            })
+    
+    # 3. Students with course completed but exam pending
+    pending_exams = []
+    completed_courses = await db.enrollments.find({
+        **branch_filter,
+        "course_status": "Completed"
+    }, {"_id": 0}).to_list(500)
+    
+    for enrollment in completed_courses:
+        # Check if exam is scheduled/completed
+        exam_booking = await db.exam_bookings.find_one({
+            "enrollment_id": enrollment.get('id'),
+            "status": {"$in": ["Completed", "Passed"]}
+        }, {"_id": 0})
+        if not exam_booking:
+            pending_exams.append({
+                "student_name": enrollment.get('student_name', 'Unknown'),
+                "contact_no": enrollment.get('contact_no', ''),
+                "program_name": enrollment.get('program_name', ''),
+                "enrollment_id": enrollment.get('id'),
+                "completion_date": enrollment.get('updated_at', '')
+            })
+    
+    return {
+        "overdue_payments": overdue_payments[:20],  # Top 20
+        "ready_to_enroll": ready_to_enroll[:15],    # Top 15
+        "pending_exams": pending_exams[:15]          # Top 15
     }
 
 @api_router.get("/analytics/counsellor-dashboard")
@@ -5068,6 +5161,187 @@ async def get_counsellor_dashboard(current_user: User = Depends(get_current_user
         "today_followups": today_followups_detailed,
         "overdue_count": overdue_followups,
         "this_week_count": this_week_count
+    }
+
+@api_router.get("/analytics/counsellor-dashboard-enhanced")
+async def get_counsellor_dashboard_enhanced(current_user: User = Depends(get_current_user)):
+    """Enhanced Counsellor dashboard with lead stats, pending feedbacks, missed tasks"""
+    if current_user.role not in [UserRole.COUNSELLOR, UserRole.BRANCH_ADMIN, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    branch_id = current_user.branch_id
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    # Build query based on role
+    if current_user.role == UserRole.COUNSELLOR:
+        lead_query = {"created_by": current_user.id, "is_deleted": {"$ne": True}}
+        followup_query = {"created_by": current_user.id, "status": "Pending"}
+        task_query = {"assigned_to": current_user.id}
+    elif current_user.role == UserRole.BRANCH_ADMIN:
+        lead_query = {"branch_id": branch_id, "is_deleted": {"$ne": True}}
+        followup_query = {"branch_id": branch_id, "status": "Pending"}
+        task_query = {"branch_id": branch_id}
+    else:  # Admin
+        lead_query = {"is_deleted": {"$ne": True}}
+        followup_query = {"status": "Pending"}
+        task_query = {}
+    
+    # 1. Lead Stats
+    total_leads = await db.leads.count_documents(lead_query)
+    total_converted = await db.leads.count_documents({**lead_query, "status": "Converted"})
+    total_lost = await db.leads.count_documents({**lead_query, "status": "Lost"})
+    conversion_rate = round((total_converted / total_leads * 100), 1) if total_leads > 0 else 0
+    
+    # 2. Today's Follow-ups
+    today_followups = await db.followups.find({
+        **followup_query,
+        "followup_date": {"$regex": f"^{today}"}
+    }, {"_id": 0}).to_list(100)
+    
+    today_followups_detailed = []
+    for fu in today_followups:
+        lead = await db.leads.find_one({"id": fu.get('lead_id')}, {"_id": 0, "name": 1, "number": 1, "status": 1, "program_name": 1})
+        if lead:
+            today_followups_detailed.append({
+                "id": fu.get('id'),
+                "lead_id": fu.get('lead_id'),
+                "lead_name": lead.get('name'),
+                "lead_number": lead.get('number'),
+                "lead_status": lead.get('status'),
+                "program": lead.get('program_name', ''),
+                "note": fu.get('note', ''),
+                "followup_date": fu.get('followup_date')
+            })
+    
+    # 3. Overdue/Missed Follow-ups
+    overdue_followups = await db.followups.find({
+        **followup_query,
+        "followup_date": {"$lt": today}
+    }, {"_id": 0}).to_list(50)
+    
+    missed_followups = []
+    for fu in overdue_followups:
+        lead = await db.leads.find_one({"id": fu.get('lead_id')}, {"_id": 0, "name": 1, "number": 1, "status": 1})
+        if lead:
+            due_date = datetime.strptime(fu.get('followup_date', today)[:10], '%Y-%m-%d').date()
+            days_missed = (datetime.now().date() - due_date).days
+            missed_followups.append({
+                "id": fu.get('id'),
+                "lead_name": lead.get('name'),
+                "lead_number": lead.get('number'),
+                "lead_status": lead.get('status'),
+                "followup_date": fu.get('followup_date'),
+                "days_missed": days_missed,
+                "note": fu.get('note', '')
+            })
+    
+    missed_followups.sort(key=lambda x: x['days_missed'], reverse=True)
+    
+    # 4. Pending Feedback (students enrolled but feedback not submitted today)
+    pending_feedbacks = []
+    # Get enrollments by this counsellor where feedback might be due
+    if current_user.role == UserRole.COUNSELLOR:
+        recent_enrollments = await db.enrollments.find({
+            "counsellor_id": current_user.id,
+            "status": "Active"
+        }, {"_id": 0}).sort("enrollment_date", -1).to_list(50)
+    else:
+        recent_enrollments = await db.enrollments.find({
+            "branch_id": branch_id,
+            "status": "Active"
+        }, {"_id": 0}).sort("enrollment_date", -1).to_list(50)
+    
+    for enrollment in recent_enrollments:
+        # Check if feedback exists for this student this month
+        current_month_start = datetime.now().replace(day=1).strftime('%Y-%m-%d')
+        feedback = await db.feedback.find_one({
+            "enrollment_id": enrollment.get('id'),
+            "created_at": {"$gte": current_month_start}
+        }, {"_id": 0})
+        if not feedback:
+            # Check if student has been enrolled for at least 7 days
+            enrollment_date = enrollment.get('enrollment_date', '')
+            if enrollment_date:
+                try:
+                    enroll_dt = datetime.fromisoformat(enrollment_date[:10]) if isinstance(enrollment_date, str) else enrollment_date
+                    days_enrolled = (datetime.now() - enroll_dt).days if hasattr(enroll_dt, 'days') else (datetime.now().date() - enroll_dt).days if hasattr(enroll_dt, 'month') else 0
+                    if days_enrolled >= 7:
+                        pending_feedbacks.append({
+                            "student_name": enrollment.get('student_name', 'Unknown'),
+                            "contact_no": enrollment.get('contact_no', ''),
+                            "program_name": enrollment.get('program_name', ''),
+                            "enrollment_id": enrollment.get('id'),
+                            "days_enrolled": days_enrolled
+                        })
+                except:
+                    pass
+    
+    # 5. Missed/Incomplete Tasks (from responsibilities)
+    missed_tasks = []
+    tasks = await db.responsibilities.find({
+        **task_query,
+        "status": {"$nin": ["Completed", "Cancelled"]},
+        "$or": [
+            {"due_date": {"$lt": today}},
+            {"due_date": {"$exists": False}}
+        ]
+    }, {"_id": 0}).to_list(50)
+    
+    for task in tasks:
+        due_date = task.get('due_date', '')
+        days_overdue = 0
+        if due_date:
+            try:
+                due_dt = datetime.strptime(due_date[:10], '%Y-%m-%d').date()
+                days_overdue = (datetime.now().date() - due_dt).days
+            except:
+                pass
+        missed_tasks.append({
+            "id": task.get('id'),
+            "title": task.get('title', ''),
+            "description": task.get('description', ''),
+            "priority": task.get('priority', 'Medium'),
+            "due_date": due_date,
+            "days_overdue": days_overdue
+        })
+    
+    missed_tasks.sort(key=lambda x: x.get('days_overdue', 0), reverse=True)
+    
+    # 6. Counsellor Incentives (if applicable)
+    incentive_data = None
+    if current_user.role == UserRole.COUNSELLOR:
+        # Get incentive stats for this counsellor
+        bookings = await db.exam_bookings.find({
+            "counsellor_id": current_user.id
+        }, {"_id": 0}).to_list(1000)
+        
+        total_bookings = len(bookings)
+        completed_exams = len([b for b in bookings if b.get('status') in ['Completed', 'Passed']])
+        
+        # Calculate incentive (example: ₹400 per completed exam)
+        incentive_per_exam = 400
+        earned_incentive = completed_exams * incentive_per_exam
+        pending_incentive = (total_bookings - completed_exams) * incentive_per_exam
+        
+        incentive_data = {
+            "total_bookings": total_bookings,
+            "completed_exams": completed_exams,
+            "earned_incentive": earned_incentive,
+            "pending_incentive": pending_incentive
+        }
+    
+    return {
+        "lead_stats": {
+            "total_leads": total_leads,
+            "total_converted": total_converted,
+            "total_lost": total_lost,
+            "conversion_rate": conversion_rate
+        },
+        "today_followups": today_followups_detailed[:10],
+        "missed_followups": missed_followups[:10],
+        "pending_feedbacks": pending_feedbacks[:10],
+        "missed_tasks": missed_tasks[:10],
+        "incentive": incentive_data
     }
 
 # Branch Admin specific endpoints

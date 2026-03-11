@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, TrendingUp, CheckCircle, XCircle, Bell, DollarSign, ArrowUpRight, ArrowDownRight, Building, Award, AlertTriangle, Trash2, Wallet, CreditCard, Receipt, GraduationCap, Gift, Clock, Ban, Calendar, IndianRupee, Banknote, ClipboardList, Phone } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle, XCircle, Bell, DollarSign, ArrowUpRight, ArrowDownRight, Building, Award, AlertTriangle, Trash2, Wallet, CreditCard, Receipt, GraduationCap, Gift, Clock, Ban, Calendar, IndianRupee, Banknote, ClipboardList, Phone, UserPlus, MessageSquare } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,7 +34,9 @@ const Dashboard = () => {
   const [royaltyData, setRoyaltyData] = useState(null);
   const [admissionData, setAdmissionData] = useState(null);
   const [fdeDashboard, setFdeDashboard] = useState(null);
+  const [fdeDashboardEnhanced, setFdeDashboardEnhanced] = useState(null);
   const [counsellorDashboard, setCounsellorDashboard] = useState(null);
+  const [counsellorDashboardEnhanced, setCounsellorDashboardEnhanced] = useState(null);
   const [sessionComparison, setSessionComparison] = useState(null);
   const fetchingRef = React.useRef(false); // Prevent concurrent calls
   const navigate = useNavigate();
@@ -133,6 +135,10 @@ const Dashboard = () => {
           // Fetch counsellor dashboard data
           const counsellorDashRes = await analyticsAPI.getCounsellorDashboard();
           setCounsellorDashboard(counsellorDashRes.data);
+          
+          // Fetch enhanced counsellor dashboard
+          const counsellorEnhRes = await analyticsAPI.getCounsellorDashboardEnhanced();
+          setCounsellorDashboardEnhanced(counsellorEnhRes.data);
         } catch (e) {
           console.error('Error fetching counsellor data:', e);
         }
@@ -143,6 +149,10 @@ const Dashboard = () => {
         try {
           const fdeDashRes = await analyticsAPI.getFDEDashboard();
           setFdeDashboard(fdeDashRes.data);
+          
+          // Fetch enhanced FDE dashboard
+          const fdeEnhRes = await analyticsAPI.getFDEDashboardEnhanced();
+          setFdeDashboardEnhanced(fdeEnhRes.data);
         } catch (e) {
           console.error('Error fetching FDE dashboard:', e);
         }
@@ -527,147 +537,357 @@ const Dashboard = () => {
       )}
       {/* ==================== END BRANCH ADMIN DASHBOARD ==================== */}
 
-      {/* FDE Dashboard Cards */}
-      {isFDE && fdeDashboard && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" data-testid="fde-dashboard">
-          {/* Fee Due This Month */}
-          <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 shadow-soft hover:shadow-lifted transition-shadow cursor-pointer" onClick={() => navigate('/students')}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-orange-800">Fee Due ({fdeDashboard.fee_due?.month})</CardTitle>
-              <IndianRupee className="w-4 h-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">₹{(fdeDashboard.fee_due?.amount || 0).toLocaleString()}</div>
-              <p className="text-xs text-orange-600 mt-1">{fdeDashboard.fee_due?.count || 0} installments pending</p>
-            </CardContent>
-          </Card>
+      {/* ==================== FDE DASHBOARD - CLEAN LAYOUT ==================== */}
+      {isFDE && (
+        <div className="space-y-6" data-testid="fde-dashboard">
+          
+          {/* Quick Stats Row */}
+          {fdeDashboard && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-white border-orange-200 hover:border-orange-400 transition-colors cursor-pointer" onClick={() => navigate('/students')}>
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IndianRupee className="w-5 h-5 text-orange-500" />
+                    <span className="text-xs text-orange-600 font-medium">Fee Due ({fdeDashboard.fee_due?.month})</span>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-600">₹{((fdeDashboard.fee_due?.amount || 0) / 1000).toFixed(0)}K</p>
+                  <p className="text-xs text-slate-500 mt-1">{fdeDashboard.fee_due?.count || 0} installments</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white border-purple-200 hover:border-purple-400 transition-colors cursor-pointer" onClick={() => navigate('/students')}>
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-5 h-5 text-purple-500" />
+                    <span className="text-xs text-purple-600 font-medium">Unassigned</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-600">{fdeDashboard.students_without_batch || 0}</p>
+                  <p className="text-xs text-slate-500 mt-1">No batch assigned</p>
+                </CardContent>
+              </Card>
+              
+              <Card className={`bg-white border-${fdeDashboard.cash_handling?.updated_today ? 'green' : 'red'}-200 hover:border-${fdeDashboard.cash_handling?.updated_today ? 'green' : 'red'}-400 transition-colors cursor-pointer`} onClick={() => navigate('/finances')}>
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Banknote className={`w-5 h-5 ${fdeDashboard.cash_handling?.updated_today ? 'text-green-500' : 'text-red-500'}`} />
+                    <span className={`text-xs font-medium ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`}>Cash Handling</span>
+                  </div>
+                  <p className={`text-2xl font-bold ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`}>
+                    {fdeDashboard.cash_handling?.updated_today ? 'Done' : 'Pending'}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">₹{(fdeDashboard.cash_handling?.today_cash_total || 0).toLocaleString()}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className={`bg-white border-${fdeDashboard.tasks?.overdue > 0 ? 'red' : 'blue'}-200 transition-colors cursor-pointer`} onClick={() => navigate('/tasks')}>
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ClipboardList className={`w-5 h-5 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-500' : 'text-blue-500'}`} />
+                    <span className={`text-xs font-medium ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`}>Tasks</span>
+                  </div>
+                  <p className={`text-2xl font-bold ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`}>{fdeDashboard.tasks?.pending || 0}</p>
+                  <p className={`text-xs mt-1 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                    {fdeDashboard.tasks?.overdue > 0 ? `${fdeDashboard.tasks.overdue} overdue!` : 'pending'}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
-          {/* Students Without Batch */}
-          <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-violet-50 shadow-soft hover:shadow-lifted transition-shadow cursor-pointer" onClick={() => navigate('/students')}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-purple-800">Unassigned Students</CardTitle>
-              <Users className="w-4 h-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{fdeDashboard.students_without_batch || 0}</div>
-              <p className="text-xs text-purple-600 mt-1">Not assigned to any batch</p>
-            </CardContent>
-          </Card>
+          {/* Enhanced Data Sections */}
+          {fdeDashboardEnhanced && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Overdue Payments */}
+              <Card className="border-red-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-red-700 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" /> Overdue Payments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {fdeDashboardEnhanced.overdue_payments?.length > 0 ? (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {fdeDashboardEnhanced.overdue_payments.slice(0, 8).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-red-50 rounded-lg border border-red-100">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-800 truncate">{item.student_name}</p>
+                            <p className="text-xs text-slate-500">{item.program_name}</p>
+                          </div>
+                          <div className="text-right ml-2">
+                            <p className="text-sm font-bold text-red-600">₹{item.amount?.toLocaleString()}</p>
+                            <Badge className="bg-red-100 text-red-700 text-[10px]">{item.days_overdue}d overdue</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center py-4">No overdue payments</p>
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Cash Handling Status */}
-          <Card 
-            className={`shadow-soft hover:shadow-lifted transition-shadow cursor-pointer ${
-              fdeDashboard.cash_handling?.updated_today 
-                ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50' 
-                : 'border-red-200 bg-gradient-to-br from-red-50 to-rose-50'
-            }`}
-            onClick={() => navigate('/finances')}
-          >
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className={`text-sm font-medium ${fdeDashboard.cash_handling?.updated_today ? 'text-green-800' : 'text-red-800'}`}>
-                Cash Handling
-              </CardTitle>
-              <Banknote className={`w-4 h-4 ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`}>
-                {fdeDashboard.cash_handling?.updated_today ? 'Updated' : 'Pending'}
-              </div>
-              <p className={`text-xs mt-1 ${fdeDashboard.cash_handling?.updated_today ? 'text-green-600' : 'text-red-600'}`}>
-                Today's cash: ₹{(fdeDashboard.cash_handling?.today_cash_total || 0).toLocaleString()}
-              </p>
-            </CardContent>
-          </Card>
+              {/* Ready to Enroll */}
+              <Card className="border-green-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-green-700 flex items-center gap-2">
+                    <UserPlus className="w-4 h-4" /> Ready to Enroll
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {fdeDashboardEnhanced.ready_to_enroll?.length > 0 ? (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {fdeDashboardEnhanced.ready_to_enroll.slice(0, 8).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-100 cursor-pointer hover:bg-green-100" onClick={() => navigate(`/enrollments/new?lead_id=${item.lead_id}`)}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-800 truncate">{item.student_name}</p>
+                            <p className="text-xs text-slate-500">{item.contact_no}</p>
+                          </div>
+                          <div className="text-right ml-2">
+                            <Badge className="bg-green-100 text-green-700 text-xs">{item.program_name || 'N/A'}</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center py-4">No pending enrollments</p>
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Pending Tasks */}
-          <Card 
-            className={`shadow-soft hover:shadow-lifted transition-shadow cursor-pointer ${
-              fdeDashboard.tasks?.overdue > 0 
-                ? 'border-red-200 bg-gradient-to-br from-red-50 to-rose-50' 
-                : 'border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50'
-            }`}
-            onClick={() => navigate('/tasks')}
-          >
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className={`text-sm font-medium ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-800' : 'text-blue-800'}`}>
-                Pending Tasks
-              </CardTitle>
-              <ClipboardList className={`w-4 h-4 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`}>
-                {fdeDashboard.tasks?.pending || 0}
-              </div>
-              <p className={`text-xs mt-1 ${fdeDashboard.tasks?.overdue > 0 ? 'text-red-600' : 'text-blue-600'}`}>
-                {fdeDashboard.tasks?.overdue > 0 ? `${fdeDashboard.tasks.overdue} overdue!` : 'No overdue tasks'}
-              </p>
-            </CardContent>
-          </Card>
+              {/* Pending Exams */}
+              <Card className="border-purple-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                    <Award className="w-4 h-4" /> Pending Exams
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {fdeDashboardEnhanced.pending_exams?.length > 0 ? (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {fdeDashboardEnhanced.pending_exams.slice(0, 8).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-purple-50 rounded-lg border border-purple-100">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-800 truncate">{item.student_name}</p>
+                            <p className="text-xs text-slate-500">{item.program_name}</p>
+                          </div>
+                          <Badge className="bg-purple-100 text-purple-700 text-xs ml-2">Course Done</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center py-4">No pending exams</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       )}
+      {/* ==================== END FDE DASHBOARD ==================== */}
 
-      {/* Counsellor Dashboard Cards */}
-      {isCounsellor && counsellorDashboard && (
-        <Card className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-soft" data-testid="counsellor-dashboard">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold flex items-center gap-2 text-indigo-800">
-              <Phone className="w-5 h-5" /> Follow-up Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <div className="bg-white p-4 rounded-lg border border-indigo-200 text-center">
-                <p className="text-sm text-indigo-600">Today's Follow-ups</p>
-                <p className="text-3xl font-bold text-indigo-700">{counsellorDashboard.today_count || 0}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-orange-200 text-center">
-                <p className="text-sm text-orange-600">Total Pending</p>
-                <p className="text-3xl font-bold text-orange-700">{counsellorDashboard.total_pending || 0}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-red-200 text-center">
-                <p className="text-sm text-red-600">Overdue</p>
-                <p className="text-3xl font-bold text-red-700">{counsellorDashboard.overdue_count || 0}</p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-green-200 text-center">
-                <p className="text-sm text-green-600">This Week</p>
-                <p className="text-3xl font-bold text-green-700">{counsellorDashboard.this_week_count || 0}</p>
-              </div>
+      {/* ==================== COUNSELLOR DASHBOARD - CLEAN LAYOUT ==================== */}
+      {isCounsellor && (
+        <div className="space-y-6" data-testid="counsellor-dashboard">
+          
+          {/* 1. Lead Stats - Top */}
+          {counsellorDashboardEnhanced?.lead_stats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="bg-white border-blue-200">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-5 h-5 text-blue-500" />
+                    <span className="text-xs text-blue-600 font-medium">Total Leads</span>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-600">{counsellorDashboardEnhanced.lead_stats.total_leads}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white border-green-200">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-xs text-green-600 font-medium">Converted</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600">{counsellorDashboardEnhanced.lead_stats.total_converted}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white border-red-200">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-xs text-red-600 font-medium">Lost</span>
+                  </div>
+                  <p className="text-2xl font-bold text-red-600">{counsellorDashboardEnhanced.lead_stats.total_lost}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white border-purple-200">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-5 h-5 text-purple-500" />
+                    <span className="text-xs text-purple-600 font-medium">Conversion Rate</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-600">{counsellorDashboardEnhanced.lead_stats.conversion_rate}%</p>
+                </CardContent>
+              </Card>
             </div>
+          )}
 
-            {/* Today's Follow-ups List */}
-            {counsellorDashboard.today_followups?.length > 0 && (
-              <div className="mt-4">
-                <p className="font-medium text-indigo-800 mb-2">Today's Scheduled Calls:</p>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {counsellorDashboard.today_followups.map((fu, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-100 hover:shadow-sm transition-shadow">
+          {/* 2. Alerts Row - Missed Follow-ups, Pending Feedbacks, Missed Tasks */}
+          {counsellorDashboardEnhanced && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Missed Follow-ups Alert */}
+              {counsellorDashboardEnhanced.missed_followups?.length > 0 && (
+                <Card className="border-red-300 bg-red-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-red-700 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" /> Missed Follow-ups ({counsellorDashboardEnhanced.missed_followups.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {counsellorDashboardEnhanced.missed_followups.slice(0, 5).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded border border-red-200">
+                          <div>
+                            <p className="text-sm font-medium text-slate-800">{item.lead_name}</p>
+                            <p className="text-xs text-slate-500">{item.lead_number}</p>
+                          </div>
+                          <Badge className="bg-red-100 text-red-700 text-[10px]">{item.days_missed}d ago</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full mt-2 text-red-700 border-red-300" onClick={() => navigate('/followups')}>
+                      View All Missed
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Pending Feedbacks Alert */}
+              {counsellorDashboardEnhanced.pending_feedbacks?.length > 0 && (
+                <Card className="border-yellow-300 bg-yellow-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-yellow-700 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" /> Feedback Pending ({counsellorDashboardEnhanced.pending_feedbacks.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {counsellorDashboardEnhanced.pending_feedbacks.slice(0, 5).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded border border-yellow-200">
+                          <div>
+                            <p className="text-sm font-medium text-slate-800">{item.student_name}</p>
+                            <p className="text-xs text-slate-500">{item.program_name}</p>
+                          </div>
+                          <Badge className="bg-yellow-100 text-yellow-700 text-[10px]">{item.days_enrolled}d enrolled</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full mt-2 text-yellow-700 border-yellow-300" onClick={() => navigate('/feedback')}>
+                      Submit Feedback
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Missed Tasks Alert */}
+              {counsellorDashboardEnhanced.missed_tasks?.length > 0 && (
+                <Card className="border-orange-300 bg-orange-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-orange-700 flex items-center gap-2">
+                      <Clock className="w-4 h-4" /> Missed Tasks ({counsellorDashboardEnhanced.missed_tasks.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {counsellorDashboardEnhanced.missed_tasks.slice(0, 5).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded border border-orange-200">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-slate-800 truncate">{item.title}</p>
+                            <p className="text-xs text-slate-500">{item.priority} priority</p>
+                          </div>
+                          {item.days_overdue > 0 && (
+                            <Badge className="bg-orange-100 text-orange-700 text-[10px]">{item.days_overdue}d late</Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full mt-2 text-orange-700 border-orange-300" onClick={() => navigate('/responsibilities')}>
+                      View Tasks
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* 3. Today's Follow-ups */}
+          {counsellorDashboardEnhanced?.today_followups?.length > 0 && (
+            <Card className="border-indigo-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold text-indigo-700 flex items-center gap-2">
+                  <Phone className="w-4 h-4" /> Today's Follow-ups ({counsellorDashboardEnhanced.today_followups.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {counsellorDashboardEnhanced.today_followups.map((fu, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-100 hover:bg-indigo-100 cursor-pointer" onClick={() => navigate(`/leads/${fu.lead_id}`)}>
                       <div>
                         <p className="font-medium text-slate-800">{fu.lead_name}</p>
                         <p className="text-sm text-slate-500">{fu.lead_number}</p>
+                        <p className="text-xs text-slate-400 mt-1">{fu.program}</p>
                       </div>
-                      <div className="text-right">
-                        <Badge className={`${
-                          fu.lead_status === 'Hot' ? 'bg-red-100 text-red-700' :
-                          fu.lead_status === 'Warm' ? 'bg-orange-100 text-orange-700' :
-                          'bg-blue-100 text-blue-700'
-                        }`}>{fu.lead_status}</Badge>
-                        <p className="text-xs text-slate-500 mt-1">{fu.note?.slice(0, 30)}...</p>
-                      </div>
+                      <Badge className={`${
+                        fu.lead_status === 'Hot' ? 'bg-red-100 text-red-700' :
+                        fu.lead_status === 'Warm' ? 'bg-orange-100 text-orange-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>{fu.lead_status}</Badge>
                     </div>
                   ))}
                 </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-3 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
-                  onClick={() => navigate('/followups')}
-                >
+                <Button variant="outline" className="w-full mt-3 border-indigo-300 text-indigo-700" onClick={() => navigate('/followups')}>
                   View All Follow-ups
                 </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 4. My Incentives - Last */}
+          {counsellorDashboardEnhanced?.incentive && (
+            <Card className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold text-green-700 flex items-center gap-2">
+                  <Gift className="w-4 h-4" /> My Incentives
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-3 bg-white rounded-lg border border-green-200">
+                    <p className="text-xs text-green-600">Total Bookings</p>
+                    <p className="text-xl font-bold text-green-700">{counsellorDashboardEnhanced.incentive.total_bookings}</p>
+                  </div>
+                  <div className="text-center p-3 bg-white rounded-lg border border-blue-200">
+                    <p className="text-xs text-blue-600">Completed Exams</p>
+                    <p className="text-xl font-bold text-blue-700">{counsellorDashboardEnhanced.incentive.completed_exams}</p>
+                  </div>
+                  <div className="text-center p-3 bg-white rounded-lg border border-emerald-200">
+                    <p className="text-xs text-emerald-600">Earned</p>
+                    <p className="text-xl font-bold text-emerald-700">₹{counsellorDashboardEnhanced.incentive.earned_incentive?.toLocaleString()}</p>
+                  </div>
+                  <div className="text-center p-3 bg-white rounded-lg border border-yellow-200">
+                    <p className="text-xs text-yellow-600">Pending</p>
+                    <p className="text-xl font-bold text-yellow-700">₹{counsellorDashboardEnhanced.incentive.pending_incentive?.toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
+      {/* ==================== END COUNSELLOR DASHBOARD ==================== */}
 
       {/* Super Admin Branch Performance Overview */}
       {isSuperAdmin && superAdminData && (
@@ -768,8 +988,8 @@ const Dashboard = () => {
         </Card>
       )}
 
-      {/* Stats Cards - For Counsellors only (Branch Admin has own section) */}
-      {!isSuperAdmin && !isFDE && !isBranchAdmin && (
+      {/* Stats Cards - For non-dashboard roles only (Super Admin, Branch Admin, FDE, Counsellor have their own sections) */}
+      {!isSuperAdmin && !isFDE && !isBranchAdmin && !isCounsellor && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {pendingCount > 0 && (
             <Card 
@@ -849,8 +1069,8 @@ const Dashboard = () => {
       </div>
       )}
 
-      {/* Counsellor Incentives Section */}
-      {isCounsellor && counsellorIncentives && (
+      {/* Counsellor Incentives Section - OLD (hidden for counsellors since they have new dashboard) */}
+      {false && isCounsellor && counsellorIncentives && (
         <Card className="border-slate-200 shadow-soft" data-testid="counsellor-incentives">
           <CardHeader>
             <CardTitle className="text-xl font-semibold flex items-center gap-2">

@@ -100,7 +100,9 @@ export const analyticsAPI = {
   getSuperAdminDashboard: () => api.get('/analytics/super-admin-dashboard'),
   getAILeadsInsights: () => api.get('/analytics/ai-leads-insights'),
   getFDEDashboard: () => api.get('/analytics/fde-dashboard'),
+  getFDEDashboardEnhanced: () => api.get('/analytics/fde-dashboard-enhanced'),
   getCounsellorDashboard: () => api.get('/analytics/counsellor-dashboard'),
+  getCounsellorDashboardEnhanced: () => api.get('/analytics/counsellor-dashboard-enhanced'),
   getSessionComparison: () => api.get('/analytics/session-comparison'),
 };
 
