@@ -36,6 +36,7 @@ const Dashboard = () => {
   const [fdeDashboard, setFdeDashboard] = useState(null);
   const [counsellorDashboard, setCounsellorDashboard] = useState(null);
   const [sessionComparison, setSessionComparison] = useState(null);
+  const fetchingRef = React.useRef(false); // Prevent concurrent calls
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const currentSession = localStorage.getItem('session') || '';
@@ -45,12 +46,20 @@ const Dashboard = () => {
   const isCounsellor = user.role === 'Counsellor';
   const isFDE = user.role === 'Front Desk Executive';
   const showAIInsights = isBranchAdmin || isCounsellor;
+  
+  // Helper to safely get numeric values for display (avoids NaN)
+  const safeNum = (val) => (Number.isFinite(val) ? val : 0);
+  const safeAbs = (val) => Math.abs(safeNum(val));
 
   useEffect(() => {
     fetchData();
   }, [selectedYear]);
 
   const fetchData = async () => {
+    // Prevent concurrent calls (fixes race condition with React StrictMode)
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+    
     try {
       const promises = [
         analyticsAPI.getOverview(),
@@ -152,6 +161,7 @@ const Dashboard = () => {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+      fetchingRef.current = false; // Reset the flag
     }
   };
 
@@ -217,57 +227,57 @@ const Dashboard = () => {
               {/* Leads */}
               <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Leads</p>
-                <p className="text-xl font-bold text-slate-800">{sessionComparison.current_session?.leads || 0}</p>
-                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.leads >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {sessionComparison.changes?.leads >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                  <span>{Math.abs(sessionComparison.changes?.leads || 0)}%</span>
+                <p className="text-xl font-bold text-slate-800">{safeNum(sessionComparison.current_session?.leads)}</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${safeNum(sessionComparison.changes?.leads) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.leads) >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{safeAbs(sessionComparison.changes?.leads)}%</span>
                 </div>
               </div>
               
               {/* Converted */}
               <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Converted</p>
-                <p className="text-xl font-bold text-green-600">{sessionComparison.current_session?.converted || 0}</p>
-                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.converted >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {sessionComparison.changes?.converted >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                  <span>{Math.abs(sessionComparison.changes?.converted || 0)}%</span>
+                <p className="text-xl font-bold text-green-600">{safeNum(sessionComparison.current_session?.converted)}</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${safeNum(sessionComparison.changes?.converted) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.converted) >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{safeAbs(sessionComparison.changes?.converted)}%</span>
                 </div>
               </div>
               
               {/* Conversion Rate */}
               <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Conversion Rate</p>
-                <p className="text-xl font-bold text-purple-600">{sessionComparison.current_session?.conversion_rate || 0}%</p>
-                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.conversion_rate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {sessionComparison.changes?.conversion_rate >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                  <span>{Math.abs(sessionComparison.changes?.conversion_rate || 0)} pts</span>
+                <p className="text-xl font-bold text-purple-600">{safeNum(sessionComparison.current_session?.conversion_rate)}%</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${safeNum(sessionComparison.changes?.conversion_rate) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.conversion_rate) >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{safeAbs(sessionComparison.changes?.conversion_rate)} pts</span>
                 </div>
               </div>
               
               {/* Enrollments */}
               <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Enrollments</p>
-                <p className="text-xl font-bold text-blue-600">{sessionComparison.current_session?.enrollments || 0}</p>
-                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.enrollments >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {sessionComparison.changes?.enrollments >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                  <span>{Math.abs(sessionComparison.changes?.enrollments || 0)}%</span>
+                <p className="text-xl font-bold text-blue-600">{safeNum(sessionComparison.current_session?.enrollments)}</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${safeNum(sessionComparison.changes?.enrollments) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.enrollments) >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{safeAbs(sessionComparison.changes?.enrollments)}%</span>
                 </div>
               </div>
               
               {/* Income */}
               <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Income</p>
-                <p className="text-xl font-bold text-amber-600">₹{((sessionComparison.current_session?.income || 0) / 1000).toFixed(0)}K</p>
-                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${sessionComparison.changes?.income >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {sessionComparison.changes?.income >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                  <span>{Math.abs(sessionComparison.changes?.income || 0)}%</span>
+                <p className="text-xl font-bold text-amber-600">₹{(safeNum(sessionComparison.current_session?.income) / 1000).toFixed(0)}K</p>
+                <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${safeNum(sessionComparison.changes?.income) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.income) >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  <span>{safeAbs(sessionComparison.changes?.income)}%</span>
                 </div>
               </div>
             </div>
             
             {/* Previous Session Reference */}
             <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-              <span>Previous ({sessionComparison.previous_session?.label}): {sessionComparison.previous_session?.leads || 0} leads, {sessionComparison.previous_session?.enrollments || 0} enrollments, ₹{((sessionComparison.previous_session?.income || 0) / 1000).toFixed(0)}K income</span>
+              <span>Previous ({sessionComparison.previous_session?.label}): {safeNum(sessionComparison.previous_session?.leads)} leads, {safeNum(sessionComparison.previous_session?.enrollments)} enrollments, ₹{(safeNum(sessionComparison.previous_session?.income) / 1000).toFixed(0)}K income</span>
             </div>
           </CardContent>
         </Card>

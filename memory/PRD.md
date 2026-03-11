@@ -41,7 +41,8 @@ Build a comprehensive institute management system with role-based access, studen
 - [x] Session switcher dropdown for Super Admin
 - [x] "All Sessions" option for Super Admin
 - [x] Data filtering by session (Leads, Enrollments, Students, Payments, Reports)
-- [x] API support for session via header and query param
+- [x] **Session Summary Card** on dashboard with current vs previous session comparison
+- [x] Fixed race condition bug in Branch Admin dashboard
 
 ## Academic Session Logic
 - **Format**: Session "2024" = April 1, 2024 → March 31, 2025
@@ -50,11 +51,18 @@ Build a comprehensive institute management system with role-based access, studen
 - **Super Admin**: Can switch sessions and view "All Sessions"
 - **Other Roles**: Locked to session selected at login
 
+## Session Summary Card
+Displays on dashboard for Super Admin and Branch Admin:
+- Current session metrics: Leads, Converted, Conversion Rate, Enrollments, Income
+- Percentage change vs previous session
+- Previous session reference line
+
 ## Current Status (March 2026)
 
 ### Recently Completed
-- Academic Session feature fully implemented and tested
-- 100% test pass rate (16/16 backend, all frontend verified)
+- Session Summary Card on Dashboard
+- Fixed Branch Admin dashboard loading bug (race condition)
+- All session features tested and working
 
 ### Pending Issues
 1. **(P0) Complete Quiz Content Generation** - Several quizzes need more questions
@@ -62,7 +70,7 @@ Build a comprehensive institute management system with role-based access, studen
 3. **(P2) Unique Student Count** - Dashboard shows enrollments, not unique students
 
 ### Technical Debt (CRITICAL)
-- `server.py` (9,600+ lines) - Must split into routers
+- `server.py` (9,700+ lines) - Must split into routers
 - `InsightsPage.js` (1,300+ lines) - Extract tab components
 - `StudentsPage.js` (1,800+ lines) - Break down
 - `Dashboard.js` - Extract role-specific components
@@ -87,13 +95,13 @@ Build a comprehensive institute management system with role-based access, studen
 - facebook-business (Meta API)
 - openpyxl (Excel parsing)
 
-## Key API Endpoints (Session-Aware)
+## Key API Endpoints
 - `GET /api/auth/sessions` - Returns available sessions
 - `POST /api/auth/login` - Accepts session parameter
+- `GET /api/analytics/session-comparison` - Current vs previous session metrics
 - `GET /api/leads?session=2024` - Filter leads by session
 - `GET /api/enrollments?session=2024` - Filter enrollments
 - `GET /api/payments/all?session=2024` - Filter payments
-- `GET /api/students?session=2024` - Filter students
 - All APIs accept `X-Academic-Session` header
 
 ## Key Credentials (Testing)
@@ -104,5 +112,4 @@ Build a comprehensive institute management system with role-based access, studen
 
 ## Test Reports
 - Latest: `/app/test_reports/iteration_23.json`
-- Backend: 100% pass rate (16/16 tests)
-- Frontend: All features verified
+- All features verified via screenshots and API testing
