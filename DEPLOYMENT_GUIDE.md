@@ -1,274 +1,167 @@
-# ETI Educom - Complete Deployment Guide
+# ETI Educom - Deployment Guide (Local MongoDB)
 
-## Table of Contents
-1. [Pre-Deployment Checklist](#pre-deployment-checklist)
-2. [Database Backup](#database-backup)
-3. [Server Requirements](#server-requirements)
-4. [Backend Deployment](#backend-deployment)
-5. [Frontend Deployment](#frontend-deployment)
-6. [Domain & SSL Setup](#domain--ssl-setup)
-7. [Post-Deployment Verification](#post-deployment-verification)
-8. [Rollback Procedure](#rollback-procedure)
+## Server Requirements
+- **OS**: Ubuntu 22.04 LTS
+- **RAM**: 2GB minimum (4GB recommended)
+- **CPU**: 2 vCPU
+- **Storage**: 40GB SSD
 
 ---
 
-## 1. Pre-Deployment Checklist
-
-Before starting deployment, ensure you have:
-
-- [ ] Access to production server (VPS/Cloud instance)
-- [ ] Domain name configured
-- [ ] SSL certificate (Let's Encrypt recommended)
-- [ ] MongoDB Atlas account OR self-hosted MongoDB
-- [ ] Emergent LLM API key (for AI features)
-- [ ] Server with minimum 2GB RAM, 2 vCPU
-
----
-
-## 2. Database Backup
-
-### Option A: MongoDB Atlas (Recommended for Production)
-
-**Step 1: Create MongoDB Atlas Account**
-1. Go to https://www.mongodb.com/cloud/atlas
-2. Sign up for free account
-3. Create a new cluster (M0 Free tier for small scale, M10+ for production)
-
-**Step 2: Export Current Data**
-```bash
-# On your current server, export all collections
-mongodump --uri="mongodb://localhost:27017/crm_db" --out=/backup/$(date +%Y%m%d)
-
-# This creates a backup folder with all your data
-```
-
-**Step 3: Import to Atlas**
-```bash
-# Get your Atlas connection string from the Atlas dashboard
-# It looks like: mongodb+srv://username:password@cluster.xxxxx.mongodb.net/
-
-mongorestore --uri="mongodb+srv://USERNAME:PASSWORD@cluster.xxxxx.mongodb.net/crm_db" /backup/YYYYMMDD/crm_db
-```
-
-### Option B: Self-Hosted MongoDB Backup
+## Step 1: Clear Old Project
 
 ```bash
-# Create backup directory
-mkdir -p /var/backups/mongodb
+# Stop old services
+sudo systemctl stop bms 2>/dev/null
+sudo systemctl disable bms 2>/dev/null
+sudo rm -f /etc/systemd/system/bms.service
 
-# Full database backup
-mongodump --db crm_db --out /var/backups/mongodb/$(date +%Y%m%d_%H%M%S)
+# Remove old project
+sudo rm -rf /var/www/bms
 
-# Compress backup
-cd /var/backups/mongodb
-tar -czvf backup_$(date +%Y%m%d).tar.gz $(date +%Y%m%d_%H%M%S)
-
-# Copy to safe location (S3, Google Drive, etc.)
-```
-
-### Automated Backup Script (Save as /usr/local/bin/backup_mongodb.sh)
-```bash
-#!/bin/bash
-BACKUP_DIR="/var/backups/mongodb"
-DATE=$(date +%Y%m%d_%H%M%S)
-RETENTION_DAYS=7
-
-# Create backup
-mongodump --db crm_db --out $BACKUP_DIR/$DATE
-
-# Compress
-tar -czvf $BACKUP_DIR/backup_$DATE.tar.gz -C $BACKUP_DIR $DATE
-
-# Remove uncompressed folder
-rm -rf $BACKUP_DIR/$DATE
-
-# Remove backups older than retention period
-find $BACKUP_DIR -name "backup_*.tar.gz" -mtime +$RETENTION_DAYS -delete
-
-echo "Backup completed: backup_$DATE.tar.gz"
-```
-
-```bash
-# Make executable and add to cron
-chmod +x /usr/local/bin/backup_mongodb.sh
-
-# Add to crontab (daily backup at 2 AM)
-crontab -e
-# Add line: 0 2 * * * /usr/local/bin/backup_mongodb.sh >> /var/log/mongodb_backup.log 2>&1
+# Remove old nginx config
+sudo rm -f /etc/nginx/sites-enabled/bms
+sudo rm -f /etc/nginx/sites-available/bms
 ```
 
 ---
 
-## 3. Server Requirements
-
-### Recommended Server Specs
-- **Small (< 100 users):** 2GB RAM, 2 vCPU, 40GB SSD
-- **Medium (100-500 users):** 4GB RAM, 2 vCPU, 80GB SSD
-- **Large (500+ users):** 8GB RAM, 4 vCPU, 160GB SSD
-
-### Install Required Software
+## Step 2: Install Dependencies
 
 ```bash
 # Update system
 sudo apt update && sudo apt upgrade -y
 
-# Install Python 3.11+
-sudo apt install python3.11 python3.11-venv python3-pip -y
-
-# Install Node.js 18+
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install nodejs -y
-
-# Install Nginx
-sudo apt install nginx -y
-
-# Install MongoDB (if self-hosting)
-wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+# Install Python 3.11
+sudo apt install -y software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa -y
 sudo apt update
-sudo apt install mongodb-org -y
+sudo apt install -y python3.11 python3.11-venv python3.11-dev
+
+# Install MongoDB (Local)
+curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+sudo apt update
+sudo apt install -y mongodb-org
+
+# Start MongoDB
 sudo systemctl start mongod
 sudo systemctl enable mongod
 
-# Install Certbot for SSL
-sudo apt install certbot python3-certbot-nginx -y
+# Install Nginx and Certbot
+sudo apt install -y nginx certbot python3-certbot-nginx git curl unzip
 
-# Install PM2 for process management
-sudo npm install -g pm2
+# Install Node.js 18
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash -
+sudo apt install -y nodejs
 
 # Install Yarn
-npm install -g yarn
+sudo npm install -g yarn
 ```
 
 ---
 
-## 4. Backend Deployment
+## Step 3: Deploy Code
 
-### Step 1: Create Application Directory
+### Option A: From GitHub
 ```bash
-# Create app directory
-sudo mkdir -p /var/www/etieducom
-sudo chown $USER:$USER /var/www/etieducom
-cd /var/www/etieducom
+cd /var/www
+sudo git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git etieducom
 ```
 
-### Step 2: Upload Backend Code
+### Option B: Upload ZIP
 ```bash
-# Option A: Using Git
-git clone YOUR_REPOSITORY_URL .
-
-# Option B: Using SCP from local machine
-scp -r /path/to/backend user@server:/var/www/etieducom/
+# Upload code.zip to server, then:
+cd /var/www
+sudo unzip /path/to/code.zip -d etieducom
 ```
 
-### Step 3: Setup Python Virtual Environment
+---
+
+## Step 4: Backend Setup
+
 ```bash
 cd /var/www/etieducom/backend
 
 # Create virtual environment
-python3.11 -m venv venv
-
-# Activate virtual environment
+sudo python3.11 -m venv venv
+sudo chown -R $USER:$USER venv
 source venv/bin/activate
 
 # Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
-
-# Install additional required packages
-pip install openpyxl gunicorn
+pip install gunicorn
 pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
 ```
 
-### Step 4: Create Environment File
+### Configure Environment
 ```bash
-nano /var/www/etieducom/backend/.env
+sudo nano .env
 ```
 
-Add the following content:
+**Paste this (edit as needed):**
 ```env
-# Database
-MONGO_URL=mongodb+srv://USERNAME:PASSWORD@cluster.xxxxx.mongodb.net/crm_db
-DB_NAME=crm_db
-
-# Security
-SECRET_KEY=your-super-secret-key-change-this-to-random-string
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-
-# URLs
+MONGO_URL=mongodb://localhost:27017
+DB_NAME=etieducom_db
+SECRET_KEY=your-64-character-secret-key-change-this
 FRONTEND_URL=https://yourdomain.com
-BACKEND_URL=https://yourdomain.com
-
-# Emergent LLM Key (for AI features)
-EMERGENT_API_KEY=your-emergent-llm-key
-
-# Optional: Meta/Facebook Integration
-META_APP_ID=your-meta-app-id
-META_APP_SECRET=your-meta-app-secret
+CORS_ORIGINS=https://yourdomain.com
+EMERGENT_LLM_KEY=sk-emergent-your-key-here
 ```
 
-### Step 5: Create Systemd Service
+Generate secret key:
 ```bash
-sudo nano /etc/systemd/system/etieducom-backend.service
+python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-Add content:
+### Create Service
+```bash
+sudo nano /etc/systemd/system/etieducom.service
+```
+
+**Paste:**
 ```ini
 [Unit]
-Description=ETI Educom Backend API
-After=network.target
+Description=ETI Educom Backend
+After=network.target mongod.service
 
 [Service]
 User=www-data
 Group=www-data
 WorkingDirectory=/var/www/etieducom/backend
 Environment="PATH=/var/www/etieducom/backend/venv/bin"
-ExecStart=/var/www/etieducom/backend/venv/bin/gunicorn server:app -w 4 -k uvicorn.workers.UvicornWorker -b 127.0.0.1:8001
+ExecStart=/var/www/etieducom/backend/venv/bin/gunicorn server:app -w 4 -k uvicorn.workers.UvicornWorker -b 127.0.0.1:8001 --timeout 120
 Restart=always
-RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
 ```
 
+### Start Backend
 ```bash
-# Enable and start service
+sudo chown -R www-data:www-data /var/www/etieducom
 sudo systemctl daemon-reload
-sudo systemctl enable etieducom-backend
-sudo systemctl start etieducom-backend
-
-# Check status
-sudo systemctl status etieducom-backend
+sudo systemctl enable etieducom
+sudo systemctl start etieducom
+sudo systemctl status etieducom
 ```
 
 ---
 
-## 5. Frontend Deployment
+## Step 5: Frontend Setup
 
-### Step 1: Build Frontend
 ```bash
 cd /var/www/etieducom/frontend
 
-# Install dependencies
+# Create production env
+echo "REACT_APP_BACKEND_URL=https://yourdomain.com" | sudo tee .env.production
+
+# Install and build
 yarn install
-
-# Create production .env file
-nano .env.production
-```
-
-Add content:
-```env
-REACT_APP_BACKEND_URL=https://yourdomain.com
-```
-
-```bash
-# Build production bundle
 yarn build
-```
 
-### Step 2: Copy Build to Nginx Directory
-```bash
+# Deploy
 sudo mkdir -p /var/www/html/etieducom
 sudo cp -r build/* /var/www/html/etieducom/
 sudo chown -R www-data:www-data /var/www/html/etieducom
@@ -276,20 +169,17 @@ sudo chown -R www-data:www-data /var/www/html/etieducom
 
 ---
 
-## 6. Domain & SSL Setup
+## Step 6: Nginx Configuration
 
-### Step 1: Configure Nginx
 ```bash
 sudo nano /etc/nginx/sites-available/etieducom
 ```
 
-Add content:
+**Paste (replace yourdomain.com):**
 ```nginx
 server {
     listen 80;
     server_name yourdomain.com www.yourdomain.com;
-    
-    # Redirect HTTP to HTTPS
     return 301 https://$server_name$request_uri;
 }
 
@@ -297,203 +187,115 @@ server {
     listen 443 ssl http2;
     server_name yourdomain.com www.yourdomain.com;
 
-    # SSL Configuration (will be added by Certbot)
-    # ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-    # ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
-
-    # Frontend static files
     root /var/www/html/etieducom;
     index index.html;
 
-    # Frontend routes (React Router)
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript;
+
     location / {
         try_files $uri $uri/ /index.html;
     }
 
-    # Backend API proxy
     location /api/ {
         proxy_pass http://127.0.0.1:8001/api/;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-        proxy_read_timeout 300s;
-        proxy_connect_timeout 75s;
-        
-        # File upload size limit (for CSV/Excel import)
+        proxy_read_timeout 120s;
         client_max_body_size 50M;
     }
-
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "no-referrer-when-downgrade" always;
-
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private auth;
-    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript application/json;
 }
 ```
 
-### Step 2: Enable Site and Get SSL
+### Enable Site & SSL
 ```bash
-# Enable site
-sudo ln -s /etc/nginx/sites-available/etieducom /etc/nginx/sites-enabled/
-
-# Remove default site
-sudo rm /etc/nginx/sites-enabled/default
-
-# Test nginx configuration
+sudo ln -sf /etc/nginx/sites-available/etieducom /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
+sudo systemctl restart nginx
 
 # Get SSL certificate
 sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
-
-# Restart nginx
-sudo systemctl restart nginx
-```
-
-### Step 3: Setup Auto-Renewal for SSL
-```bash
-# Test renewal
-sudo certbot renew --dry-run
-
-# Certbot automatically adds a cron job, but verify:
-sudo systemctl status certbot.timer
 ```
 
 ---
 
-## 7. Post-Deployment Verification
+## Step 7: Create Admin User
 
-### Step 1: Check Services
 ```bash
-# Check backend status
-sudo systemctl status etieducom-backend
+cd /var/www/etieducom/backend
+source venv/bin/activate
 
-# Check nginx status
-sudo systemctl status nginx
+python3 << 'EOF'
+import asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
+from passlib.context import CryptContext
 
-# Check MongoDB status (if self-hosted)
-sudo systemctl status mongod
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
-# View backend logs
-sudo journalctl -u etieducom-backend -f
+async def create_admin():
+    client = AsyncIOMotorClient('mongodb://localhost:27017')
+    db = client['etieducom_db']
+    
+    admin = {
+        'id': 'admin-001',
+        'email': 'admin@etieducom.com',
+        'name': 'Super Admin',
+        'role': 'Admin',
+        'hashed_password': pwd_context.hash('admin@123'),
+        'is_active': True,
+        'branch_id': None
+    }
+    
+    await db.users.update_one({'email': admin['email']}, {'$set': admin}, upsert=True)
+    print('Admin user created: admin@etieducom.com / admin@123')
+
+asyncio.run(create_admin())
+EOF
 ```
 
-### Step 2: Test Endpoints
+---
+
+## Verification
+
 ```bash
-# Test backend health
+# Test backend
 curl https://yourdomain.com/api/health
 
 # Test login
 curl -X POST https://yourdomain.com/api/auth/login \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=admin@etieducom.com&password=admin@123"
-```
-
-### Step 3: Test Application Features
-1. ✅ Login with all user roles (Admin, Branch Admin, Counsellor, FDE, etc.)
-2. ✅ Navigate to Dashboard - verify data loads
-3. ✅ Navigate to Insights - verify all tabs work
-4. ✅ Navigate to Reports - verify Deleted Leads section
-5. ✅ Navigate to Quiz Exams - verify QR code and links work
-6. ✅ Test My Responsibilities feature
-7. ✅ Test CSV import for Quiz
-
-### Step 4: Setup Monitoring (Optional but Recommended)
-```bash
-# Install PM2 monitoring
-pm2 install pm2-logrotate
-
-# Or use systemd journal
-sudo journalctl -u etieducom-backend --since "1 hour ago"
+  -d "username=admin@etieducom.com&password=admin@123&session=2025-26"
 ```
 
 ---
 
-## 8. Rollback Procedure
+## Default Credentials
 
-If something goes wrong, follow these steps:
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | admin@etieducom.com | admin@123 |
 
-### Rollback Database
-```bash
-# Stop backend
-sudo systemctl stop etieducom-backend
-
-# Restore from backup
-mongorestore --uri="YOUR_MONGO_URI" --drop /var/backups/mongodb/BACKUP_DATE/crm_db
-
-# Start backend
-sudo systemctl start etieducom-backend
-```
-
-### Rollback Code
-```bash
-# If using Git
-cd /var/www/etieducom
-git log --oneline -10  # Find previous commit
-git checkout PREVIOUS_COMMIT_HASH
-
-# Rebuild frontend
-cd frontend
-yarn build
-sudo cp -r build/* /var/www/html/etieducom/
-
-# Restart backend
-sudo systemctl restart etieducom-backend
-```
+**Change password after first login!**
 
 ---
 
-## Quick Reference Commands
+## Troubleshooting
 
 ```bash
-# Start all services
-sudo systemctl start etieducom-backend nginx mongod
+# Check backend logs
+sudo journalctl -u etieducom -f
 
-# Stop all services
-sudo systemctl stop etieducom-backend nginx mongod
+# Check MongoDB
+sudo systemctl status mongod
 
-# Restart backend
-sudo systemctl restart etieducom-backend
-
-# View backend logs
-sudo journalctl -u etieducom-backend -f
-
-# View nginx access logs
-sudo tail -f /var/log/nginx/access.log
-
-# View nginx error logs
+# Check Nginx
+sudo nginx -t
 sudo tail -f /var/log/nginx/error.log
 
-# Check disk usage
-df -h
-
-# Check memory usage
-free -m
-
-# Check running processes
-htop
+# Restart services
+sudo systemctl restart mongod etieducom nginx
 ```
-
----
-
-## Support Contacts
-
-- **MongoDB Atlas Support:** https://www.mongodb.com/support
-- **Nginx Documentation:** https://nginx.org/en/docs/
-- **Let's Encrypt:** https://letsencrypt.org/docs/
-
----
-
-**Document Version:** 1.0
-**Last Updated:** March 7, 2026
