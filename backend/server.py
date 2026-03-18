@@ -2250,19 +2250,23 @@ async def update_lead(lead_id: str, lead_update: LeadUpdate, request: Request, c
     if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN] and lead.get('branch_id') != current_user.branch_id:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Check if lead is converted and enrolled - if so, block all updates
-    if lead.get('status') == 'Converted':
-        # Check if there's an enrollment for this lead
-        enrollment = await db.enrollments.find_one({"lead_id": lead_id}, {"_id": 0})
-        if enrollment:
-            raise HTTPException(
-                status_code=400, 
-                detail="This lead has been converted and enrolled. No further changes are allowed."
-            )
+    # Allow Branch Admin and Admin to edit converted leads
+    # Counsellor cannot edit converted leads
+    if lead.get('status') == 'Converted' and current_user.role == UserRole.COUNSELLOR:
+        raise HTTPException(
+            status_code=400, 
+            detail="Counsellors cannot edit converted leads. Contact Branch Admin."
+        )
     
     old_status = lead.get('status')
     
     update_data = {k: v for k, v in lead_update.model_dump(exclude_unset=True).items() if v is not None}
+    
+    # If program_id is being updated, also update program_name
+    if 'program_id' in update_data:
+        program = await db.programs.find_one({"id": update_data['program_id']}, {"_id": 0})
+        if program:
+            update_data['program_name'] = program.get('name', '')
     update_data['updated_at'] = datetime.now(timezone.utc).isoformat()
     
     await db.leads.update_one({"id": lead_id}, {"$set": update_data})
@@ -3888,6 +3892,10 @@ async def create_expense(expense: ExpenseCreate, current_user: User = Depends(ge
 
 @api_router.get("/expenses", response_model=List[Expense])
 async def get_expenses(current_user: User = Depends(get_current_user)):
+    # FDE should not see expenses
+    if current_user.role == UserRole.FRONT_DESK:
+        raise HTTPException(status_code=403, detail="Front Desk Executive cannot access expenses")
+    
     query = {}
     if current_user.role not in [UserRole.ADMIN]:
         query["branch_id"] = current_user.branch_id
@@ -5174,7 +5182,14 @@ async def get_counsellor_dashboard_enhanced(current_user: User = Depends(get_cur
     
     # Build query based on role
     if current_user.role == UserRole.COUNSELLOR:
-        lead_query = {"created_by": current_user.id, "is_deleted": {"$ne": True}}
+        # Counsellor sees leads assigned to them OR created by them
+        lead_query = {
+            "$or": [
+                {"counsellor_id": current_user.id},
+                {"created_by": current_user.id}
+            ],
+            "is_deleted": {"$ne": True}
+        }
         followup_query = {"created_by": current_user.id, "status": "Pending"}
         task_query = {"assigned_to": current_user.id}
     elif current_user.role == UserRole.BRANCH_ADMIN:
@@ -5877,12 +5892,18 @@ async def update_student_details(enrollment_id: str, data: StudentUpdateModel, c
     # Build update data (only include non-None values)
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     
-    # FDE cannot edit name, phone, or financial fields
-    restricted_fields_for_fde = ['student_name', 'student_phone', 'fee_quoted', 'discount_percent', 'discount_amount', 'final_fee', 'total_paid']
+    # FDE cannot edit name and phone (but can edit financial fields)
+    restricted_fields_for_fde = ['student_name', 'student_phone']
     if current_user.role == UserRole.FRONT_DESK:
         for field in restricted_fields_for_fde:
             if field in update_data:
                 raise HTTPException(status_code=403, detail=f"Front Desk cannot edit {field}")
+    
+    # Recalculate final_fee if discount is changed
+    if 'discount_percent' in update_data or 'fee_quoted' in update_data:
+        fee_quoted = update_data.get('fee_quoted', enrollment.get('fee_quoted', 0))
+        discount_percent = update_data.get('discount_percent', enrollment.get('discount_percent', 0))
+        update_data['final_fee'] = fee_quoted * (1 - discount_percent / 100)
     
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")

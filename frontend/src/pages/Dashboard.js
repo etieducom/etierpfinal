@@ -829,11 +829,14 @@ const Dashboard = () => {
                     <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
                       {counsellorDashboardEnhanced.missed_followups.slice(0, 4).map((item, idx) => (
                         <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-xl border border-red-100">
-                          <div>
+                          <div className="flex-1 min-w-0">
                             <p className="font-medium text-slate-800">{item.lead_name}</p>
                             <p className="text-xs text-slate-500 mt-0.5">{item.lead_number}</p>
+                            {item.note && (
+                              <p className="text-xs text-red-600 mt-1 italic truncate">"{item.note}"</p>
+                            )}
                           </div>
-                          <Badge className="bg-red-100 text-red-700 text-xs">{item.days_missed}d ago</Badge>
+                          <Badge className="bg-red-100 text-red-700 text-xs ml-2">{item.days_missed}d ago</Badge>
                         </div>
                       ))}
                     </div>
@@ -917,12 +920,17 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {counsellorDashboardEnhanced.today_followups.map((fu, idx) => (
                     <div key={idx} className="flex items-center justify-between p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 hover:bg-indigo-100/50 cursor-pointer transition-colors" onClick={() => navigate(`/leads/${fu.lead_id}`)}>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-semibold text-slate-800">{fu.lead_name}</p>
                         <p className="text-sm text-slate-500 mt-1">{fu.lead_number}</p>
                         <p className="text-xs text-slate-400 mt-1">{fu.program}</p>
+                        {fu.note && (
+                          <p className="text-xs text-indigo-600 mt-2 bg-indigo-100/50 p-2 rounded-lg border-l-2 border-indigo-400 italic">
+                            "{fu.note}"
+                          </p>
+                        )}
                       </div>
-                      <Badge className={`${
+                      <Badge className={`ml-3 ${
                         fu.lead_status === 'Hot' ? 'bg-red-100 text-red-700' :
                         fu.lead_status === 'Warm' ? 'bg-orange-100 text-orange-700' :
                         'bg-blue-100 text-blue-700'

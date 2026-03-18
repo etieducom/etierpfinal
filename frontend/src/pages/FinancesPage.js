@@ -16,7 +16,13 @@ import { format } from 'date-fns';
 const PAYMENT_MODES = ['Cash', 'Card', 'UPI', 'Net Banking', 'Cheque'];
 
 const FinancesPage = () => {
-  const [activeTab, setActiveTab] = useState('expenses');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isBranchAdmin = user.role === 'Branch Admin';
+  const isFDE = user.role === 'Front Desk Executive';
+  const canDeleteExpense = isBranchAdmin;
+  
+  // FDE starts with cash tab, others with expenses
+  const [activeTab, setActiveTab] = useState(isFDE ? 'cash' : 'expenses');
   
   // Expenses State
   const [expenses, setExpenses] = useState([]);
@@ -47,18 +53,16 @@ const FinancesPage = () => {
   const [remarks, setRemarks] = useState('');
   const [manualTotal, setManualTotal] = useState('');
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isBranchAdmin = user.role === 'Branch Admin';
-  const isFDE = user.role === 'Front Desk Executive';
-  const canDeleteExpense = isBranchAdmin;
-
   // Check if within submission time window (4 PM - 5 PM)
   const currentHour = new Date().getHours();
   const isWithinSubmissionWindow = currentHour >= 16 && currentHour < 17;
   const canSubmitCash = isWithinSubmissionWindow || isBranchAdmin;
 
   useEffect(() => {
-    fetchExpensesData();
+    // Only fetch expenses if not FDE
+    if (!isFDE) {
+      fetchExpensesData();
+    }
     if (isFDE) {
       fetchTodayCash();
     }
@@ -462,20 +466,24 @@ const FinancesPage = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2 bg-slate-100">
-          <TabsTrigger value="expenses" className="flex items-center gap-2" data-testid="expenses-tab">
-            <Wallet className="w-4 h-4" />
-            Expenses
-          </TabsTrigger>
+        <TabsList className={`grid w-full max-w-md bg-slate-100 ${isFDE ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {!isFDE && (
+            <TabsTrigger value="expenses" className="flex items-center gap-2" data-testid="expenses-tab">
+              <Wallet className="w-4 h-4" />
+              Expenses
+            </TabsTrigger>
+          )}
           <TabsTrigger value="cash" className="flex items-center gap-2" data-testid="cash-handling-tab">
             <Banknote className="w-4 h-4" />
             Cash Handling
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="expenses" className="mt-6">
-          {renderExpensesTab()}
-        </TabsContent>
+        {!isFDE && (
+          <TabsContent value="expenses" className="mt-6">
+            {renderExpensesTab()}
+          </TabsContent>
+        )}
 
         <TabsContent value="cash" className="mt-6">
           {isFDE ? renderCashHandlingFDE() : renderCashHandlingAdmin()}
