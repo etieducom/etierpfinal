@@ -790,12 +790,18 @@ def get_available_sessions() -> list:
     """Get list of available academic sessions from 2016 to current."""
     current_session = int(get_current_academic_session())
     sessions = []
-    for year in range(2016, current_session + 1):
+    for year in range(2016, current_session + 2):  # +2 to include next year
         sessions.append({
             "value": str(year),
             "label": f"{year}-{str(year+1)[2:]}"  # e.g., "2024-25"
         })
     return sessions
+
+# Session model for custom sessions
+class AcademicSessionCreate(BaseModel):
+    year: int  # Start year (e.g., 2025 for 2025-26)
+    label: Optional[str] = None  # Custom label, defaults to "2025-26"
+    is_active: bool = True
 
 def get_session_filter(session: Optional[str], date_field: str = "created_at") -> dict:
     """Generate MongoDB date filter for academic session.
@@ -1933,6 +1939,61 @@ async def delete_program(program_id: str, current_user: User = Depends(require_r
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Program not found")
     return {"message": "Program deleted successfully"}
+
+# ============ ACADEMIC SESSION MANAGEMENT ============
+
+@api_router.get("/admin/sessions")
+async def get_all_sessions(current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Get all academic sessions including custom ones"""
+    # Get default sessions
+    default_sessions = get_available_sessions()
+    
+    # Get custom sessions from DB
+    custom_sessions = await db.academic_sessions.find({}, {"_id": 0}).to_list(100)
+    
+    # Merge - custom sessions override default ones
+    session_dict = {s["value"]: s for s in default_sessions}
+    for cs in custom_sessions:
+        session_dict[str(cs["year"])] = {
+            "value": str(cs["year"]),
+            "label": cs.get("label", f"{cs['year']}-{str(cs['year']+1)[2:]}"),
+            "is_active": cs.get("is_active", True),
+            "is_custom": True
+        }
+    
+    # Sort by year descending (newest first)
+    sessions = sorted(session_dict.values(), key=lambda x: int(x["value"]), reverse=True)
+    return sessions
+
+@api_router.post("/admin/sessions")
+async def create_session(session_data: AcademicSessionCreate, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Create a new academic session (Super Admin only)"""
+    # Check if session already exists
+    existing = await db.academic_sessions.find_one({"year": session_data.year})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Session {session_data.year}-{str(session_data.year+1)[2:]} already exists")
+    
+    label = session_data.label or f"{session_data.year}-{str(session_data.year+1)[2:]}"
+    
+    new_session = {
+        "id": str(uuid.uuid4()),
+        "year": session_data.year,
+        "label": label,
+        "is_active": session_data.is_active,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": current_user.id
+    }
+    
+    await db.academic_sessions.insert_one(new_session)
+    return {"message": f"Session {label} created successfully", "session": {"value": str(session_data.year), "label": label}}
+
+@api_router.delete("/admin/sessions/{year}")
+async def delete_session(year: int, current_user: User = Depends(require_role([UserRole.ADMIN]))):
+    """Delete a custom academic session (Super Admin only)"""
+    result = await db.academic_sessions.delete_one({"year": year})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Custom session not found")
+    return {"message": f"Session {year}-{str(year+1)[2:]} deleted successfully"}
 
 @api_router.delete("/admin/branches/{branch_id}")
 async def delete_branch(branch_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):

@@ -64,6 +64,10 @@ export const adminAPI = {
   changeUserPassword: (id, data) => api.put(`/admin/users/${id}/password`, data),
   updateUserStatus: (id, data) => api.put(`/admin/users/${id}/status`, data),
   resetSystem: () => api.post('/admin/reset-system'),
+  // Session management
+  getSessions: () => api.get('/admin/sessions'),
+  createSession: (data) => api.post('/admin/sessions', data),
+  deleteSession: (year) => api.delete(`/admin/sessions/${year}`),
 };
 
 export const leadsAPI = {
