@@ -108,7 +108,7 @@ const StudentsPage = () => {
 
   const openAddonDialog = async (student) => {
     setSelectedStudent(student);
-    setAddonForm({ program_id: '', fee_quoted: '', discount_percent: 0 });
+    setAddonForm({ program_id: '', fee_quoted: '', discount_percent: 0, discount_amount: 0, discount_type: 'percent' });
     try {
       const addons = await studentsAPI.getAddonCourses(student.id);
       setAddonCourses(addons.data);
@@ -130,7 +130,8 @@ const StudentsPage = () => {
         enrollment_id: selectedStudent.id,
         program_id: addonForm.program_id,
         fee_quoted: parseFloat(addonForm.fee_quoted),
-        discount_percent: parseFloat(addonForm.discount_percent) || 0
+        discount_percent: addonForm.discount_type === 'percent' ? (parseFloat(addonForm.discount_percent) || 0) : 0,
+        discount_amount: addonForm.discount_type === 'amount' ? (parseFloat(addonForm.discount_amount) || 0) : 0
       });
       toast.success(response.data.message);
       setAddonDialog(false);
@@ -228,8 +229,13 @@ const StudentsPage = () => {
 
   const calculateAddonFinalFee = () => {
     const quoted = parseFloat(addonForm.fee_quoted) || 0;
-    const discount = parseFloat(addonForm.discount_percent) || 0;
-    return quoted * (1 - discount / 100);
+    if (addonForm.discount_type === 'amount') {
+      const discountAmt = parseFloat(addonForm.discount_amount) || 0;
+      return quoted - discountAmt;
+    } else {
+      const discountPct = parseFloat(addonForm.discount_percent) || 0;
+      return quoted * (1 - discountPct / 100);
+    }
   };
 
   const viewDetails = async (student) => {
@@ -1585,15 +1591,47 @@ const StudentsPage = () => {
                   />
                 </div>
                 <div>
-                  <Label>Discount %</Label>
-                  <Input
-                    type="number"
-                    value={addonForm.discount_percent}
-                    onChange={(e) => setAddonForm({...addonForm, discount_percent: e.target.value})}
-                    min="0"
-                    max="100"
-                  />
+                  <Label>Discount Type</Label>
+                  <Select 
+                    value={addonForm.discount_type || 'percent'} 
+                    onValueChange={(v) => setAddonForm({...addonForm, discount_type: v, discount_percent: 0, discount_amount: 0})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percent">Percentage (%)</SelectItem>
+                      <SelectItem value="amount">Amount (₹)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+
+              <div>
+                {addonForm.discount_type === 'amount' ? (
+                  <div>
+                    <Label>Discount Amount (₹)</Label>
+                    <Input
+                      type="number"
+                      value={addonForm.discount_amount}
+                      onChange={(e) => setAddonForm({...addonForm, discount_amount: e.target.value})}
+                      min="0"
+                      placeholder="Enter discount amount"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <Label>Discount %</Label>
+                    <Input
+                      type="number"
+                      value={addonForm.discount_percent}
+                      onChange={(e) => setAddonForm({...addonForm, discount_percent: e.target.value})}
+                      min="0"
+                      max="100"
+                      placeholder="Enter discount percentage"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="p-3 bg-green-50 rounded-lg">

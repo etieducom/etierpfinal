@@ -372,6 +372,7 @@ class AddOnCourse(BaseModel):
     program_name: str
     fee_quoted: float
     discount_percent: Optional[float] = 0
+    discount_amount: Optional[float] = 0
     final_fee: float
     added_by: str
     added_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -381,6 +382,7 @@ class AddOnCourseCreate(BaseModel):
     program_id: str
     fee_quoted: float
     discount_percent: Optional[float] = 0
+    discount_amount: Optional[float] = 0
 
 # Schools/Colleges Outreach Management
 class OrganizationType(str, Enum):
@@ -2339,11 +2341,7 @@ class LeadDeleteRequest(BaseModel):
 
 @api_router.delete("/leads/{lead_id}")
 async def delete_lead(lead_id: str, delete_request: Optional[LeadDeleteRequest] = None, current_user: User = Depends(get_current_user)):
-    """Soft delete a lead - only Branch Admin or Super Admin can delete"""
-    # Only Branch Admin or Super Admin can delete leads
-    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
-        raise HTTPException(status_code=403, detail="Only Branch Admin can delete leads")
-    
+    """Soft delete a lead - all users can delete leads from their branch"""
     lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -2351,9 +2349,14 @@ async def delete_lead(lead_id: str, delete_request: Optional[LeadDeleteRequest] 
     if lead.get('is_deleted'):
         raise HTTPException(status_code=400, detail="Lead is already deleted")
     
-    # Branch Admin can only delete leads from their branch
-    if current_user.role == UserRole.BRANCH_ADMIN and lead.get('branch_id') != current_user.branch_id:
+    # Users can only delete leads from their branch (Admin can delete any)
+    if current_user.role != UserRole.ADMIN and lead.get('branch_id') != current_user.branch_id:
         raise HTTPException(status_code=403, detail="You can only delete leads from your branch")
+    
+    # Counsellor can only delete leads they created or are assigned to
+    if current_user.role == UserRole.COUNSELLOR:
+        if lead.get('created_by') != current_user.id and lead.get('counsellor_id') != current_user.id:
+            raise HTTPException(status_code=403, detail="You can only delete leads assigned to you")
     
     # Soft delete - mark as deleted instead of removing
     await db.leads.update_one(
@@ -5867,13 +5870,18 @@ class StudentUpdateModel(BaseModel):
     student_photo_url: Optional[str] = None
     aadhar_photo_url: Optional[str] = None
     aadhar_documents: Optional[List[str]] = None
-    # Fields that FDE cannot edit (only Branch Admin/Admin)
-    student_name: Optional[str] = None
-    student_phone: Optional[str] = None
-    student_email: Optional[str] = None
-    date_of_birth: Optional[str] = None
+    # Personal details
     parent_name: Optional[str] = None
     parent_phone: Optional[str] = None
+    alternate_phone: Optional[str] = None
+    # Fee fields - editable by Branch Admin and FDE
+    fee_quoted: Optional[float] = None
+    discount_percent: Optional[float] = None
+    discount_amount: Optional[float] = None
+    final_fee: Optional[float] = None
+    # Program change
+    program_id: Optional[str] = None
+    program_name: Optional[str] = None
 
 @api_router.put("/students/{enrollment_id}/update")
 async def update_student_details(enrollment_id: str, data: StudentUpdateModel, current_user: User = Depends(get_current_user)):
@@ -5892,18 +5900,34 @@ async def update_student_details(enrollment_id: str, data: StudentUpdateModel, c
     # Build update data (only include non-None values)
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     
-    # FDE cannot edit name and phone (but can edit financial fields)
-    restricted_fields_for_fde = ['student_name', 'student_phone']
+    # FDE cannot edit student_name (but can edit other fields including fee)
+    restricted_fields_for_fde = ['student_name']
     if current_user.role == UserRole.FRONT_DESK:
         for field in restricted_fields_for_fde:
             if field in update_data:
                 raise HTTPException(status_code=403, detail=f"Front Desk cannot edit {field}")
     
-    # Recalculate final_fee if discount is changed
-    if 'discount_percent' in update_data or 'fee_quoted' in update_data:
+    # If program_id is being updated, also update program_name
+    if 'program_id' in update_data:
+        program = await db.programs.find_one({"id": update_data['program_id']}, {"_id": 0})
+        if program:
+            update_data['program_name'] = program.get('name', '')
+            # Update fee_quoted if not explicitly provided
+            if 'fee_quoted' not in update_data:
+                update_data['fee_quoted'] = program.get('fee', 0)
+    
+    # Recalculate final_fee if discount or fee is changed
+    if any(k in update_data for k in ['discount_percent', 'discount_amount', 'fee_quoted']):
         fee_quoted = update_data.get('fee_quoted', enrollment.get('fee_quoted', 0))
-        discount_percent = update_data.get('discount_percent', enrollment.get('discount_percent', 0))
-        update_data['final_fee'] = fee_quoted * (1 - discount_percent / 100)
+        discount_amount = update_data.get('discount_amount', enrollment.get('discount_amount', 0)) or 0
+        discount_percent = update_data.get('discount_percent', enrollment.get('discount_percent', 0)) or 0
+        
+        # discount_amount takes priority over discount_percent
+        if discount_amount > 0:
+            update_data['final_fee'] = fee_quoted - discount_amount
+            update_data['discount_percent'] = 0  # Clear percent if amount is used
+        else:
+            update_data['final_fee'] = fee_quoted * (1 - discount_percent / 100)
     
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")
@@ -5961,9 +5985,14 @@ async def add_addon_course(enrollment_id: str, addon: AddOnCourseCreate, current
     if not program:
         raise HTTPException(status_code=404, detail="Program not found")
     
-    # Calculate final fee with discount
-    discount = addon.discount_percent or 0
-    final_fee = addon.fee_quoted * (1 - discount / 100)
+    # Calculate final fee with discount (amount takes priority over percent)
+    discount_amount = addon.discount_amount or 0
+    discount_percent = addon.discount_percent or 0
+    
+    if discount_amount > 0:
+        final_fee = addon.fee_quoted - discount_amount
+    else:
+        final_fee = addon.fee_quoted * (1 - discount_percent / 100)
     
     # Create add-on course record
     new_addon = AddOnCourse(
@@ -5971,7 +6000,8 @@ async def add_addon_course(enrollment_id: str, addon: AddOnCourseCreate, current
         program_id=addon.program_id,
         program_name=program['name'],
         fee_quoted=addon.fee_quoted,
-        discount_percent=discount,
+        discount_percent=discount_percent if discount_amount == 0 else 0,
+        discount_amount=discount_amount,
         final_fee=final_fee,
         added_by=current_user.id
     )
