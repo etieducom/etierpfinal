@@ -16,6 +16,7 @@ Build a comprehensive institute management system with role-based access, studen
   - Created `/app/backend/core/` with shared dependencies
   - Created `/app/REFACTORING_GUIDE.md` with migration plan
 - ✅ **Login Page Verified** - Clean layout without session stats (as requested)
+- ✅ **Delete from Ready to Enroll** - Added delete button and confirmation dialog to remove leads from Ready to Enroll list in EnrollmentsPage
 
 ### Previously Completed
 - Academic Session-based login and filtering

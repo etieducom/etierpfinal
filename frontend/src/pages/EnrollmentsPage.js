@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { enrollmentAPI, paymentAPI, adminAPI, uploadAPI, paymentPlanAPI } from '@/api/api';
+import { enrollmentAPI, paymentAPI, adminAPI, uploadAPI, paymentPlanAPI, leadsAPI } from '@/api/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, ChevronRight, ChevronLeft, UserPlus, CreditCard, FileText, Eye, Printer, CheckCircle, Clock, Upload, Image, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const PAYMENT_MODES = ['Cash', 'Card', 'UPI', 'Net Banking', 'Cheque'];
 
@@ -88,6 +89,11 @@ const EnrollmentsPage = () => {
   const [editingPlan, setEditingPlan] = useState(null);
   const [editInstallments, setEditInstallments] = useState([]);
 
+  // Delete lead confirmation dialog
+  const [deleteLeadDialog, setDeleteLeadDialog] = useState(false);
+  const [deletingLead, setDeletingLead] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isBranchAdmin = user.role === 'Branch Admin' || user.role === 'Admin';
 
@@ -158,6 +164,25 @@ const EnrollmentsPage = () => {
     });
     setEnrollStep(1);
     setEnrollDialog(true);
+  };
+
+  // Handle delete lead from Ready to Enroll list
+  const handleDeleteLead = async () => {
+    if (!deletingLead) return;
+    
+    setDeleteLoading(true);
+    try {
+      await leadsAPI.delete(deletingLead.id, { reason: 'Removed from Ready to Enroll list' });
+      toast.success(`${deletingLead.name} removed from Ready to Enroll list`);
+      setConvertedLeads(convertedLeads.filter(l => l.id !== deletingLead.id));
+      setDeleteLeadDialog(false);
+      setDeletingLead(null);
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast.error('Failed to delete lead');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleEnrollmentSubmit = async () => {
@@ -834,14 +859,28 @@ const EnrollmentsPage = () => {
                           {lead.fee_quoted ? `₹${lead.fee_quoted.toLocaleString()}` : '-'}
                         </td>
                         <td className="px-4 py-3">
-                          <Button 
-                            size="sm" 
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() => handleStartEnrollment(lead)}
-                            data-testid={`enroll-btn-${lead.id}`}
-                          >
-                            <UserPlus className="w-4 h-4 mr-1" /> Enroll
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleStartEnrollment(lead)}
+                              data-testid={`enroll-btn-${lead.id}`}
+                            >
+                              <UserPlus className="w-4 h-4 mr-1" /> Enroll
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                              onClick={() => {
+                                setDeletingLead(lead);
+                                setDeleteLeadDialog(true);
+                              }}
+                              data-testid={`delete-lead-btn-${lead.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1815,6 +1854,29 @@ const EnrollmentsPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Lead Confirmation Dialog */}
+      <AlertDialog open={deleteLeadDialog} onOpenChange={setDeleteLeadDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove from Ready to Enroll?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove <strong>{deletingLead?.name}</strong> from the Ready to Enroll list? 
+              This will soft-delete the lead and they will no longer appear in this list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteLead} 
+              disabled={deleteLoading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteLoading ? 'Removing...' : 'Remove'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
