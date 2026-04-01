@@ -67,7 +67,7 @@ const Layout = ({ children }) => {
   const handleSessionChange = (value) => {
     localStorage.setItem('session', value);
     setCurrentSession(value);
-    toast.success(`Switched to session: ${value === 'all' ? 'All Sessions' : `${value}-${String(parseInt(value) + 1).slice(2)}`}`);
+    toast.success(`Switched to session: ${value === 'all' ? 'All Sessions' : `${value}-${parseInt(value) + 1}`}`);
     // Reload the page to refresh data with new session
     window.location.reload();
   };
@@ -75,7 +75,7 @@ const Layout = ({ children }) => {
   const getSessionLabel = () => {
     if (!currentSession) return '';
     if (currentSession === 'all') return 'All Sessions';
-    return `${currentSession}-${String(parseInt(currentSession) + 1).slice(2)}`;
+    return `${currentSession}-${parseInt(currentSession) + 1}`;
   };
 
   // Sidebar menu ordered as per user specification:

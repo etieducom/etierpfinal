@@ -18,6 +18,10 @@ Build a comprehensive institute management system with role-based access, studen
 - ✅ **Login Page Verified** - Clean layout without session stats (as requested)
 - ✅ **Delete from Ready to Enroll** - Added delete button and confirmation dialog to remove leads from Ready to Enroll list in EnrollmentsPage
 - ✅ **Fixed Unique Student Count** - Super Admin dashboard now shows "Total Students" (unique count) instead of "Total Enrollments"
+- ✅ **Fixed Academic Session Format** - Now displays as "2026-2027" instead of "2026-27" throughout the app
+- ✅ **AdminPanel Refactoring Started**
+  - Created `BranchesTab.jsx`, `ProgramsTab.jsx`, `SessionsTab.jsx` components
+  - Reduced `AdminPanel.js` from 1,869 to 1,722 lines
 
 ### Previously Completed
 - Academic Session-based login and filtering

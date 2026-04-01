@@ -40,7 +40,7 @@ const Login = () => {
         for (let year = 2016; year <= currentSessionYear; year++) {
           fallbackSessions.push({
             value: String(year),
-            label: `${year}-${String(year + 1).slice(2)}`
+            label: `${year}-${year + 1}`
           });
         }
         setSessions(fallbackSessions);
@@ -64,7 +64,7 @@ const Login = () => {
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       localStorage.setItem('session', response.data.session);
-      toast.success(`Welcome back! Session: ${formData.session}-${String(parseInt(formData.session) + 1).slice(2)}`);
+      toast.success(`Welcome back! Session: ${formData.session}-${parseInt(formData.session) + 1}`);
       navigate('/');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Authentication failed');

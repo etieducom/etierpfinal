@@ -12,6 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Building, Users, BookOpen, Wallet, Trash2, Link, MessageSquare, Key, UserX, UserCheck, Globe, Webhook, Copy, RefreshCw } from 'lucide-react';
 
+// Modular Tab Components
+import { BranchesTab, ProgramsTab, SessionsTab } from '@/components/admin';
+
 // Webhook Card Component for displaying branch webhook info
 const WebhookCard = ({ branch, onRefresh }) => {
   const [webhookInfo, setWebhookInfo] = useState(null);
@@ -272,7 +275,7 @@ const AdminPanel = () => {
   };
 
   const handleDeleteSession = async (year) => {
-    if (!window.confirm(`Are you sure you want to delete session ${year}-${String(year+1).slice(2)}?`)) return;
+    if (!window.confirm(`Are you sure you want to delete session ${year}-${year+1}?`)) return;
     try {
       await adminAPI.deleteSession(year);
       toast.success('Session deleted successfully');
@@ -537,149 +540,50 @@ const AdminPanel = () => {
 
         {isSuperAdmin && (
         <TabsContent value="branches" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Branches</h2>
-            <Button onClick={() => setBranchDialog(true)} className="bg-slate-900 hover:bg-slate-800">
-              <Plus className="w-4 h-4 mr-2" /> Add Branch
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {branches.map((branch) => (
-              <Card key={branch.id} className="border-slate-200 shadow-soft">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Building className="w-5 h-5 text-slate-600" />
-                      <CardTitle className="text-lg">{branch.name}</CardTitle>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingBranch(branch);
-                          setBranchForm({
-                            name: branch.name,
-                            location: branch.location,
-                            address: branch.address || '',
-                            city: branch.city || '',
-                            state: branch.state || '',
-                            pincode: branch.pincode || '',
-                            owner_name: branch.owner_name || '',
-                            owner_email: branch.owner_email || '',
-                            owner_phone: branch.owner_phone || '',
-                            owner_designation: branch.owner_designation || '',
-                            branch_phone: branch.branch_phone || '',
-                            branch_email: branch.branch_email || '',
-                            royalty_percentage: branch.royalty_percentage || 0
-                          });
-                          setBranchDialog(true);
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteBranch(branch.id)}
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-1">
-                    <p className="text-sm text-slate-600">{branch.location}</p>
-                    <p className="text-xs text-slate-500">{branch.city}, {branch.state} - {branch.pincode}</p>
-                    <div className="mt-2 pt-2 border-t border-slate-100">
-                      <p className="text-xs font-semibold text-slate-700">Branch Owner:</p>
-                      <p className="text-xs text-slate-600">{branch.owner_name} ({branch.owner_designation})</p>
-                      <p className="text-xs text-slate-500">{branch.branch_phone}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <BranchesTab 
+            branches={branches}
+            onAddBranch={() => setBranchDialog(true)}
+            onEditBranch={(branch) => {
+              setEditingBranch(branch);
+              setBranchForm({
+                name: branch.name,
+                location: branch.location,
+                address: branch.address || '',
+                city: branch.city || '',
+                state: branch.state || '',
+                pincode: branch.pincode || '',
+                owner_name: branch.owner_name || '',
+                owner_email: branch.owner_email || '',
+                owner_phone: branch.owner_phone || '',
+                owner_designation: branch.owner_designation || '',
+                branch_phone: branch.branch_phone || '',
+                branch_email: branch.branch_email || '',
+                royalty_percentage: branch.royalty_percentage || 0
+              });
+              setBranchDialog(true);
+            }}
+            onDeleteBranch={handleDeleteBranch}
+          />
         </TabsContent>
         )}
 
         {isSuperAdmin && (
         <TabsContent value="programs" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Programs</h2>
-            <Button onClick={() => setProgramDialog(true)} className="bg-slate-900 hover:bg-slate-800">
-              <Plus className="w-4 h-4 mr-2" /> Add Program
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {programs.map((program) => (
-              <Card key={program.id} className="border-slate-200 shadow-soft">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="w-5 h-5 text-slate-600" />
-                      <CardTitle className="text-lg">{program.name}</CardTitle>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingProgram(program);
-                          setProgramForm({
-                            name: program.name,
-                            duration: program.duration,
-                            fee: program.fee.toString(),
-                            max_discount_percent: program.max_discount_percent.toString()
-                          });
-                          setProgramDialog(true);
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteProgram(program.id)}
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Duration:</span>
-                    <span className="font-semibold">{program.duration}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Fee:</span>
-                    <span className="font-semibold">₹{program.fee.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-600">Max Discount:</span>
-                    <span className="font-semibold">{program.max_discount_percent}%</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ProgramsTab 
+            programs={programs}
+            onAddProgram={() => setProgramDialog(true)}
+            onEditProgram={(program) => {
+              setEditingProgram(program);
+              setProgramForm({
+                name: program.name,
+                duration: program.duration,
+                fee: program.fee.toString(),
+                max_discount_percent: program.max_discount_percent.toString()
+              });
+              setProgramDialog(true);
+            }}
+            onDeleteProgram={handleDeleteProgram}
+          />
         </TabsContent>
         )}
 
@@ -806,62 +710,12 @@ const AdminPanel = () => {
         {/* Sessions Tab */}
         {isSuperAdmin && (
         <TabsContent value="sessions" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Academic Sessions</h2>
-            <Button onClick={() => { setSessionDialog(true); fetchSessions(); }} className="bg-slate-900 hover:bg-slate-800" data-testid="add-session-btn">
-              <Plus className="w-4 h-4 mr-2" /> Add Session
-            </Button>
-          </div>
-          
-          <Card className="border-slate-200">
-            <CardContent className="p-0">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Session</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Year</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {sessionsLoading ? (
-                    <tr><td colSpan={4} className="text-center py-8 text-slate-500">Loading...</td></tr>
-                  ) : sessions.length === 0 ? (
-                    <tr><td colSpan={4} className="text-center py-8 text-slate-500">No sessions found. Click "Add Session" to create one.</td></tr>
-                  ) : (
-                    sessions.map((session) => (
-                      <tr key={session.value} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 text-sm font-medium">{session.label}</td>
-                        <td className="px-4 py-3 text-sm text-slate-600">{session.value}</td>
-                        <td className="px-4 py-3">
-                          <Badge className={session.is_custom ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'}>
-                            {session.is_custom ? 'Custom' : 'Default'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          {session.is_custom && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteSession(parseInt(session.value))}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
-          
-          <p className="text-sm text-slate-500">
-            Note: Default sessions are auto-generated from 2016 to the current year. Custom sessions can be added for future years.
-          </p>
+          <SessionsTab 
+            sessions={sessions}
+            sessionsLoading={sessionsLoading}
+            onAddSession={() => { setSessionDialog(true); fetchSessions(); }}
+            onDeleteSession={handleDeleteSession}
+          />
         </TabsContent>
         )}
 
@@ -1849,7 +1703,7 @@ const AdminPanel = () => {
                 placeholder="e.g., 2026"
               />
               <p className="text-sm text-slate-500">
-                This will create session: {sessionForm.year}-{String(sessionForm.year + 1).slice(2)}
+                This will create session: {sessionForm.year}-{sessionForm.year + 1}
               </p>
             </div>
             <div className="flex justify-end gap-2">

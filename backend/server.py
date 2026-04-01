@@ -793,7 +793,7 @@ def get_available_sessions() -> list:
     for year in range(2016, current_session + 2):  # +2 to include next year
         sessions.append({
             "value": str(year),
-            "label": f"{year}-{str(year+1)[2:]}"  # e.g., "2024-25"
+            "label": f"{year}-{year+1}"  # e.g., "2024-2025"
         })
     return sessions
 
@@ -1896,7 +1896,7 @@ async def get_session_stats(session_year: str):
         total_collections = sum(p.get("amount", 0) for p in payments)
         
         return {
-            "session": f"{year}-{str(year+1)[2:]}",
+            "session": f"{year}-{year+1}",
             "total_enquiries": total_enquiries,
             "converted": converted,
             "total_enrollments": total_enrollments,
@@ -2023,9 +2023,9 @@ async def create_session(session_data: AcademicSessionCreate, current_user: User
     # Check if session already exists
     existing = await db.academic_sessions.find_one({"year": session_data.year})
     if existing:
-        raise HTTPException(status_code=400, detail=f"Session {session_data.year}-{str(session_data.year+1)[2:]} already exists")
+        raise HTTPException(status_code=400, detail=f"Session {session_data.year}-{session_data.year+1} already exists")
     
-    label = session_data.label or f"{session_data.year}-{str(session_data.year+1)[2:]}"
+    label = session_data.label or f"{session_data.year}-{session_data.year+1}"
     
     new_session = {
         "id": str(uuid.uuid4()),
@@ -2045,7 +2045,7 @@ async def delete_session(year: int, current_user: User = Depends(require_role([U
     result = await db.academic_sessions.delete_one({"year": year})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Custom session not found")
-    return {"message": f"Session {year}-{str(year+1)[2:]} deleted successfully"}
+    return {"message": f"Session {year}-{year+1} deleted successfully"}
 
 @api_router.delete("/admin/branches/{branch_id}")
 async def delete_branch(branch_id: str, current_user: User = Depends(require_role([UserRole.ADMIN]))):

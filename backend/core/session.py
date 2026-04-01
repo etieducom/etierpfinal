@@ -37,7 +37,7 @@ def get_available_sessions() -> list:
     for year in range(2016, current_session + 2):  # +2 to include next year
         sessions.append({
             "value": str(year),
-            "label": f"{year}-{str(year+1)[2:]}"  # e.g., "2024-25"
+            "label": f"{year}-{year+1}"  # e.g., "2024-2025"
         })
     return sessions
 
