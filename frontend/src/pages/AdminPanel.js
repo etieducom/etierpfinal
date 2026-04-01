@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { Plus, Building, Users, BookOpen, Wallet, Trash2, Link, MessageSquare, Key, UserX, UserCheck, Globe, Webhook, Copy, RefreshCw } from 'lucide-react';
 
 // Modular Tab Components
-import { BranchesTab, ProgramsTab, SessionsTab } from '@/components/admin';
+import { BranchesTab, ProgramsTab, SessionsTab, ExpenseCategoriesTab, LeadSourcesTab } from '@/components/admin';
 
 // Webhook Card Component for displaying branch webhook info
 const WebhookCard = ({ branch, onRefresh }) => {
@@ -721,86 +721,20 @@ const AdminPanel = () => {
 
         {/* Expense Categories Tab */}
         <TabsContent value="expense-categories" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Expense Categories</h2>
-            <Button onClick={() => setCategoryDialog(true)} className="bg-slate-900 hover:bg-slate-800" data-testid="add-category-btn">
-              <Plus className="w-4 h-4 mr-2" /> Add Category
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {expenseCategories.map((category) => (
-              <Card key={category.id} className="border-slate-200 shadow-soft" data-testid={`category-${category.id}`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Wallet className="w-5 h-5 text-slate-600" />
-                      <CardTitle className="text-lg">{category.name}</CardTitle>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDeleteCategory(category.id)}
-                      data-testid={`delete-category-${category.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-slate-600">{category.description || 'No description'}</p>
-                </CardContent>
-              </Card>
-            ))}
-            {expenseCategories.length === 0 && (
-              <div className="col-span-3 text-center py-12 text-slate-500">
-                No expense categories created yet. Click "Add Category" to create one.
-              </div>
-            )}
-          </div>
+          <ExpenseCategoriesTab 
+            categories={expenseCategories}
+            onAddCategory={() => setCategoryDialog(true)}
+            onDeleteCategory={handleDeleteCategory}
+          />
         </TabsContent>
 
         {/* Lead Sources Tab */}
         <TabsContent value="lead-sources" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-semibold">Lead Sources</h2>
-            <Button onClick={() => setLeadSourceDialog(true)} className="bg-slate-900 hover:bg-slate-800" data-testid="add-lead-source-btn">
-              <Plus className="w-4 h-4 mr-2" /> Add Lead Source
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {leadSources.map((source) => (
-              <Card key={source.id} className="border-slate-200 shadow-soft" data-testid={`lead-source-${source.id}`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Link className="w-5 h-5 text-slate-600" />
-                      <CardTitle className="text-lg">{source.name}</CardTitle>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDeleteLeadSource(source.id)}
-                      data-testid={`delete-source-${source.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-slate-600">{source.description || 'No description'}</p>
-                </CardContent>
-              </Card>
-            ))}
-            {leadSources.length === 0 && (
-              <div className="col-span-3 text-center py-12 text-slate-500">
-                No lead sources created yet. Click "Add Lead Source" to create one.
-              </div>
-            )}
-          </div>
+          <LeadSourcesTab 
+            sources={leadSources}
+            onAddSource={() => setLeadSourceDialog(true)}
+            onDeleteSource={handleDeleteLeadSource}
+          />
         </TabsContent>
 
         {/* WhatsApp Settings Tab */}

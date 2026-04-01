@@ -48,11 +48,17 @@ Build a comprehensive institute management system with role-based access, studen
 2. **(P2) Unique Student Count** - Dashboard shows enrollments, not unique students
 
 ### Technical Debt Status
-| File | Before | After | Status |
-|------|--------|-------|--------|
-| `Dashboard.js` | 1,704 lines | 1,042 lines | ✅ IMPROVED (40% reduction) |
-| `server.py` | 10,225 lines | 10,225 lines | 🔴 PENDING - Router structure created |
-| `InsightsPage.js` | 1,400+ lines | - | 🟡 FUTURE |
+| File | Original | Current | Reduction |
+|------|----------|---------|-----------|
+| `Dashboard.js` | 1,704 | 1,042 | **39%** ✅ |
+| `AdminPanel.js` | 1,869 | 1,656 | **11%** ✅ |
+| `server.py` | 10,225 | 10,235 | Pending |
+| `StudentsPage.js` | 1,965 | 1,965 | Pending |
+| `InsightsPage.js` | 1,452 | 1,452 | Pending |
+
+**Extracted Components (1,064 lines total):**
+- Dashboard: `FDEDashboard.jsx`, `CounsellorDashboard.jsx`, `BranchAdminDashboard.jsx`
+- Admin: `BranchesTab.jsx`, `ProgramsTab.jsx`, `SessionsTab.jsx`, `ExpenseCategoriesTab.jsx`, `LeadSourcesTab.jsx`
 
 ## Architecture
 
