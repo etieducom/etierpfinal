@@ -1,0 +1,264 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, DollarSign, ArrowDownRight, Award, Calendar, CreditCard, GraduationCap, Gift } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+
+const safeNum = (val) => (Number.isFinite(val) ? val : 0);
+const safeAbs = (val) => Math.abs(safeNum(val));
+
+const BranchAdminDashboard = ({ 
+  analytics, 
+  branchFinancialStats, 
+  financialData, 
+  admissionData, 
+  sessionComparison, 
+  branchIncentiveStats,
+  selectedYear,
+  setSelectedYear
+}) => {
+  return (
+    <div className="space-y-8" data-testid="branch-admin-dashboard">
+      
+      {/* 1. Current Month Stats - Top Section */}
+      {branchFinancialStats && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {/* Total Enquiries */}
+          <Card className="bg-white border-slate-200 hover:border-blue-300 transition-colors">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <Users className="w-5 h-5 text-blue-500" />
+                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{analytics?.total_leads || 0}</p>
+              <p className="text-xs text-slate-500 mt-1">Total Enquiries</p>
+            </CardContent>
+          </Card>
+          
+          {/* Total Admissions */}
+          <Card className="bg-white border-slate-200 hover:border-green-300 transition-colors">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <GraduationCap className="w-5 h-5 text-green-500" />
+                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{admissionData?.monthly_data?.find(m => m.month_name === new Date().toLocaleString('default', { month: 'short' }))?.admissions || 0}</p>
+              <p className="text-xs text-slate-500 mt-1">Total Admissions</p>
+            </CardContent>
+          </Card>
+          
+          {/* Total Collection */}
+          <Card className="bg-white border-slate-200 hover:border-emerald-300 transition-colors">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <CreditCard className="w-5 h-5 text-emerald-500" />
+                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">₹{((branchFinancialStats.monthly_revenue || 0) / 1000).toFixed(0)}K</p>
+              <p className="text-xs text-slate-500 mt-1">Total Collection</p>
+            </CardContent>
+          </Card>
+          
+          {/* Expenses */}
+          <Card className="bg-white border-slate-200 hover:border-red-300 transition-colors">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <ArrowDownRight className="w-5 h-5 text-red-500" />
+                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">₹{((branchFinancialStats.total_expenses || 0) / 1000).toFixed(0)}K</p>
+              <p className="text-xs text-slate-500 mt-1">Expenses</p>
+            </CardContent>
+          </Card>
+          
+          {/* Exam Revenue */}
+          <Card className="bg-white border-slate-200 hover:border-purple-300 transition-colors">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <Award className="w-5 h-5 text-purple-500" />
+                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">₹{((branchFinancialStats.exam_revenue || 0) / 1000).toFixed(0)}K</p>
+              <p className="text-xs text-slate-500 mt-1">Exam Revenue</p>
+            </CardContent>
+          </Card>
+          
+          {/* Net Revenue */}
+          <Card className="bg-white border-slate-200 hover:border-green-300 transition-colors">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <DollarSign className={`w-5 h-5 ${(branchFinancialStats.net_revenue || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
+              </div>
+              <p className={`text-2xl font-bold ${(branchFinancialStats.net_revenue || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ₹{((branchFinancialStats.net_revenue || 0) / 1000).toFixed(0)}K
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Net Revenue</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 2. Charts Row - Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Monthly Income & Expense Chart */}
+        {financialData && (
+          <Card className="border-slate-200">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-base font-semibold text-slate-700">Income & Expenses</CardTitle>
+                <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+                  <SelectTrigger className="w-20 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[2024, 2025, 2026].map((year) => (
+                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={financialData.monthly_data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis dataKey="month_name" stroke="#94A3B8" tick={{fontSize: 10}} />
+                  <YAxis stroke="#94A3B8" tick={{fontSize: 10}} tickFormatter={(v) => `₹${v/1000}K`} />
+                  <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                  <Legend wrapperStyle={{fontSize: '11px'}} />
+                  <Bar dataKey="income" name="Income" fill="#10B981" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="expenses" name="Expenses" fill="#EF4444" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Monthly Admissions Chart */}
+        {admissionData && (
+          <Card className="border-slate-200">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-base font-semibold text-slate-700">Monthly Admissions</CardTitle>
+                <Badge variant="outline" className="text-xs">{admissionData.total_admissions} total</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={admissionData.monthly_data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis dataKey="month_name" stroke="#94A3B8" tick={{fontSize: 10}} />
+                  <YAxis stroke="#94A3B8" tick={{fontSize: 10}} allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="admissions" name="Admissions" fill="#8B5CF6" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* 3. Session Summary - Near Bottom */}
+      {sessionComparison && (
+        <Card className="border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-indigo-500" />
+                Session Summary
+              </CardTitle>
+              <Badge variant="outline" className="text-xs">
+                {sessionComparison.current_session?.label} vs {sessionComparison.previous_session?.label}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-5 gap-4">
+              <div className="text-center">
+                <p className="text-xs text-slate-500 mb-1">Leads</p>
+                <p className="text-lg font-bold text-slate-800">{safeNum(sessionComparison.current_session?.leads)}</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.leads) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.leads) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.leads)}%
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-slate-500 mb-1">Converted</p>
+                <p className="text-lg font-bold text-green-600">{safeNum(sessionComparison.current_session?.converted)}</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.converted) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.converted) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.converted)}%
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-slate-500 mb-1">Conversion</p>
+                <p className="text-lg font-bold text-purple-600">{safeNum(sessionComparison.current_session?.conversion_rate)}%</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.conversion_rate) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.conversion_rate) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.conversion_rate)} pts
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-slate-500 mb-1">Enrollments</p>
+                <p className="text-lg font-bold text-blue-600">{safeNum(sessionComparison.current_session?.enrollments)}</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.enrollments) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.enrollments) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.enrollments)}%
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-slate-500 mb-1">Income</p>
+                <p className="text-lg font-bold text-amber-600">₹{(safeNum(sessionComparison.current_session?.income) / 1000).toFixed(0)}K</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.income) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.income) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.income)}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 4. Counsellor Incentives - Last */}
+      {branchIncentiveStats && (
+        <Card className="border-slate-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+              <Gift className="w-4 h-4 text-purple-500" />
+              Counsellor Incentives
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4 mb-4">
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <p className="text-xs text-green-600 mb-1">Earned</p>
+                <p className="text-lg font-bold text-green-700">₹{(branchIncentiveStats.branch_summary.total_earned_incentives || 0).toLocaleString()}</p>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <p className="text-xs text-yellow-600 mb-1">Pending</p>
+                <p className="text-lg font-bold text-yellow-700">₹{(branchIncentiveStats.branch_summary.total_pending_incentives || 0).toLocaleString()}</p>
+              </div>
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <p className="text-xs text-blue-600 mb-1">Exams Done</p>
+                <p className="text-lg font-bold text-blue-700">{branchIncentiveStats.branch_summary.completed_exams || 0}</p>
+              </div>
+              <div className="text-center p-3 bg-red-50 rounded-lg">
+                <p className="text-xs text-red-600 mb-1">Refunds</p>
+                <p className="text-lg font-bold text-red-700">₹{(branchIncentiveStats.branch_summary.total_refunds_pending || 0).toLocaleString()}</p>
+              </div>
+            </div>
+            {branchIncentiveStats.counsellor_stats?.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {branchIncentiveStats.counsellor_stats.map((counsellor) => (
+                  <div key={counsellor.counsellor_id} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-full border text-xs">
+                    <span className="text-slate-600">{counsellor.counsellor_name}</span>
+                    <span className="text-green-600 font-semibold">₹{counsellor.earned_incentive}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default BranchAdminDashboard;

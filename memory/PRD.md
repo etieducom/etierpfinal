@@ -3,17 +3,19 @@
 ## Original Problem Statement
 Build a comprehensive institute management system with role-based access, student management, lead tracking, payments, academics, and business analytics.
 
-## Current Status (March 2026)
+## Current Status (April 2026)
 
 ### Recently Completed (This Session)
-- ✅ Verified FDE Dashboard "breathable" layout with proper spacing
-- ✅ Verified Counsellor Dashboard "breathable" layout with proper spacing
-- ✅ AI-Powered Business Insights fully functional
-  - Health Score (1-10 from AI, displayed as x10 for 0-100 scale)
-  - AI Summary text showing branch performance analysis
-  - "What's Going Well" section with AI-derived insights
-  - "Needs Attention" section with actionable AI recommendations
-- ✅ Deployment guide exists: `/app/DEPLOYMENT_QUICKSTART.md`
+- ✅ **Dashboard Refactoring Complete**
+  - Created `FDEDashboard.jsx` (216 lines) - modular FDE component
+  - Created `CounsellorDashboard.jsx` (252 lines) - modular Counsellor component
+  - Created `BranchAdminDashboard.jsx` (264 lines) - modular Branch Admin component
+  - Reduced `Dashboard.js` from 1,704 to 1,042 lines (40% reduction)
+- ✅ **Backend Router Structure Created**
+  - Created `/app/backend/routes/` with 9 router stubs
+  - Created `/app/backend/core/` with shared dependencies
+  - Created `/app/REFACTORING_GUIDE.md` with migration plan
+- ✅ **Login Page Verified** - Clean layout without session stats (as requested)
 
 ### Previously Completed
 - Academic Session-based login and filtering
@@ -22,6 +24,9 @@ Build a comprehensive institute management system with role-based access, studen
 - Redesigned FDE Dashboard with overdue payments, ready-to-enroll, pending exams
 - Redesigned Counsellor Dashboard with missed follow-ups, incentives
 - Fixed race condition bug in Dashboard loading
+- AI-Powered Business Insights (GPT-4o via emergentintegrations)
+- Full CRUD Session Management for Super Admin
+- Multiple production bug fixes (enrollments, leads, fees, etc.)
 
 ### AI Insights Implementation
 - Backend endpoint: `GET /api/analytics/ai-branch-insights`
@@ -36,10 +41,46 @@ Build a comprehensive institute management system with role-based access, studen
 1. **(P1) Complete Quiz Content Generation** - Several quizzes need more questions
 2. **(P2) Unique Student Count** - Dashboard shows enrollments, not unique students
 
-### Technical Debt (CRITICAL)
-- `server.py` (10,000+ lines) - Must split into FastAPI routers
-- `Dashboard.js` (1,600+ lines) - Must split into role-specific components
-- `InsightsPage.js` (1,400+ lines) - Large but functional
+### Technical Debt Status
+| File | Before | After | Status |
+|------|--------|-------|--------|
+| `Dashboard.js` | 1,704 lines | 1,042 lines | ✅ IMPROVED (40% reduction) |
+| `server.py` | 10,225 lines | 10,225 lines | 🔴 PENDING - Router structure created |
+| `InsightsPage.js` | 1,400+ lines | - | 🟡 FUTURE |
+
+## Architecture
+
+### Frontend Structure
+```
+/app/frontend/src/
+├── components/
+│   └── dashboards/
+│       ├── FDEDashboard.jsx
+│       ├── CounsellorDashboard.jsx
+│       ├── BranchAdminDashboard.jsx
+│       └── index.js
+├── pages/
+│   └── Dashboard.js (uses modular components)
+```
+
+### Backend Structure (Prepared for migration)
+```
+/app/backend/
+├── core/
+│   ├── deps.py (shared dependencies)
+│   └── session.py (academic session helpers)
+├── routes/
+│   ├── auth.py
+│   ├── admin.py
+│   ├── leads.py
+│   ├── enrollments.py
+│   ├── students.py
+│   ├── analytics.py
+│   ├── finances.py
+│   ├── batches.py
+│   └── exams.py
+└── server.py (main file - to be gradually migrated)
+```
 
 ## Deployment
 Full deployment guide available at: `/app/DEPLOYMENT_QUICKSTART.md`
@@ -49,10 +90,14 @@ Full deployment guide available at: `/app/DEPLOYMENT_QUICKSTART.md`
 
 ## Key Credentials
 - Super Admin: admin@etieducom.com / admin@123
-- Branch Admin: branchadmin@etieducom.com / admin@123
 - FDE: fde@etieducom.com / password
-- Counsellor: counsellor@etieducom.com / password
-- Academic: academic@etieducom.com / password
+(Note: Other credentials may need verification)
+
+## Documentation
+- `/app/DEPLOYMENT_QUICKSTART.md` - Deployment guide
+- `/app/DEPLOYMENT_GUIDE.md` - Detailed deployment instructions
+- `/app/COMMANDS.md` - Useful commands
+- `/app/REFACTORING_GUIDE.md` - Code refactoring plan
 
 ## Test Reports
 - Latest: `/app/test_reports/iteration_24.json` (All features verified)
