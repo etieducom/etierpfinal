@@ -4902,6 +4902,13 @@ async def get_super_admin_dashboard(request: Request, session: Optional[str] = N
         enrollments_query = {"branch_id": branch_id, **enrollment_session_filter}
         enrollments_count = await db.enrollments.count_documents(enrollments_query)
         
+        # Unique students count (distinct lead_ids) with session filter
+        enrollments_for_students = await db.enrollments.find(
+            enrollments_query, 
+            {"_id": 0, "lead_id": 1}
+        ).to_list(10000)
+        unique_students = len(set(e.get("lead_id") for e in enrollments_for_students if e.get("lead_id")))
+        
         # Total income with session filter
         payments_query = {"branch_id": branch_id, **payment_session_filter}
         payments = await db.payments.find(payments_query, {"_id": 0, "amount": 1}).to_list(10000)
@@ -4920,6 +4927,7 @@ async def get_super_admin_dashboard(request: Request, session: Optional[str] = N
             "branch_location": branch.get("location", ""),
             "leads_count": leads_count,
             "enrollments_count": enrollments_count,
+            "unique_students": unique_students,
             "total_income": total_income,
             "converted_count": converted_count,
             "conversion_rate": round(conversion_rate, 1)
@@ -4931,6 +4939,7 @@ async def get_super_admin_dashboard(request: Request, session: Optional[str] = N
     # Calculate totals
     total_leads = sum(b["leads_count"] for b in branch_data)
     total_enrollments = sum(b["enrollments_count"] for b in branch_data)
+    total_unique_students = sum(b["unique_students"] for b in branch_data)
     total_income = sum(b["total_income"] for b in branch_data)
     avg_income = total_income / len(branch_data) if branch_data else 0
     
@@ -4948,6 +4957,7 @@ async def get_super_admin_dashboard(request: Request, session: Optional[str] = N
         "totals": {
             "total_leads": total_leads,
             "total_enrollments": total_enrollments,
+            "total_students": total_unique_students,
             "total_income": total_income,
             "average_income_per_branch": avg_income
         }

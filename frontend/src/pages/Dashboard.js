@@ -348,10 +348,10 @@ const Dashboard = () => {
               <Card className="bg-purple-50 border-purple-200">
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-purple-600" />
-                    <span className="text-sm text-purple-700">Total Enrollments</span>
+                    <GraduationCap className="w-5 h-5 text-purple-600" />
+                    <span className="text-sm text-purple-700">Total Students</span>
                   </div>
-                  <p className="text-2xl font-bold text-purple-700 mt-1">{superAdminData.totals?.total_enrollments || 0}</p>
+                  <p className="text-2xl font-bold text-purple-700 mt-1">{superAdminData.totals?.total_students || 0}</p>
                 </CardContent>
               </Card>
               <Card className="bg-green-50 border-green-200">
