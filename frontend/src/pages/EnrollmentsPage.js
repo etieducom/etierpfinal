@@ -1421,16 +1421,15 @@ const EnrollmentsPage = () => {
                 <>
                   <div className="space-y-2">
                     <Label>Number of Installments</Label>
-                    <Select value={installmentsCount.toString()} onValueChange={(v) => setInstallmentsCount(parseInt(v))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                          <SelectItem key={n} value={n.toString()}>{n} Installments</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      type="number"
+                      min="2"
+                      max="24"
+                      value={installmentsCount}
+                      onChange={(e) => setInstallmentsCount(parseInt(e.target.value) || 2)}
+                      placeholder="Enter number of installments"
+                      data-testid="installments-count-input"
+                    />
                   </div>
 
                   <div className="space-y-2">

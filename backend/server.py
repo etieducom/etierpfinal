@@ -1859,6 +1859,58 @@ async def get_sessions():
         "current_session": get_current_academic_session()
     }
 
+@api_router.get("/auth/session-stats/{session_year}")
+async def get_session_stats(session_year: str):
+    """Get stats for a specific session (public endpoint for login page)"""
+    try:
+        year = int(session_year)
+        # Session runs from April of year to March of year+1
+        start_date = datetime(year, 4, 1)
+        end_date = datetime(year + 1, 3, 31, 23, 59, 59)
+        
+        date_query = {
+            "created_at": {
+                "$gte": start_date.isoformat(),
+                "$lte": end_date.isoformat()
+            }
+        }
+        
+        # Count enquiries (leads) for this session
+        total_enquiries = await db.leads.count_documents({
+            **date_query,
+            "is_deleted": {"$ne": True}
+        })
+        
+        # Count converted leads
+        converted = await db.leads.count_documents({
+            **date_query,
+            "status": "Converted",
+            "is_deleted": {"$ne": True}
+        })
+        
+        # Count enrollments
+        total_enrollments = await db.enrollments.count_documents(date_query)
+        
+        # Calculate total collections
+        payments = await db.payments.find(date_query, {"_id": 0, "amount": 1}).to_list(10000)
+        total_collections = sum(p.get("amount", 0) for p in payments)
+        
+        return {
+            "session": f"{year}-{str(year+1)[2:]}",
+            "total_enquiries": total_enquiries,
+            "converted": converted,
+            "total_enrollments": total_enrollments,
+            "total_collections": total_collections
+        }
+    except Exception as e:
+        return {
+            "session": session_year,
+            "total_enquiries": 0,
+            "converted": 0,
+            "total_enrollments": 0,
+            "total_collections": 0
+        }
+
 @api_router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse(**{k: v for k, v in current_user.model_dump().items() if k != 'hashed_password'})

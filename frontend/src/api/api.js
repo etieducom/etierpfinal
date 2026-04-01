@@ -46,6 +46,7 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   changePassword: (data) => api.put('/auth/change-password', data),
   getSessions: () => api.get('/auth/sessions'),
+  getSessionStats: (year) => api.get(`/auth/session-stats/${year}`),
 };
 
 export const adminAPI = {
