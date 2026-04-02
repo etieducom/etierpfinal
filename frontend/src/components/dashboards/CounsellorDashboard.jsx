@@ -5,6 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Users, TrendingUp, CheckCircle, XCircle, AlertTriangle, Gift, Clock, Phone, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// Indian currency format: 1L = 1,00,000 | 1Cr = 1,00,00,000
+const formatIndianCurrency = (num) => {
+  const absNum = Math.abs(num || 0);
+  const sign = num < 0 ? '-' : '';
+  
+  if (absNum >= 10000000) {
+    const crores = absNum / 10000000;
+    return sign + '₹' + (crores % 1 === 0 ? crores.toFixed(0) : crores.toFixed(2)) + 'Cr';
+  } else if (absNum >= 100000) {
+    const lakhs = absNum / 100000;
+    return sign + '₹' + (lakhs % 1 === 0 ? lakhs.toFixed(0) : lakhs.toFixed(2)) + 'L';
+  } else if (absNum >= 1000) {
+    const thousands = absNum / 1000;
+    return sign + '₹' + (thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1)) + 'K';
+  } else {
+    return sign + '₹' + absNum.toFixed(0);
+  }
+};
+
 const CounsellorDashboard = ({ counsellorDashboardEnhanced }) => {
   const navigate = useNavigate();
 
@@ -234,12 +253,12 @@ const CounsellorDashboard = ({ counsellorDashboardEnhanced }) => {
               <div className="relative overflow-hidden text-center p-5 bg-gradient-to-br from-emerald-50 to-white rounded-xl border border-emerald-200 group hover:shadow-md transition-all">
                 <div className="absolute top-0 right-0 w-12 h-12 bg-emerald-100 rounded-full -mr-4 -mt-4" />
                 <p className="text-xs text-emerald-600 font-medium mb-2 uppercase tracking-wide">Earned</p>
-                <p className="text-3xl font-bold text-emerald-700">₹{counsellorDashboardEnhanced.incentive.earned_incentive?.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-emerald-700">{formatIndianCurrency(counsellorDashboardEnhanced.incentive.earned_incentive)}</p>
               </div>
               <div className="relative overflow-hidden text-center p-5 bg-gradient-to-br from-amber-50 to-white rounded-xl border border-amber-200 group hover:shadow-md transition-all">
                 <div className="absolute top-0 right-0 w-12 h-12 bg-amber-100 rounded-full -mr-4 -mt-4" />
                 <p className="text-xs text-amber-600 font-medium mb-2 uppercase tracking-wide">Pending</p>
-                <p className="text-3xl font-bold text-amber-700">₹{counsellorDashboardEnhanced.incentive.pending_incentive?.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-amber-700">{formatIndianCurrency(counsellorDashboardEnhanced.incentive.pending_incentive)}</p>
               </div>
             </div>
           </CardContent>

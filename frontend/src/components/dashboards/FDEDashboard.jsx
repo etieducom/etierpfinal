@@ -4,6 +4,25 @@ import { Badge } from '@/components/ui/badge';
 import { Users, CheckCircle, AlertTriangle, Award, IndianRupee, Banknote, ClipboardList, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+// Indian currency format: 1L = 1,00,000 | 1Cr = 1,00,00,000
+const formatIndianCurrency = (num) => {
+  const absNum = Math.abs(num || 0);
+  const sign = num < 0 ? '-' : '';
+  
+  if (absNum >= 10000000) {
+    const crores = absNum / 10000000;
+    return sign + '₹' + (crores % 1 === 0 ? crores.toFixed(0) : crores.toFixed(2)) + 'Cr';
+  } else if (absNum >= 100000) {
+    const lakhs = absNum / 100000;
+    return sign + '₹' + (lakhs % 1 === 0 ? lakhs.toFixed(0) : lakhs.toFixed(2)) + 'L';
+  } else if (absNum >= 1000) {
+    const thousands = absNum / 1000;
+    return sign + '₹' + (thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1)) + 'K';
+  } else {
+    return sign + '₹' + absNum.toFixed(0);
+  }
+};
+
 const FDEDashboard = ({ fdeDashboard, fdeDashboardEnhanced }) => {
   const navigate = useNavigate();
 
@@ -24,7 +43,7 @@ const FDEDashboard = ({ fdeDashboard, fdeDashboardEnhanced }) => {
                 <Badge className="bg-orange-100 text-orange-700 font-semibold">{fdeDashboard.fee_due?.count || 0}</Badge>
               </div>
               <p className="text-sm text-orange-700/80 font-medium mb-1">Fee Due</p>
-              <p className="text-3xl font-bold text-orange-900">₹{((fdeDashboard.fee_due?.amount || 0) / 1000).toFixed(0)}K</p>
+              <p className="text-3xl font-bold text-orange-900">{formatIndianCurrency(fdeDashboard.fee_due?.amount || 0)}</p>
               <p className="text-xs text-orange-600/70 mt-2">{fdeDashboard.fee_due?.month || 'This Month'}</p>
             </CardContent>
           </Card>
@@ -63,7 +82,7 @@ const FDEDashboard = ({ fdeDashboard, fdeDashboardEnhanced }) => {
               <p className={`text-3xl font-bold ${fdeDashboard.cash_handling?.updated_today ? 'text-emerald-700' : 'text-rose-700'}`}>
                 {fdeDashboard.cash_handling?.updated_today ? 'Done' : 'Pending'}
               </p>
-              <p className={`text-xs mt-2 ${fdeDashboard.cash_handling?.updated_today ? 'text-emerald-600/70' : 'text-rose-600/70'}`}>Today: ₹{(fdeDashboard.cash_handling?.today_cash_total || 0).toLocaleString()}</p>
+              <p className={`text-xs mt-2 ${fdeDashboard.cash_handling?.updated_today ? 'text-emerald-600/70' : 'text-rose-600/70'}`}>Today: {formatIndianCurrency(fdeDashboard.cash_handling?.today_cash_total || 0)}</p>
             </CardContent>
           </Card>
           
@@ -114,7 +133,7 @@ const FDEDashboard = ({ fdeDashboard, fdeDashboardEnhanced }) => {
                         <p className="text-xs text-slate-500 mt-0.5">{item.program_name}</p>
                       </div>
                       <div className="text-right ml-3">
-                        <p className="font-bold text-rose-600">₹{item.amount?.toLocaleString()}</p>
+                        <p className="font-bold text-rose-600">{formatIndianCurrency(item.amount)}</p>
                         <Badge className="bg-rose-100 text-rose-700 text-[10px] mt-1 font-medium">{item.days_overdue}d late</Badge>
                       </div>
                     </div>

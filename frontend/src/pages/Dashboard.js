@@ -11,6 +11,26 @@ import { useNavigate } from 'react-router-dom';
 // Modular Dashboard Components
 import { FDEDashboard, CounsellorDashboard, BranchAdminDashboard } from '@/components/dashboards';
 
+// Indian currency format: 1L = 1,00,000 | 1Cr = 1,00,00,000
+const formatIndianCurrency = (num, showSymbol = true) => {
+  const absNum = Math.abs(num || 0);
+  const sign = num < 0 ? '-' : '';
+  const symbol = showSymbol ? '₹' : '';
+  
+  if (absNum >= 10000000) {
+    const crores = absNum / 10000000;
+    return sign + symbol + (crores % 1 === 0 ? crores.toFixed(0) : crores.toFixed(2)) + 'Cr';
+  } else if (absNum >= 100000) {
+    const lakhs = absNum / 100000;
+    return sign + symbol + (lakhs % 1 === 0 ? lakhs.toFixed(0) : lakhs.toFixed(2)) + 'L';
+  } else if (absNum >= 1000) {
+    const thousands = absNum / 1000;
+    return sign + symbol + (thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1)) + 'K';
+  } else {
+    return sign + symbol + absNum.toFixed(0);
+  }
+};
+
 const STATUS_COLORS = {
   'New': '#3B82F6',
   'Contacted': '#8B5CF6',
@@ -280,7 +300,7 @@ const Dashboard = () => {
               {/* Income */}
               <div className="text-center p-3 bg-white/60 rounded-lg border border-slate-100">
                 <p className="text-xs text-slate-500 mb-1">Income</p>
-                <p className="text-xl font-bold text-amber-600">₹{(safeNum(sessionComparison.current_session?.income) / 1000).toFixed(0)}K</p>
+                <p className="text-xl font-bold text-amber-600">{formatIndianCurrency(safeNum(sessionComparison.current_session?.income))}</p>
                 <div className={`flex items-center justify-center gap-1 text-xs mt-1 ${safeNum(sessionComparison.changes?.income) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {safeNum(sessionComparison.changes?.income) >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                   <span>{safeAbs(sessionComparison.changes?.income)}%</span>
@@ -290,7 +310,7 @@ const Dashboard = () => {
             
             {/* Previous Session Reference */}
             <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-              <span>Previous ({sessionComparison.previous_session?.label}): {safeNum(sessionComparison.previous_session?.leads)} leads, {safeNum(sessionComparison.previous_session?.enrollments)} enrollments, ₹{(safeNum(sessionComparison.previous_session?.income) / 1000).toFixed(0)}K income</span>
+              <span>Previous ({sessionComparison.previous_session?.label}): {safeNum(sessionComparison.previous_session?.leads)} leads, {safeNum(sessionComparison.previous_session?.enrollments)} enrollments, {formatIndianCurrency(safeNum(sessionComparison.previous_session?.income))} income</span>
             </div>
           </CardContent>
         </Card>
@@ -360,7 +380,7 @@ const Dashboard = () => {
                     <DollarSign className="w-5 h-5 text-green-600" />
                     <span className="text-sm text-green-700">Total Income</span>
                   </div>
-                  <p className="text-2xl font-bold text-green-700 mt-1">₹{superAdminData.totals?.total_income?.toLocaleString() || 0}</p>
+                  <p className="text-2xl font-bold text-green-700 mt-1">{formatIndianCurrency(superAdminData.totals?.total_income || 0)}</p>
                 </CardContent>
               </Card>
               <Card className="bg-slate-50 border-slate-200">
@@ -369,7 +389,7 @@ const Dashboard = () => {
                     <Building className="w-5 h-5 text-slate-600" />
                     <span className="text-sm text-slate-700">Avg Income/Branch</span>
                   </div>
-                  <p className="text-2xl font-bold text-slate-700 mt-1">₹{superAdminData.totals?.average_income_per_branch?.toLocaleString() || 0}</p>
+                  <p className="text-2xl font-bold text-slate-700 mt-1">{formatIndianCurrency(superAdminData.totals?.average_income_per_branch || 0)}</p>
                 </CardContent>
               </Card>
             </div>
@@ -406,7 +426,7 @@ const Dashboard = () => {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="inline-flex items-center justify-center px-3 h-8 rounded-md bg-green-50 text-green-700 font-semibold">
-                          ₹{branch.total_income?.toLocaleString()}
+                          {formatIndianCurrency(branch.total_income)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -806,7 +826,7 @@ const Dashboard = () => {
                     <span className="text-sm text-green-700">Total Income</span>
                   </div>
                   <p className="text-2xl font-bold text-green-700 mt-1">
-                    ₹{financialData.total_income?.toLocaleString() || 0}
+                    {formatIndianCurrency(financialData.total_income || 0)}
                   </p>
                 </CardContent>
               </Card>
@@ -817,7 +837,7 @@ const Dashboard = () => {
                     <span className="text-sm text-red-700">Total Expenses</span>
                   </div>
                   <p className="text-2xl font-bold text-red-700 mt-1">
-                    ₹{financialData.total_expenses?.toLocaleString() || 0}
+                    {formatIndianCurrency(financialData.total_expenses || 0)}
                   </p>
                 </CardContent>
               </Card>
@@ -828,7 +848,7 @@ const Dashboard = () => {
                     <span className="text-sm text-blue-700">Net Profit</span>
                   </div>
                   <p className="text-2xl font-bold text-blue-700 mt-1">
-                    ₹{((financialData.total_income || 0) - (financialData.total_expenses || 0)).toLocaleString()}
+                    {formatIndianCurrency((financialData.total_income || 0) - (financialData.total_expenses || 0))}
                   </p>
                 </CardContent>
               </Card>
@@ -837,8 +857,13 @@ const Dashboard = () => {
               <BarChart data={financialData.monthly_data || []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                 <XAxis dataKey="month_name" stroke="#64748B" />
-                <YAxis stroke="#64748B" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                <YAxis stroke="#64748B" tickFormatter={(v) => {
+                  if (v >= 10000000) return `₹${(v/10000000).toFixed(1)}Cr`;
+                  if (v >= 100000) return `₹${(v/100000).toFixed(1)}L`;
+                  if (v >= 1000) return `₹${(v/1000).toFixed(0)}K`;
+                  return `₹${v}`;
+                }} />
+                <Tooltip formatter={(value) => formatIndianCurrency(value)} />
                 <Legend />
                 <Bar dataKey="income" name="Income" fill="#10B981" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="expenses" name="Expenses" fill="#EF4444" radius={[4, 4, 0, 0]} />
@@ -882,19 +907,19 @@ const Dashboard = () => {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="inline-flex items-center justify-center px-3 h-8 rounded-md bg-green-50 text-green-700 font-semibold text-sm">
-                          ₹{branch.total_income?.toLocaleString()}
+                          {formatIndianCurrency(branch.total_income)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="inline-flex items-center justify-center px-3 h-8 rounded-md bg-red-50 text-red-700 font-semibold text-sm">
-                          ₹{branch.total_expenses?.toLocaleString()}
+                          {formatIndianCurrency(branch.total_expenses)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex items-center justify-center px-3 h-8 rounded-md font-semibold text-sm ${
                           branch.net_profit >= 0 ? 'bg-blue-50 text-blue-700' : 'bg-red-100 text-red-700'
                         }`}>
-                          ₹{branch.net_profit?.toLocaleString()}
+                          {formatIndianCurrency(branch.net_profit)}
                         </span>
                       </td>
                     </tr>

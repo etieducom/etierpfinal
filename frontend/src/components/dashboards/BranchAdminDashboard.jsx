@@ -8,6 +8,28 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const safeNum = (val) => (Number.isFinite(val) ? val : 0);
 const safeAbs = (val) => Math.abs(safeNum(val));
 
+// Indian numbering format: 1L = 1,00,000 | 1Cr = 1,00,00,000
+const formatIndianCurrency = (num) => {
+  const absNum = Math.abs(num || 0);
+  const sign = num < 0 ? '-' : '';
+  
+  if (absNum >= 10000000) {
+    // Crores (1 Cr = 10,000,000)
+    const crores = absNum / 10000000;
+    return sign + '₹' + (crores % 1 === 0 ? crores.toFixed(0) : crores.toFixed(2)) + 'Cr';
+  } else if (absNum >= 100000) {
+    // Lakhs (1 L = 100,000)
+    const lakhs = absNum / 100000;
+    return sign + '₹' + (lakhs % 1 === 0 ? lakhs.toFixed(0) : lakhs.toFixed(2)) + 'L';
+  } else if (absNum >= 1000) {
+    // Thousands
+    const thousands = absNum / 1000;
+    return sign + '₹' + (thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1)) + 'K';
+  } else {
+    return sign + '₹' + absNum.toFixed(0);
+  }
+};
+
 const BranchAdminDashboard = ({ 
   analytics, 
   branchFinancialStats, 
@@ -55,7 +77,7 @@ const BranchAdminDashboard = ({
                 <CreditCard className="w-5 h-5 text-emerald-500" />
                 <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
               </div>
-              <p className="text-2xl font-bold text-slate-800">₹{((branchFinancialStats.monthly_revenue || 0) / 1000).toFixed(0)}K</p>
+              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.monthly_revenue || 0)}</p>
               <p className="text-xs text-slate-500 mt-1">Total Collection</p>
             </CardContent>
           </Card>
@@ -67,7 +89,7 @@ const BranchAdminDashboard = ({
                 <ArrowDownRight className="w-5 h-5 text-red-500" />
                 <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
               </div>
-              <p className="text-2xl font-bold text-slate-800">₹{((branchFinancialStats.total_expenses || 0) / 1000).toFixed(0)}K</p>
+              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.total_expenses || 0)}</p>
               <p className="text-xs text-slate-500 mt-1">Expenses</p>
             </CardContent>
           </Card>
@@ -79,7 +101,7 @@ const BranchAdminDashboard = ({
                 <Award className="w-5 h-5 text-purple-500" />
                 <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
               </div>
-              <p className="text-2xl font-bold text-slate-800">₹{((branchFinancialStats.exam_revenue || 0) / 1000).toFixed(0)}K</p>
+              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.exam_revenue || 0)}</p>
               <p className="text-xs text-slate-500 mt-1">Exam Revenue</p>
             </CardContent>
           </Card>
@@ -92,7 +114,7 @@ const BranchAdminDashboard = ({
                 <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
               </div>
               <p className={`text-2xl font-bold ${(branchFinancialStats.net_revenue || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                ₹{((branchFinancialStats.net_revenue || 0) / 1000).toFixed(0)}K
+                {formatIndianCurrency(branchFinancialStats.net_revenue || 0)}
               </p>
               <p className="text-xs text-slate-500 mt-1">Net Revenue</p>
             </CardContent>
@@ -125,7 +147,12 @@ const BranchAdminDashboard = ({
                 <BarChart data={financialData.monthly_data}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                   <XAxis dataKey="month_name" stroke="#94A3B8" tick={{fontSize: 10}} />
-                  <YAxis stroke="#94A3B8" tick={{fontSize: 10}} tickFormatter={(v) => `₹${v/1000}K`} />
+                  <YAxis stroke="#94A3B8" tick={{fontSize: 10}} tickFormatter={(v) => {
+                    if (v >= 10000000) return `₹${(v/10000000).toFixed(1)}Cr`;
+                    if (v >= 100000) return `₹${(v/100000).toFixed(1)}L`;
+                    if (v >= 1000) return `₹${(v/1000).toFixed(0)}K`;
+                    return `₹${v}`;
+                  }} />
                   <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
                   <Legend wrapperStyle={{fontSize: '11px'}} />
                   <Bar dataKey="income" name="Income" fill="#10B981" radius={[3, 3, 0, 0]} />
@@ -206,7 +233,7 @@ const BranchAdminDashboard = ({
               </div>
               <div className="text-center">
                 <p className="text-xs text-slate-500 mb-1">Income</p>
-                <p className="text-lg font-bold text-amber-600">₹{(safeNum(sessionComparison.current_session?.income) / 1000).toFixed(0)}K</p>
+                <p className="text-lg font-bold text-amber-600">{formatIndianCurrency(safeNum(sessionComparison.current_session?.income))}</p>
                 <p className={`text-xs ${safeNum(sessionComparison.changes?.income) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {safeNum(sessionComparison.changes?.income) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.income)}%
                 </p>

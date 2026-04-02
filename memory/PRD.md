@@ -8,7 +8,21 @@ Build a comprehensive institute management system with role-based access, studen
 ### Just Completed (This Session)
 - ✅ **AdminPanel.js Final Refactoring** - ExamsTab and SystemSettingsTab components integrated
 - ✅ **WhatsApp Tab Fixed** - Added missing testNumber state and handler functions
-- ✅ **Testing Verified** - All AdminPanel tabs working (iteration_25.json - 100% pass)
+- ✅ **Indian Currency Formatting** - Fixed all dashboards to use proper Indian numbering (L for Lakhs, Cr for Crores instead of just K)
+- ✅ **Testing Verified** - AdminPanel tabs working (iteration_25.json - 100% pass)
+
+### Indian Currency Formatting Details
+The `formatIndianCurrency()` function was added to:
+- `/app/frontend/src/pages/Dashboard.js`
+- `/app/frontend/src/components/dashboards/BranchAdminDashboard.jsx`
+- `/app/frontend/src/components/dashboards/FDEDashboard.jsx`
+- `/app/frontend/src/components/dashboards/CounsellorDashboard.jsx`
+
+Format rules:
+- ₹1Cr+ = Crores (1,00,00,000)
+- ₹1L+ = Lakhs (1,00,000)
+- ₹1K+ = Thousands (1,000)
+- Below ₹1K = Exact amount
 
 ### Previously Completed
 - Academic Session-based login and filtering
