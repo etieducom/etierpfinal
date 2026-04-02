@@ -5,3 +5,5 @@ export { default as ExpenseCategoriesTab } from './ExpenseCategoriesTab';
 export { default as LeadSourcesTab } from './LeadSourcesTab';
 export { default as UsersTab } from './UsersTab';
 export { default as WhatsAppSettingsTab } from './WhatsAppSettingsTab';
+export { default as ExamsTab } from './ExamsTab';
+export { default as SystemSettingsTab } from './SystemSettingsTab';
