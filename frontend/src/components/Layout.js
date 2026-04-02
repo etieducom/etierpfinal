@@ -38,29 +38,21 @@ const Layout = ({ children }) => {
   }, []);
 
   // Fetch available sessions for ALL users (not just Super Admin)
+  // Header switcher shows both sessions for switching after login
   useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        const response = await authAPI.getSessions();
-        // Super Admin gets "All Sessions" option, others don't
-        if (isSuperAdmin) {
-          setSessions([
-            { value: 'all', label: 'All Sessions' },
-            ...response.data.sessions
-          ]);
-        } else {
-          setSessions(response.data.sessions || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch sessions');
-        // Fallback to default sessions
-        setSessions([
-          { value: '2025', label: '2025-2026' },
-          { value: '2026', label: '2026-2027' }
-        ]);
-      }
-    };
-    fetchSessions();
+    const allSessions = [
+      { value: '2025', label: '2025-2026' },
+      { value: '2026', label: '2026-2027' }
+    ];
+    
+    if (isSuperAdmin) {
+      setSessions([
+        { value: 'all', label: 'All Sessions' },
+        ...allSessions
+      ]);
+    } else {
+      setSessions(allSessions);
+    }
   }, [isSuperAdmin]);
 
   const fetchPendingCount = async () => {
