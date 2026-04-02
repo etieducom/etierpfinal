@@ -886,8 +886,24 @@ const StudentsPage = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium">{student.student_name}</p>
-                      <p className="text-xs text-slate-500">{student.email}</p>
+                      <div className="flex items-center gap-3">
+                        {/* Student Photo */}
+                        {student.student_photo_url ? (
+                          <img 
+                            src={student.student_photo_url} 
+                            alt={student.student_name}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center border-2 border-slate-200">
+                            <User className="w-5 h-5 text-slate-400" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium">{student.student_name}</p>
+                          <p className="text-xs text-slate-500">{student.email}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm">{student.phone}</td>
                     <td className="px-4 py-3">
