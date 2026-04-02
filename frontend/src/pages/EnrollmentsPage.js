@@ -868,18 +868,21 @@ const EnrollmentsPage = () => {
                             >
                               <UserPlus className="w-4 h-4 mr-1" /> Enroll
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                              onClick={() => {
-                                setDeletingLead(lead);
-                                setDeleteLeadDialog(true);
-                              }}
-                              data-testid={`delete-lead-btn-${lead.id}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            {/* Delete button - Only for Branch Admin */}
+                            {isBranchAdmin && (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                                onClick={() => {
+                                  setDeletingLead(lead);
+                                  setDeleteLeadDialog(true);
+                                }}
+                                data-testid={`delete-lead-btn-${lead.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
