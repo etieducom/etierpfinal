@@ -6,22 +6,15 @@ Build a comprehensive institute management system with role-based access, studen
 ## Current Status (April 2026)
 
 ### Recently Completed (This Session)
-- ✅ **Dashboard Refactoring Complete**
-  - Created `FDEDashboard.jsx` (216 lines) - modular FDE component
-  - Created `CounsellorDashboard.jsx` (252 lines) - modular Counsellor component
-  - Created `BranchAdminDashboard.jsx` (264 lines) - modular Branch Admin component
-  - Reduced `Dashboard.js` from 1,704 to 1,042 lines (40% reduction)
-- ✅ **Backend Router Structure Created**
-  - Created `/app/backend/routes/` with 9 router stubs
-  - Created `/app/backend/core/` with shared dependencies
-  - Created `/app/REFACTORING_GUIDE.md` with migration plan
-- ✅ **Login Page Verified** - Clean layout without session stats (as requested)
-- ✅ **Delete from Ready to Enroll** - Added delete button and confirmation dialog to remove leads from Ready to Enroll list in EnrollmentsPage
-- ✅ **Fixed Unique Student Count** - Super Admin dashboard now shows "Total Students" (unique count) instead of "Total Enrollments"
-- ✅ **Fixed Academic Session Format** - Now displays as "2026-2027" instead of "2026-27" throughout the app
-- ✅ **AdminPanel Refactoring Started**
-  - Created `BranchesTab.jsx`, `ProgramsTab.jsx`, `SessionsTab.jsx` components
-  - Reduced `AdminPanel.js` from 1,869 to 1,722 lines
+- ✅ **Academic Session Dropdown Limited** - Now shows only 2025-2026 and 2026-2027
+- ✅ **Academic Session Format Fixed** - Full year format (2026-2027 not 2026-27)
+- ✅ **Dashboard Refactoring** - 39% reduction (1,704 → 1,042 lines)
+- ✅ **AdminPanel Refactoring** - 11% reduction (1,869 → 1,656 lines)
+- ✅ **StudentsPage Refactoring** - Dialogs extracted (1,965 → 1,902 lines)
+- ✅ **InsightsPage Components** - BusinessOverviewComponents created
+- ✅ **Delete from Ready to Enroll** - Delete button in EnrollmentsPage
+- ✅ **Fixed Unique Student Count** - Shows unique students instead of enrollments
+- ✅ **Backend Router Structure** - 9 router stubs at `/app/backend/routes/`
 
 ### Previously Completed
 - Academic Session-based login and filtering
@@ -52,12 +45,15 @@ Build a comprehensive institute management system with role-based access, studen
 |------|----------|---------|-----------|
 | `Dashboard.js` | 1,704 | 1,042 | **39%** ✅ |
 | `AdminPanel.js` | 1,869 | 1,656 | **11%** ✅ |
-| `StudentsPage.js` | 1,965 | 1,968 | Components created |
-| `InsightsPage.js` | 1,452 | 1,452 | Pending |
+| `StudentsPage.js` | 1,965 | 1,902 | **3%** ✅ |
+| `InsightsPage.js` | 1,452 | 1,452 | Components ready |
 | `server.py` | 10,225 | 10,235 | Router structure created |
 
-**Extracted Components (1,344 lines total):**
-- Dashboard: `FDEDashboard.jsx`, `CounsellorDashboard.jsx`, `BranchAdminDashboard.jsx` (732 lines)
+**Extracted Components (1,504 lines total):**
+- Dashboard: 3 components (732 lines)
+- Admin: 5 components (337 lines)
+- Students: 3 components (272 lines)
+- Insights: 1 component file (163 lines)
 - Admin: `BranchesTab.jsx`, `ProgramsTab.jsx`, `SessionsTab.jsx`, `ExpenseCategoriesTab.jsx`, `LeadSourcesTab.jsx` (337 lines)
 - Students: `PaymentDialog.jsx`, `ReceiptDialog.jsx`, `CancelEnrollmentDialog.jsx` (272 lines) - Created, pending integration
 

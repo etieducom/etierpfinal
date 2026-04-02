@@ -32,20 +32,14 @@ const Login = () => {
         setFormData(prev => ({ ...prev, session: response.data.current_session }));
       } catch (error) {
         console.error('Failed to fetch sessions:', error);
-        // Fallback: generate sessions client-side
-        const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth() + 1;
-        const currentSessionYear = currentMonth >= 4 ? currentYear : currentYear - 1;
-        const fallbackSessions = [];
-        for (let year = 2016; year <= currentSessionYear; year++) {
-          fallbackSessions.push({
-            value: String(year),
-            label: `${year}-${year + 1}`
-          });
-        }
+        // Fallback: only show 2025-2026 and 2026-2027 sessions
+        const fallbackSessions = [
+          { value: '2025', label: '2025-2026' },
+          { value: '2026', label: '2026-2027' }
+        ];
         setSessions(fallbackSessions);
-        setCurrentSession(String(currentSessionYear));
-        setFormData(prev => ({ ...prev, session: String(currentSessionYear) }));
+        setCurrentSession('2026');
+        setFormData(prev => ({ ...prev, session: '2026' }));
       }
     };
     fetchSessions();

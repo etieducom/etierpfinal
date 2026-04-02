@@ -787,14 +787,12 @@ def get_session_date_range(session: str) -> tuple:
     return start_date, end_date
 
 def get_available_sessions() -> list:
-    """Get list of available academic sessions from 2016 to current."""
-    current_session = int(get_current_academic_session())
-    sessions = []
-    for year in range(2016, current_session + 2):  # +2 to include next year
-        sessions.append({
-            "value": str(year),
-            "label": f"{year}-{year+1}"  # e.g., "2024-2025"
-        })
+    """Get list of available academic sessions - currently limited to 2025-2026 and 2026-2027."""
+    # Only show these two sessions as per user request
+    sessions = [
+        {"value": "2025", "label": "2025-2026"},
+        {"value": "2026", "label": "2026-2027"}
+    ]
     return sessions
 
 # Session model for custom sessions

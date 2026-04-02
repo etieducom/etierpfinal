@@ -1164,59 +1164,13 @@ const StudentsPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Receipt Dialog */}
-      <Dialog open={receiptDialog} onOpenChange={setReceiptDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Payment Successful!</span>
-              <Button onClick={handlePrintReceipt} className="bg-slate-900 hover:bg-slate-800" data-testid="print-receipt-btn">
-                <Printer className="w-4 h-4 mr-2" /> Print Receipt
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
-          
-          {receiptData && (
-            <div className="space-y-4">
-              <div className="bg-green-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-green-600">Amount Received</p>
-                <p className="text-3xl font-bold text-green-700">₹{receiptData.amount?.toLocaleString()}</p>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Receipt No:</span>
-                  <span className="font-mono font-medium">{receiptData.receipt_number}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Student:</span>
-                  <span className="font-medium">{receiptData.student_name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Payment Mode:</span>
-                  <span>{receiptData.payment_mode}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Total Paid:</span>
-                  <span className="font-medium text-green-600">₹{receiptData.total_paid?.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Pending:</span>
-                  <span className="font-medium text-amber-600">
-                    ₹{((receiptData.total_fee || 0) - (receiptData.total_paid || 0)).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => setReceiptDialog(false)}
-              >
-                Close
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Receipt Dialog - Modular Component */}
+      <ReceiptDialog
+        open={receiptDialog}
+        onOpenChange={setReceiptDialog}
+        receiptData={receiptData}
+        onPrintReceipt={handlePrintReceipt}
+      />
 
       {/* Student Details Dialog */}
       <Dialog open={detailsDialog} onOpenChange={setDetailsDialog}>
@@ -1497,34 +1451,14 @@ const StudentsPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Cancel Enrollment Dialog */}
-      <Dialog open={cancelDialog} onOpenChange={setCancelDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancel Enrollment</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Are you sure you want to cancel this enrollment? This action cannot be undone.
-            </p>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Reason for cancellation</label>
-              <textarea
-                className="w-full min-h-20 px-3 py-2 border border-slate-200 rounded-md"
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="Enter reason for cancellation..."
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setCancelDialog(false)}>Cancel</Button>
-              <Button variant="destructive" onClick={handleCancelEnrollment}>
-                Confirm Cancellation
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Cancel Enrollment Dialog - Modular Component */}
+      <CancelEnrollmentDialog
+        open={cancelDialog}
+        onOpenChange={setCancelDialog}
+        cancelReason={cancelReason}
+        setCancelReason={setCancelReason}
+        onConfirmCancel={handleCancelEnrollment}
+      />
 
       {/* Add-on Course Dialog */}
       <Dialog open={addonDialog} onOpenChange={setAddonDialog}>
