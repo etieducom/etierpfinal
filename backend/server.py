@@ -7284,6 +7284,15 @@ async def get_branch_financial_stats(request: Request, current_user: User = Depe
     session_start, session_end = get_session_date_range(session_val)
     session_label = f"{session_val}-{int(session_val)+1}"
     
+    # Current month boundaries for "This Month" stats
+    now = datetime.now(timezone.utc)
+    month_start = datetime(now.year, now.month, 1, 0, 0, 0)
+    if now.month == 12:
+        month_end = datetime(now.year + 1, 1, 1, 0, 0, 0)
+    else:
+        month_end = datetime(now.year, now.month + 1, 1, 0, 0, 0)
+    current_month_str = now.strftime('%Y-%m')
+    
     # Helper to check if a date string falls within session
     def is_in_session(date_str):
         if not date_str or not session_start or not session_end:
@@ -7296,16 +7305,33 @@ async def get_branch_financial_stats(request: Request, current_user: User = Depe
         except:
             return False
     
+    # Helper to check if a date falls within current month
+    def is_in_current_month(date_str):
+        if not date_str:
+            return False
+        try:
+            if isinstance(date_str, str):
+                return date_str.startswith(current_month_str)
+            elif isinstance(date_str, datetime):
+                return month_start <= date_str < month_end
+            return False
+        except:
+            return False
+    
     # SESSION-FILTERED: Payments (by payment_date)
     all_payments = await db.payments.find(branch_filter, {"_id": 0, "amount": 1, "payment_date": 1}).to_list(10000)
     session_payments = [p for p in all_payments if is_in_session(p.get('payment_date', ''))]
     session_revenue = sum(p.get('amount', 0) for p in session_payments)
+    monthly_payments = [p for p in all_payments if is_in_current_month(p.get('payment_date', ''))]
+    monthly_revenue = sum(p.get('amount', 0) for p in monthly_payments)
     total_collections = sum(p.get('amount', 0) for p in all_payments)
     
     # SESSION-FILTERED: Enrollments (by enrollment_date)
     all_enrollments = await db.enrollments.find(branch_filter, {"_id": 0, "final_fee": 1, "total_paid": 1, "enrollment_date": 1}).to_list(10000)
     session_enrollments = [e for e in all_enrollments if is_in_session(e.get('enrollment_date', ''))]
     session_admissions = len(session_enrollments)
+    monthly_enrollments = [e for e in all_enrollments if is_in_current_month(e.get('enrollment_date', ''))]
+    monthly_admissions = len(monthly_enrollments)
     pending_amounts = sum((e.get('final_fee', 0) - e.get('total_paid', 0)) for e in all_enrollments)
     
     # SESSION-FILTERED: Exam Bookings (by booking_date)
@@ -7327,6 +7353,8 @@ async def get_branch_financial_stats(request: Request, current_user: User = Depe
     all_leads = await db.leads.find({**branch_filter, "is_deleted": {"$ne": True}}, {"_id": 0, "created_at": 1}).to_list(10000)
     session_leads = [l for l in all_leads if is_in_session(l.get('created_at', ''))]
     session_leads_count = len(session_leads)
+    monthly_leads = [l for l in all_leads if is_in_current_month(l.get('created_at', ''))]
+    monthly_leads_count = len(monthly_leads)
     total_leads = len(all_leads)
     
     # Calculate session net revenue
@@ -7354,6 +7382,11 @@ async def get_branch_financial_stats(request: Request, current_user: User = Depe
         })
     
     return {
+        # Monthly stats (for "This Month" display)
+        "monthly_leads": monthly_leads_count,
+        "monthly_admissions": monthly_admissions,
+        "monthly_revenue": monthly_revenue,
+        
         # Session-filtered stats (for "This Session" display)
         "session_label": session_label,
         "session_leads": session_leads_count,
@@ -7370,13 +7403,6 @@ async def get_branch_financial_stats(request: Request, current_user: User = Depe
         "exam_revenue": total_exam_revenue,
         "pending_amounts": pending_amounts,
         "net_revenue": total_collections + total_exam_revenue - total_expenses,
-        
-        # Legacy fields for backward compatibility
-        "monthly_revenue": session_revenue,
-        "monthly_expenses": session_expenses_total,
-        "monthly_exam_revenue": session_exam_revenue,
-        "monthly_net": session_net_revenue,
-        "monthly_leads": session_leads_count,
         
         "trainer_stats": trainer_stats,
         "total_students": len(all_enrollments),

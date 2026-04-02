@@ -42,82 +42,106 @@ const BranchAdminDashboard = ({
   return (
     <div className="space-y-8" data-testid="branch-admin-dashboard">
       
-      {/* 1. Current Session Stats - Top Section */}
+      {/* 1. Current Month Stats - Top Row */}
       {branchFinancialStats && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {/* Total Enquiries - This Session */}
-          <Card className="bg-white border-slate-200 hover:border-blue-300 transition-colors">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <Users className="w-5 h-5 text-blue-500" />
-                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Session</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-800">{branchFinancialStats?.session_leads || 0}</p>
-              <p className="text-xs text-slate-500 mt-1">Total Enquiries</p>
-            </CardContent>
-          </Card>
+        <div className="space-y-4">
+          {/* This Month Row */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              This Month
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Monthly Enquiries */}
+              <Card className="bg-white border-slate-200 hover:border-blue-300 transition-colors">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Users className="w-5 h-5 text-blue-500" />
+                    <Badge variant="outline" className="text-[10px]">This Month</Badge>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-800">{branchFinancialStats?.monthly_leads || 0}</p>
+                  <p className="text-xs text-slate-500 mt-1">Total Enquiries</p>
+                </CardContent>
+              </Card>
+              
+              {/* Monthly Admissions */}
+              <Card className="bg-white border-slate-200 hover:border-green-300 transition-colors">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <GraduationCap className="w-5 h-5 text-green-500" />
+                    <Badge variant="outline" className="text-[10px]">This Month</Badge>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-800">{branchFinancialStats?.monthly_admissions || 0}</p>
+                  <p className="text-xs text-slate-500 mt-1">Total Admissions</p>
+                </CardContent>
+              </Card>
+              
+              {/* Monthly Collection */}
+              <Card className="bg-white border-slate-200 hover:border-emerald-300 transition-colors">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <CreditCard className="w-5 h-5 text-emerald-500" />
+                    <Badge variant="outline" className="text-[10px]">This Month</Badge>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.monthly_revenue || 0)}</p>
+                  <p className="text-xs text-slate-500 mt-1">Total Collection</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
           
-          {/* Total Admissions - This Session */}
-          <Card className="bg-white border-slate-200 hover:border-green-300 transition-colors">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <GraduationCap className="w-5 h-5 text-green-500" />
-                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Session</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-800">{branchFinancialStats?.session_admissions || 0}</p>
-              <p className="text-xs text-slate-500 mt-1">Total Admissions</p>
-            </CardContent>
-          </Card>
-          
-          {/* Total Collection - This Session */}
-          <Card className="bg-white border-slate-200 hover:border-emerald-300 transition-colors">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <CreditCard className="w-5 h-5 text-emerald-500" />
-                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Session</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.session_revenue || 0)}</p>
-              <p className="text-xs text-slate-500 mt-1">Total Collection</p>
-            </CardContent>
-          </Card>
-          
-          {/* Expenses - This Session */}
-          <Card className="bg-white border-slate-200 hover:border-red-300 transition-colors">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <ArrowDownRight className="w-5 h-5 text-red-500" />
-                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Session</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.session_expenses || 0)}</p>
-              <p className="text-xs text-slate-500 mt-1">Expenses</p>
-            </CardContent>
-          </Card>
-          
-          {/* Exam Revenue - This Session */}
-          <Card className="bg-white border-slate-200 hover:border-purple-300 transition-colors">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <Award className="w-5 h-5 text-purple-500" />
-                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Session</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.session_exam_revenue || 0)}</p>
-              <p className="text-xs text-slate-500 mt-1">Exam Revenue</p>
-            </CardContent>
-          </Card>
-          
-          {/* Net Revenue - This Session */}
-          <Card className="bg-white border-slate-200 hover:border-green-300 transition-colors">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <DollarSign className={`w-5 h-5 ${(branchFinancialStats.session_net_revenue || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`} />
-                <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Session</span>
-              </div>
-              <p className={`text-2xl font-bold ${(branchFinancialStats.session_net_revenue || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatIndianCurrency(branchFinancialStats.session_net_revenue || 0)}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">Net Revenue</p>
-            </CardContent>
-          </Card>
+          {/* This Session Row */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              This Session ({branchFinancialStats?.session_label || '2026-2027'})
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Session Enquiries */}
+              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-blue-700">{branchFinancialStats?.session_leads || 0}</p>
+                  <p className="text-xs text-blue-600 mt-1">Total Enquiries</p>
+                </CardContent>
+              </Card>
+              
+              {/* Session Admissions */}
+              <Card className="bg-gradient-to-br from-green-50 to-white border-green-200">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <GraduationCap className="w-5 h-5 text-green-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-green-700">{branchFinancialStats?.session_admissions || 0}</p>
+                  <p className="text-xs text-green-600 mt-1">Total Admissions</p>
+                </CardContent>
+              </Card>
+              
+              {/* Session Collection */}
+              <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <CreditCard className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-700">{formatIndianCurrency(branchFinancialStats.session_revenue || 0)}</p>
+                  <p className="text-xs text-emerald-600 mt-1">Total Collection</p>
+                </CardContent>
+              </Card>
+              
+              {/* Session Expenses */}
+              <Card className="bg-gradient-to-br from-red-50 to-white border-red-200">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <ArrowDownRight className="w-5 h-5 text-red-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-red-700">{formatIndianCurrency(branchFinancialStats.session_expenses || 0)}</p>
+                  <p className="text-xs text-red-600 mt-1">Total Expenses</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       )}
 
