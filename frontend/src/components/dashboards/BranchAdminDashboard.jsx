@@ -32,7 +32,8 @@ const formatIndianCurrency = (num) => {
 
 const BranchAdminDashboard = ({ 
   branchFinancialStats, 
-  financialData, 
+  financialData,
+  admissionData, 
   sessionComparison, 
   branchIncentiveStats,
   selectedYear,

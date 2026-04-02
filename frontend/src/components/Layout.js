@@ -37,22 +37,30 @@ const Layout = ({ children }) => {
     }
   }, []);
 
-  // Fetch available sessions for Super Admin
+  // Fetch available sessions for ALL users (not just Super Admin)
   useEffect(() => {
-    if (isSuperAdmin) {
-      const fetchSessions = async () => {
-        try {
-          const response = await authAPI.getSessions();
+    const fetchSessions = async () => {
+      try {
+        const response = await authAPI.getSessions();
+        // Super Admin gets "All Sessions" option, others don't
+        if (isSuperAdmin) {
           setSessions([
             { value: 'all', label: 'All Sessions' },
             ...response.data.sessions
           ]);
-        } catch (error) {
-          console.error('Failed to fetch sessions');
+        } else {
+          setSessions(response.data.sessions || []);
         }
-      };
-      fetchSessions();
-    }
+      } catch (error) {
+        console.error('Failed to fetch sessions');
+        // Fallback to default sessions
+        setSessions([
+          { value: '2025', label: '2025-2026' },
+          { value: '2026', label: '2026-2027' }
+        ]);
+      }
+    };
+    fetchSessions();
   }, [isSuperAdmin]);
 
   const fetchPendingCount = async () => {
@@ -163,27 +171,20 @@ const Layout = ({ children }) => {
           <span className="text-lg font-semibold text-slate-700 hidden md:block">Branch Management System</span>
         </div>
         <div className="flex items-center gap-4">
-          {/* Session Indicator/Selector */}
-          {isSuperAdmin ? (
-            <Select value={currentSession} onValueChange={handleSessionChange}>
-              <SelectTrigger className="w-[140px] h-9 text-xs" data-testid="session-switcher">
-                <Calendar className="w-3 h-3 mr-1" />
-                <SelectValue placeholder="Session" />
-              </SelectTrigger>
-              <SelectContent>
-                {sessions.map((session) => (
-                  <SelectItem key={session.value} value={session.value}>
-                    {session.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 rounded-md border border-blue-200" data-testid="session-badge">
-              <Calendar className="w-3.5 h-3.5 text-blue-600" />
-              <span className="text-xs font-medium text-blue-700">{getSessionLabel()}</span>
-            </div>
-          )}
+          {/* Session Switcher - Available for ALL users */}
+          <Select value={currentSession} onValueChange={handleSessionChange}>
+            <SelectTrigger className="w-[140px] h-9 text-xs" data-testid="session-switcher">
+              <Calendar className="w-3 h-3 mr-1" />
+              <SelectValue placeholder="Session" />
+            </SelectTrigger>
+            <SelectContent>
+              {sessions.map((session) => (
+                <SelectItem key={session.value} value={session.value}>
+                  {session.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <NotificationCenter />
           <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold">{user.name}</p>
