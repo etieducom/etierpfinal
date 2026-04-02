@@ -6020,12 +6020,16 @@ async def update_student_details(enrollment_id: str, data: StudentUpdateModel, c
     # Build update data (only include non-None values)
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     
-    # FDE cannot edit student_name (but can edit other fields including fee)
-    restricted_fields_for_fde = ['student_name']
+    # FDE cannot edit student_name (but can edit other fields including photo, fee, etc.)
+    # Only block if the name is actually being changed
     if current_user.role == UserRole.FRONT_DESK:
-        for field in restricted_fields_for_fde:
-            if field in update_data:
-                raise HTTPException(status_code=403, detail=f"Front Desk cannot edit {field}")
+        if 'student_name' in update_data:
+            # Check if name is actually different from current
+            if update_data['student_name'] != enrollment.get('student_name'):
+                raise HTTPException(status_code=403, detail="Front Desk cannot edit student name")
+            else:
+                # Remove from update if same (no change needed)
+                del update_data['student_name']
     
     # If program_id is being updated, also update program_name
     if 'program_id' in update_data:

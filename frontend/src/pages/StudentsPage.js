@@ -1314,14 +1314,24 @@ const StudentsPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                     <div className="bg-slate-50 p-3 rounded-lg">
                       <p className="text-sm text-slate-500">Fee Quoted</p>
                       <p className="text-xl font-bold">₹{(studentDetails.enrollment?.fee_quoted || 0).toLocaleString()}</p>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg">
                       <p className="text-sm text-slate-500">Discount</p>
-                      <p className="text-xl font-bold">{studentDetails.enrollment?.discount_percent || 0}%</p>
+                      <p className="text-xl font-bold text-red-500">
+                        {studentDetails.enrollment?.discount_amount > 0 
+                          ? `-₹${(studentDetails.enrollment?.discount_amount || 0).toLocaleString()}`
+                          : studentDetails.enrollment?.discount_percent > 0 
+                            ? `${studentDetails.enrollment?.discount_percent}%`
+                            : 'None'}
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <p className="text-sm text-blue-600">Final Fee</p>
+                      <p className="text-xl font-bold text-blue-600">₹{(studentDetails.enrollment?.final_fee || 0).toLocaleString()}</p>
                     </div>
                     <div className="bg-green-50 p-3 rounded-lg">
                       <p className="text-sm text-green-600">Total Paid</p>
