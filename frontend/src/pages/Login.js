@@ -12,34 +12,35 @@ import { Calendar } from 'lucide-react';
 const ETI_LOGO = 'https://customer-assets.emergentagent.com/job_4e0bdddc-c844-4374-a91a-dfbddecb14b1/artifacts/4ane8ulw_eti%20.png';
 
 const Login = () => {
+  // Default sessions - always available
+  const defaultSessions = [
+    { value: '2025', label: '2025-2026' },
+    { value: '2026', label: '2026-2027' }
+  ];
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    session: '',
+    session: '2026', // Default to current session
   });
   const [loading, setLoading] = useState(false);
-  const [sessions, setSessions] = useState([]);
-  const [currentSession, setCurrentSession] = useState('');
+  const [sessions, setSessions] = useState(defaultSessions);
+  const [currentSession, setCurrentSession] = useState('2026');
   const navigate = useNavigate();
 
-  // Fetch available sessions on mount
+  // Fetch available sessions on mount (optional - we have defaults)
   useEffect(() => {
     const fetchSessions = async () => {
       try {
         const response = await authAPI.getSessions();
-        setSessions(response.data.sessions);
-        setCurrentSession(response.data.current_session);
-        setFormData(prev => ({ ...prev, session: response.data.current_session }));
+        if (response.data.sessions && response.data.sessions.length > 0) {
+          setSessions(response.data.sessions);
+          setCurrentSession(response.data.current_session || '2026');
+          setFormData(prev => ({ ...prev, session: response.data.current_session || '2026' }));
+        }
       } catch (error) {
-        console.error('Failed to fetch sessions:', error);
-        // Fallback: only show 2025-2026 and 2026-2027 sessions
-        const fallbackSessions = [
-          { value: '2025', label: '2025-2026' },
-          { value: '2026', label: '2026-2027' }
-        ];
-        setSessions(fallbackSessions);
-        setCurrentSession('2026');
-        setFormData(prev => ({ ...prev, session: '2026' }));
+        console.error('Failed to fetch sessions, using defaults');
+        // Defaults are already set
       }
     };
     fetchSessions();
@@ -134,7 +135,11 @@ const Login = () => {
                 </SelectContent>
               </Select>
               <p className="text-xs text-slate-500">
-                Session {getSessionLabel(formData.session)}: April {formData.session} - March {parseInt(formData.session) + 1}
+                {formData.session ? (
+                  <>Session: April {formData.session} - March {parseInt(formData.session) + 1}</>
+                ) : (
+                  <>Please select a session</>
+                )}
               </p>
             </div>
 
