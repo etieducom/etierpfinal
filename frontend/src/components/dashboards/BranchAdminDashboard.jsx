@@ -31,7 +31,6 @@ const formatIndianCurrency = (num) => {
 };
 
 const BranchAdminDashboard = ({ 
-  analytics, 
   branchFinancialStats, 
   financialData, 
   admissionData, 
@@ -46,14 +45,14 @@ const BranchAdminDashboard = ({
       {/* 1. Current Month Stats - Top Section */}
       {branchFinancialStats && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {/* Total Enquiries */}
+          {/* Total Enquiries - This Month */}
           <Card className="bg-white border-slate-200 hover:border-blue-300 transition-colors">
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between mb-3">
                 <Users className="w-5 h-5 text-blue-500" />
                 <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
               </div>
-              <p className="text-2xl font-bold text-slate-800">{analytics?.total_leads || 0}</p>
+              <p className="text-2xl font-bold text-slate-800">{branchFinancialStats?.monthly_leads || 0}</p>
               <p className="text-xs text-slate-500 mt-1">Total Enquiries</p>
             </CardContent>
           </Card>
@@ -70,7 +69,7 @@ const BranchAdminDashboard = ({
             </CardContent>
           </Card>
           
-          {/* Total Collection */}
+          {/* Total Collection - This Month */}
           <Card className="bg-white border-slate-200 hover:border-emerald-300 transition-colors">
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between mb-3">
@@ -82,39 +81,39 @@ const BranchAdminDashboard = ({
             </CardContent>
           </Card>
           
-          {/* Expenses */}
+          {/* Expenses - This Month */}
           <Card className="bg-white border-slate-200 hover:border-red-300 transition-colors">
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between mb-3">
                 <ArrowDownRight className="w-5 h-5 text-red-500" />
                 <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
               </div>
-              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.total_expenses || 0)}</p>
+              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.monthly_expenses || 0)}</p>
               <p className="text-xs text-slate-500 mt-1">Expenses</p>
             </CardContent>
           </Card>
           
-          {/* Exam Revenue */}
+          {/* Exam Revenue - This Month */}
           <Card className="bg-white border-slate-200 hover:border-purple-300 transition-colors">
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between mb-3">
                 <Award className="w-5 h-5 text-purple-500" />
                 <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
               </div>
-              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.exam_revenue || 0)}</p>
+              <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.monthly_exam_revenue || 0)}</p>
               <p className="text-xs text-slate-500 mt-1">Exam Revenue</p>
             </CardContent>
           </Card>
           
-          {/* Net Revenue */}
+          {/* Net Revenue - This Month */}
           <Card className="bg-white border-slate-200 hover:border-green-300 transition-colors">
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between mb-3">
-                <DollarSign className={`w-5 h-5 ${(branchFinancialStats.net_revenue || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                <DollarSign className={`w-5 h-5 ${(branchFinancialStats.monthly_net || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`} />
                 <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">This Month</span>
               </div>
-              <p className={`text-2xl font-bold ${(branchFinancialStats.net_revenue || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatIndianCurrency(branchFinancialStats.net_revenue || 0)}
+              <p className={`text-2xl font-bold ${(branchFinancialStats.monthly_net || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {formatIndianCurrency(branchFinancialStats.monthly_net || 0)}
               </p>
               <p className="text-xs text-slate-500 mt-1">Net Revenue</p>
             </CardContent>

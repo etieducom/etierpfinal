@@ -319,7 +319,6 @@ const Dashboard = () => {
       {/* Branch Admin Dashboard - Modular Component */}
       {isBranchAdmin && (
         <BranchAdminDashboard
-          analytics={analytics}
           branchFinancialStats={branchFinancialStats}
           financialData={financialData}
           admissionData={admissionData}

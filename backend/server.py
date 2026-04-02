@@ -7276,30 +7276,56 @@ async def get_branch_financial_stats(current_user: User = Depends(get_current_us
     if current_user.role == UserRole.BRANCH_ADMIN:
         branch_filter["branch_id"] = current_user.branch_id
     
+    # Current month boundaries
+    now = datetime.now(timezone.utc)
+    current_month_start = datetime(now.year, now.month, 1, 0, 0, 0)
+    if now.month == 12:
+        next_month_start = datetime(now.year + 1, 1, 1, 0, 0, 0)
+    else:
+        next_month_start = datetime(now.year, now.month + 1, 1, 0, 0, 0)
+    current_month_str = now.strftime('%Y-%m')
+    
     # Total collections (all payments)
     payments = await db.payments.find(branch_filter, {"_id": 0, "amount": 1, "payment_date": 1}).to_list(10000)
     total_collections = sum(p.get('amount', 0) for p in payments)
     
     # Monthly revenue (current month)
-    current_month = datetime.now(timezone.utc).strftime('%Y-%m')
-    monthly_payments = [p for p in payments if p.get('payment_date', '').startswith(current_month)]
+    monthly_payments = [p for p in payments if p.get('payment_date', '').startswith(current_month_str)]
     monthly_revenue = sum(p.get('amount', 0) for p in monthly_payments)
     
     # Pending amounts (from enrollments)
     enrollments = await db.enrollments.find(branch_filter, {"_id": 0, "final_fee": 1, "total_paid": 1}).to_list(10000)
     pending_amounts = sum((e.get('final_fee', 0) - e.get('total_paid', 0)) for e in enrollments)
     
-    # Revenue from exams (completed bookings, use exam_price field)
+    # Revenue from exams (completed bookings, use exam_price field) - All time
     exam_bookings = await db.exam_bookings.find(
         {**branch_filter, "status": {"$ne": "Cancelled"}}, 
-        {"_id": 0, "exam_price": 1}
+        {"_id": 0, "exam_price": 1, "booking_date": 1}
     ).to_list(10000)
     exam_revenue = sum(e.get('exam_price', 0) for e in exam_bookings)
     
-    # Total expenses
+    # Monthly exam revenue
+    monthly_exam_revenue = sum(
+        e.get('exam_price', 0) for e in exam_bookings 
+        if e.get('booking_date', '').startswith(current_month_str)
+    )
+    
+    # Total expenses - All time
     expenses = await db.expenses.find(branch_filter, {"_id": 0, "amount": 1, "expense_date": 1}).to_list(10000)
     total_expenses = sum(e.get('amount', 0) for e in expenses)
-    monthly_expenses = sum(e.get('amount', 0) for e in expenses if e.get('expense_date', '').startswith(current_month))
+    monthly_expenses = sum(e.get('amount', 0) for e in expenses if e.get('expense_date', '').startswith(current_month_str))
+    
+    # Monthly leads count - get leads created this month
+    leads = await db.leads.find(branch_filter, {"_id": 0, "created_at": 1}).to_list(10000)
+    total_leads = len(leads)
+    monthly_leads = 0
+    for lead in leads:
+        created_at = lead.get('created_at', '')
+        if isinstance(created_at, str) and created_at.startswith(current_month_str):
+            monthly_leads += 1
+        elif isinstance(created_at, datetime):
+            if created_at >= current_month_start and created_at < next_month_start:
+                monthly_leads += 1
     
     # Trainer-wise student count
     trainers_query = {"role": UserRole.TRAINER.value}
@@ -7328,10 +7354,13 @@ async def get_branch_financial_stats(current_user: User = Depends(get_current_us
         "monthly_revenue": monthly_revenue,
         "pending_amounts": pending_amounts,
         "exam_revenue": exam_revenue,
+        "monthly_exam_revenue": monthly_exam_revenue,
         "total_expenses": total_expenses,
         "monthly_expenses": monthly_expenses,
         "net_revenue": total_collections - total_expenses,
-        "monthly_net": monthly_revenue - monthly_expenses,
+        "monthly_net": monthly_revenue - monthly_expenses - monthly_exam_revenue,
+        "total_leads": total_leads,
+        "monthly_leads": monthly_leads,
         "trainer_stats": trainer_stats,
         "total_students": len(enrollments),
         "total_trainers": len(trainers)
