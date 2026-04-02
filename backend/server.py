@@ -7360,6 +7360,15 @@ async def get_branch_financial_stats(request: Request, current_user: User = Depe
     # Calculate session net revenue
     session_net_revenue = session_revenue + session_exam_revenue - session_expenses_total
     
+    # ACTIVE UNIQUE STUDENTS - students whose course is not yet completed
+    # Count each student (lead_id) only once, even if enrolled in multiple courses
+    active_enrollments = await db.enrollments.find(
+        {**branch_filter, "status": {"$nin": ["Completed", "Cancelled", "Dropped"]}},
+        {"_id": 0, "lead_id": 1}
+    ).to_list(10000)
+    # Get unique lead_ids (unique students)
+    active_unique_students = len(set(e.get('lead_id') for e in active_enrollments if e.get('lead_id')))
+    
     # Trainer-wise student count
     trainers_query = {"role": UserRole.TRAINER.value}
     if current_user.role == UserRole.BRANCH_ADMIN:
@@ -7395,6 +7404,9 @@ async def get_branch_financial_stats(request: Request, current_user: User = Depe
         "session_expenses": session_expenses_total,
         "session_exam_revenue": session_exam_revenue,
         "session_net_revenue": session_net_revenue,
+        
+        # Active students count
+        "active_unique_students": active_unique_students,
         
         # All-time stats (for reference)
         "total_collections": total_collections,

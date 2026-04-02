@@ -96,7 +96,7 @@ const BranchAdminDashboard = ({
               <Calendar className="w-4 h-4" />
               This Session ({branchFinancialStats?.session_label || '2026-2027'})
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {/* Session Enquiries */}
               <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200">
                 <CardContent className="pt-5 pb-4">
@@ -116,6 +116,17 @@ const BranchAdminDashboard = ({
                   </div>
                   <p className="text-2xl font-bold text-green-700">{branchFinancialStats?.session_admissions || 0}</p>
                   <p className="text-xs text-green-600 mt-1">Total Admissions</p>
+                </CardContent>
+              </Card>
+              
+              {/* Active Unique Students */}
+              <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-200">
+                <CardContent className="pt-5 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Users className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-purple-700">{branchFinancialStats?.active_unique_students || 0}</p>
+                  <p className="text-xs text-purple-600 mt-1">Active Students</p>
                 </CardContent>
               </Card>
               
