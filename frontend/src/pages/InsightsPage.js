@@ -22,6 +22,9 @@ import {
   ArrowRight, Megaphone, Search, Filter
 } from 'lucide-react';
 
+// Import modular components
+import { HealthScoreCard, InsightsColumn, QuickStatsGrid, LoadingState } from '@/components/insights';
+
 const InsightsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   
