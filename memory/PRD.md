@@ -5,16 +5,10 @@ Build a comprehensive institute management system with role-based access, studen
 
 ## Current Status (April 2026)
 
-### Recently Completed (This Session)
-- ✅ **Academic Session Dropdown Limited** - Now shows only 2025-2026 and 2026-2027
-- ✅ **Academic Session Format Fixed** - Full year format (2026-2027 not 2026-27)
-- ✅ **Dashboard Refactoring** - 39% reduction (1,704 → 1,042 lines)
-- ✅ **AdminPanel Refactoring** - 11% reduction (1,869 → 1,656 lines)
-- ✅ **StudentsPage Refactoring** - Dialogs extracted (1,965 → 1,902 lines)
-- ✅ **InsightsPage Components** - BusinessOverviewComponents created
-- ✅ **Delete from Ready to Enroll** - Delete button in EnrollmentsPage
-- ✅ **Fixed Unique Student Count** - Shows unique students instead of enrollments
-- ✅ **Backend Router Structure** - 9 router stubs at `/app/backend/routes/`
+### Just Completed (This Session)
+- ✅ **AdminPanel.js Final Refactoring** - ExamsTab and SystemSettingsTab components integrated
+- ✅ **WhatsApp Tab Fixed** - Added missing testNumber state and handler functions
+- ✅ **Testing Verified** - All AdminPanel tabs working (iteration_25.json - 100% pass)
 
 ### Previously Completed
 - Academic Session-based login and filtering
@@ -25,37 +19,42 @@ Build a comprehensive institute management system with role-based access, studen
 - Fixed race condition bug in Dashboard loading
 - AI-Powered Business Insights (GPT-4o via emergentintegrations)
 - Full CRUD Session Management for Super Admin
-- Multiple production bug fixes (enrollments, leads, fees, etc.)
-
-### AI Insights Implementation
-- Backend endpoint: `GET /api/analytics/ai-branch-insights`
-- Uses GPT-4o via emergentintegrations LlmChat
-- Returns structured JSON with:
-  - `trainer_analysis` (overloaded/underutilized trainers, recommendation)
-  - `income_insights` (trend, forecast, recommendation)
-  - `student_insights` (retention risk, fee collection status)
-  - `overall_health` (score 1-10, status, top_priority, summary)
+- Dashboard.js modularization (1,704 → 1,042 lines, 39% reduction)
+- AdminPanel.js modularization (1,536 → 1,468 lines, all tabs extracted)
+- Delete from Ready to Enroll feature
+- Fixed Unique Student Count on dashboard
 
 ### Pending Issues
-1. **(P1) Complete Quiz Content Generation** - Several quizzes need more questions
-2. **(P2) Unique Student Count** - Dashboard shows enrollments, not unique students
+1. **(P0) Backend server.py Modularization** - Router scaffolding exists at `/app/backend/routes/` but endpoints haven't been migrated yet
+2. **(P1) StudentsPage.js Refactoring** - PaymentDialog, ReceiptDialog created but not integrated (~1,900 lines)
+3. **(P1) InsightsPage.js Refactoring** - BusinessOverviewComponents created but not integrated
 
 ### Technical Debt Status
-| File | Original | Current | Reduction |
-|------|----------|---------|-----------|
-| `Dashboard.js` | 1,704 | 1,042 | **39%** ✅ |
-| `AdminPanel.js` | 1,869 | 1,656 | **11%** ✅ |
-| `StudentsPage.js` | 1,965 | 1,902 | **3%** ✅ |
-| `InsightsPage.js` | 1,453 | 1,455 | Components ready |
-| `server.py` | 10,225 | 10,233 | Router structure created |
+| File | Original | Current | Status |
+|------|----------|---------|--------|
+| `Dashboard.js` | 1,704 | 1,042 | **✅ DONE (39%)** |
+| `AdminPanel.js` | 1,536 | 1,468 | **✅ DONE (All tabs modular)** |
+| `StudentsPage.js` | 1,965 | ~1,900 | Components created, pending integration |
+| `InsightsPage.js` | 1,453 | ~1,455 | Components created, pending integration |
+| `server.py` | 10,225 | 10,232 | Router structure created, pending migration |
 
-**Extracted Components (1,816 lines total):**
-- Dashboard: 3 components (735 lines) - FDE, Counsellor, BranchAdmin
-- Admin: 7 components (649 lines) - Branches, Programs, Sessions, Expenses, LeadSources, Users, WhatsApp
-- Students: 3 components (272 lines) - Payment, Receipt, CancelEnrollment
-- Insights: 1 component (160 lines) - BusinessOverviewComponents
-- Admin: `BranchesTab.jsx`, `ProgramsTab.jsx`, `SessionsTab.jsx`, `ExpenseCategoriesTab.jsx`, `LeadSourcesTab.jsx` (337 lines)
-- Students: `PaymentDialog.jsx`, `ReceiptDialog.jsx`, `CancelEnrollmentDialog.jsx` (272 lines) - Created, pending integration
+### Extracted Components Summary
+**Dashboard Components (735 lines):**
+- `FDEDashboard.jsx`
+- `CounsellorDashboard.jsx`
+- `BranchAdminDashboard.jsx`
+
+**Admin Components (10 files):**
+- `BranchesTab.jsx`, `ProgramsTab.jsx`, `SessionsTab.jsx`
+- `ExpenseCategoriesTab.jsx`, `LeadSourcesTab.jsx`, `UsersTab.jsx`
+- `WhatsAppSettingsTab.jsx`, `ExamsTab.jsx`, `SystemSettingsTab.jsx`
+- `index.js` (barrel export)
+
+**Student Components (pending integration):**
+- `PaymentDialog.jsx`, `ReceiptDialog.jsx`, `CancelEnrollmentDialog.jsx`
+
+**Insights Components (pending integration):**
+- `BusinessOverviewComponents.jsx`
 
 ## Architecture
 
@@ -63,13 +62,29 @@ Build a comprehensive institute management system with role-based access, studen
 ```
 /app/frontend/src/
 ├── components/
-│   └── dashboards/
-│       ├── FDEDashboard.jsx
-│       ├── CounsellorDashboard.jsx
-│       ├── BranchAdminDashboard.jsx
-│       └── index.js
-├── pages/
-│   └── Dashboard.js (uses modular components)
+│   ├── dashboards/
+│   │   ├── FDEDashboard.jsx
+│   │   ├── CounsellorDashboard.jsx
+│   │   ├── BranchAdminDashboard.jsx
+│   │   └── index.js
+│   ├── admin/
+│   │   ├── BranchesTab.jsx
+│   │   ├── ProgramsTab.jsx
+│   │   ├── SessionsTab.jsx
+│   │   ├── ExpenseCategoriesTab.jsx
+│   │   ├── LeadSourcesTab.jsx
+│   │   ├── UsersTab.jsx
+│   │   ├── WhatsAppSettingsTab.jsx
+│   │   ├── ExamsTab.jsx
+│   │   ├── SystemSettingsTab.jsx
+│   │   └── index.js
+│   ├── students/ (created, pending integration)
+│   └── insights/ (created, pending integration)
+└── pages/
+    ├── Dashboard.js (uses modular components)
+    ├── AdminPanel.js (uses modular components)
+    ├── StudentsPage.js (pending refactor)
+    └── InsightsPage.js (pending refactor)
 ```
 
 ### Backend Structure (Prepared for migration)
@@ -79,16 +94,16 @@ Build a comprehensive institute management system with role-based access, studen
 │   ├── deps.py (shared dependencies)
 │   └── session.py (academic session helpers)
 ├── routes/
-│   ├── auth.py
-│   ├── admin.py
-│   ├── leads.py
-│   ├── enrollments.py
-│   ├── students.py
-│   ├── analytics.py
-│   ├── finances.py
-│   ├── batches.py
-│   └── exams.py
-└── server.py (main file - to be gradually migrated)
+│   ├── auth.py (stub)
+│   ├── admin.py (stub)
+│   ├── leads.py (stub)
+│   ├── enrollments.py (stub)
+│   ├── students.py (stub)
+│   ├── analytics.py (stub)
+│   ├── finances.py (stub)
+│   ├── batches.py (stub)
+│   └── exams.py (stub)
+└── server.py (main file - all logic still here)
 ```
 
 ## Deployment
@@ -99,8 +114,9 @@ Full deployment guide available at: `/app/DEPLOYMENT_QUICKSTART.md`
 
 ## Key Credentials
 - Super Admin: admin@etieducom.com / admin@123
+- Branch Admin: branchadmin@etieducom.com / admin@123
 - FDE: fde@etieducom.com / password
-(Note: Other credentials may need verification)
+- Counsellor: counsellor@etieducom.com / password
 
 ## Documentation
 - `/app/DEPLOYMENT_QUICKSTART.md` - Deployment guide
@@ -109,4 +125,12 @@ Full deployment guide available at: `/app/DEPLOYMENT_QUICKSTART.md`
 - `/app/REFACTORING_GUIDE.md` - Code refactoring plan
 
 ## Test Reports
-- Latest: `/app/test_reports/iteration_24.json` (All features verified)
+- Latest: `/app/test_reports/iteration_25.json` (AdminPanel tabs verified - 100% pass)
+
+## 3rd Party Integrations
+- MSG91 (WhatsApp API)
+- pywebpush (Push Notifications)
+- OpenAI GPT-4o (via Emergent LLM Key)
+- qrcode
+- facebook-business (Meta Marketing API)
+- openpyxl
