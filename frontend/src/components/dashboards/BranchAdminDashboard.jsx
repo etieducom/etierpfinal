@@ -40,120 +40,67 @@ const BranchAdminDashboard = ({
   setSelectedYear
 }) => {
   return (
-    <div className="space-y-8" data-testid="branch-admin-dashboard">
+    <div className="space-y-6" data-testid="branch-admin-dashboard">
       
-      {/* 1. Current Month Stats - Top Row */}
-      {branchFinancialStats && (
-        <div className="space-y-4">
-          {/* This Month Row */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              This Month
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Monthly Enquiries */}
-              <Card className="bg-white border-slate-200 hover:border-blue-300 transition-colors">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <Users className="w-5 h-5 text-blue-500" />
-                    <Badge variant="outline" className="text-[10px]">This Month</Badge>
-                  </div>
-                  <p className="text-2xl font-bold text-slate-800">{branchFinancialStats?.monthly_leads || 0}</p>
-                  <p className="text-xs text-slate-500 mt-1">Total Enquiries</p>
-                </CardContent>
-              </Card>
-              
-              {/* Monthly Admissions */}
-              <Card className="bg-white border-slate-200 hover:border-green-300 transition-colors">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <GraduationCap className="w-5 h-5 text-green-500" />
-                    <Badge variant="outline" className="text-[10px]">This Month</Badge>
-                  </div>
-                  <p className="text-2xl font-bold text-slate-800">{branchFinancialStats?.monthly_admissions || 0}</p>
-                  <p className="text-xs text-slate-500 mt-1">Total Admissions</p>
-                </CardContent>
-              </Card>
-              
-              {/* Monthly Collection */}
-              <Card className="bg-white border-slate-200 hover:border-emerald-300 transition-colors">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <CreditCard className="w-5 h-5 text-emerald-500" />
-                    <Badge variant="outline" className="text-[10px]">This Month</Badge>
-                  </div>
-                  <p className="text-2xl font-bold text-slate-800">{formatIndianCurrency(branchFinancialStats.monthly_revenue || 0)}</p>
-                  <p className="text-xs text-slate-500 mt-1">Total Collection</p>
-                </CardContent>
-              </Card>
+      {/* 1. Session Summary - TOP */}
+      {sessionComparison && (
+        <Card className="border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-indigo-500" />
+                Session Summary
+              </CardTitle>
+              <Badge variant="outline" className="text-xs">
+                {sessionComparison.current_session?.label} vs {sessionComparison.previous_session?.label}
+              </Badge>
             </div>
-          </div>
-          
-          {/* This Session Row */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              This Session ({branchFinancialStats?.session_label || '2026-2027'})
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {/* Session Enquiries */}
-              <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <Users className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-blue-700">{branchFinancialStats?.session_leads || 0}</p>
-                  <p className="text-xs text-blue-600 mt-1">Total Enquiries</p>
-                </CardContent>
-              </Card>
-              
-              {/* Session Admissions */}
-              <Card className="bg-gradient-to-br from-green-50 to-white border-green-200">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <GraduationCap className="w-5 h-5 text-green-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-green-700">{branchFinancialStats?.session_admissions || 0}</p>
-                  <p className="text-xs text-green-600 mt-1">Total Admissions</p>
-                </CardContent>
-              </Card>
-              
-              {/* Active Unique Students */}
-              <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-200">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <Users className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-purple-700">{branchFinancialStats?.active_unique_students || 0}</p>
-                  <p className="text-xs text-purple-600 mt-1">Active Students</p>
-                </CardContent>
-              </Card>
-              
-              {/* Session Collection */}
-              <Card className="bg-gradient-to-br from-emerald-50 to-white border-emerald-200">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <CreditCard className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-emerald-700">{formatIndianCurrency(branchFinancialStats.session_revenue || 0)}</p>
-                  <p className="text-xs text-emerald-600 mt-1">Total Collection</p>
-                </CardContent>
-              </Card>
-              
-              {/* Session Expenses */}
-              <Card className="bg-gradient-to-br from-red-50 to-white border-red-200">
-                <CardContent className="pt-5 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <ArrowDownRight className="w-5 h-5 text-red-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-red-700">{formatIndianCurrency(branchFinancialStats.session_expenses || 0)}</p>
-                  <p className="text-xs text-red-600 mt-1">Total Expenses</p>
-                </CardContent>
-              </Card>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="text-center p-3 bg-white rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Leads</p>
+                <p className="text-xl font-bold text-slate-800">{safeNum(sessionComparison.current_session?.leads)}</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.leads) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.leads) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.leads)}%
+                </p>
+              </div>
+              <div className="text-center p-3 bg-white rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Converted</p>
+                <p className="text-xl font-bold text-green-600">{safeNum(sessionComparison.current_session?.converted)}</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.converted) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.converted) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.converted)}%
+                </p>
+              </div>
+              <div className="text-center p-3 bg-white rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Conversion</p>
+                <p className="text-xl font-bold text-purple-600">{safeNum(sessionComparison.current_session?.conversion_rate)}%</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.conversion_rate) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.conversion_rate) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.conversion_rate)} pts
+                </p>
+              </div>
+              <div className="text-center p-3 bg-white rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Enrollments</p>
+                <p className="text-xl font-bold text-blue-600">{safeNum(sessionComparison.current_session?.enrollments)}</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.enrollments) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.enrollments) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.enrollments)}%
+                </p>
+              </div>
+              <div className="text-center p-3 bg-white rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Active Students</p>
+                <p className="text-xl font-bold text-orange-600">{branchFinancialStats?.active_unique_students || 0}</p>
+                <p className="text-xs text-slate-400">Course in progress</p>
+              </div>
+              <div className="text-center p-3 bg-white rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 mb-1">Income</p>
+                <p className="text-xl font-bold text-amber-600">{formatIndianCurrency(safeNum(sessionComparison.current_session?.income))}</p>
+                <p className={`text-xs ${safeNum(sessionComparison.changes?.income) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {safeNum(sessionComparison.changes?.income) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.income)}%
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* 2. Charts Row - Side by Side */}
@@ -221,63 +168,7 @@ const BranchAdminDashboard = ({
         )}
       </div>
 
-      {/* 3. Session Summary - Near Bottom */}
-      {sessionComparison && (
-        <Card className="border-slate-200 bg-gradient-to-r from-slate-50 to-white">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold text-slate-700 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-indigo-500" />
-                Session Summary
-              </CardTitle>
-              <Badge variant="outline" className="text-xs">
-                {sessionComparison.current_session?.label} vs {sessionComparison.previous_session?.label}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-5 gap-4">
-              <div className="text-center">
-                <p className="text-xs text-slate-500 mb-1">Leads</p>
-                <p className="text-lg font-bold text-slate-800">{safeNum(sessionComparison.current_session?.leads)}</p>
-                <p className={`text-xs ${safeNum(sessionComparison.changes?.leads) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {safeNum(sessionComparison.changes?.leads) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.leads)}%
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-slate-500 mb-1">Converted</p>
-                <p className="text-lg font-bold text-green-600">{safeNum(sessionComparison.current_session?.converted)}</p>
-                <p className={`text-xs ${safeNum(sessionComparison.changes?.converted) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {safeNum(sessionComparison.changes?.converted) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.converted)}%
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-slate-500 mb-1">Conversion</p>
-                <p className="text-lg font-bold text-purple-600">{safeNum(sessionComparison.current_session?.conversion_rate)}%</p>
-                <p className={`text-xs ${safeNum(sessionComparison.changes?.conversion_rate) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {safeNum(sessionComparison.changes?.conversion_rate) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.conversion_rate)} pts
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-slate-500 mb-1">Enrollments</p>
-                <p className="text-lg font-bold text-blue-600">{safeNum(sessionComparison.current_session?.enrollments)}</p>
-                <p className={`text-xs ${safeNum(sessionComparison.changes?.enrollments) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {safeNum(sessionComparison.changes?.enrollments) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.enrollments)}%
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-slate-500 mb-1">Income</p>
-                <p className="text-lg font-bold text-amber-600">{formatIndianCurrency(safeNum(sessionComparison.current_session?.income))}</p>
-                <p className={`text-xs ${safeNum(sessionComparison.changes?.income) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {safeNum(sessionComparison.changes?.income) >= 0 ? '↑' : '↓'} {safeAbs(sessionComparison.changes?.income)}%
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 4. Counsellor Incentives - Last */}
+      {/* 3. Counsellor Incentives */}
       {branchIncentiveStats && (
         <Card className="border-slate-200">
           <CardHeader className="pb-2">
