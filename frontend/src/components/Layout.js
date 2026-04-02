@@ -118,8 +118,8 @@ const Layout = ({ children }) => {
     { icon: History, label: 'Activity Logs', path: '/audit-logs', show: isSuperAdmin },
     // My Responsibilities - For all roles
     { icon: Shield, label: 'My Responsibilities', path: '/responsibilities', show: true },
-    // Schools/Colleges Outreach - For all roles except Certificate Manager, Trainer, Academic Controller
-    { icon: Building2, label: 'Schools/Colleges', path: '/organizations', show: !isCertManager && !isTrainer && !isAcademicController },
+    // Schools/Colleges Outreach - Only for Branch Admin and Super Admin
+    { icon: Building2, label: 'Schools/Colleges', path: '/organizations', show: isBranchAdmin },
     // Batch Management - For Branch Admin, Super Admin, Front Desk, Counsellor
     { icon: UsersRound, label: 'Batches', path: '/batches', show: isBranchAdmin || isSuperAdmin || isFDE || isCounsellor },
     // Curriculum Management - For Academic Controller only (removed from Trainer)

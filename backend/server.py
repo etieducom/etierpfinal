@@ -2301,7 +2301,7 @@ async def get_leads(
 @api_router.get("/leads/converted")
 async def get_converted_leads(current_user: User = Depends(get_current_user)):
     """Get converted leads for enrollment - FDA sees only their branch"""
-    query = {"status": LeadStatus.CONVERTED.value}
+    query = {"status": LeadStatus.CONVERTED.value, "is_deleted": {"$ne": True}}
     
     if current_user.role != UserRole.ADMIN:
         query["branch_id"] = current_user.branch_id
@@ -6412,10 +6412,64 @@ async def assign_student_to_batch(batch_id: str, data: StudentBatchAssignmentCre
 
 @api_router.delete("/batches/{batch_id}/remove-student/{enrollment_id}")
 async def remove_student_from_batch(batch_id: str, enrollment_id: str, current_user: User = Depends(get_current_user)):
-    """Remove a student from a batch"""
+    """Remove a student from a batch - FDE needs Branch Admin approval"""
     if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN, UserRole.FRONT_DESK]:
         raise HTTPException(status_code=403, detail="Permission denied")
     
+    # If FDE is trying to remove, create approval request instead of direct removal
+    if current_user.role == UserRole.FRONT_DESK:
+        # Get student and batch details for the request
+        assignment = await db.student_batch_assignments.find_one({
+            "batch_id": batch_id,
+            "enrollment_id": enrollment_id
+        })
+        if not assignment:
+            raise HTTPException(status_code=404, detail="Assignment not found")
+        
+        enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+        batch = await db.batches.find_one({"id": batch_id}, {"_id": 0})
+        lead = await db.leads.find_one({"id": enrollment.get("lead_id")}, {"_id": 0}) if enrollment else None
+        
+        # Create approval request
+        request_id = str(uuid.uuid4())
+        approval_request = {
+            "id": request_id,
+            "type": "batch_removal",
+            "batch_id": batch_id,
+            "batch_name": batch.get("name") if batch else "Unknown",
+            "enrollment_id": enrollment_id,
+            "student_name": lead.get("name") if lead else "Unknown",
+            "requested_by": current_user.id,
+            "requested_by_name": current_user.name,
+            "branch_id": current_user.branch_id,
+            "status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.approval_requests.insert_one(approval_request)
+        
+        # Notify Branch Admin
+        branch_admins = await db.users.find({
+            "branch_id": current_user.branch_id,
+            "role": UserRole.BRANCH_ADMIN.value,
+            "is_active": True
+        }).to_list(10)
+        
+        for admin in branch_admins:
+            notification = {
+                "id": str(uuid.uuid4()),
+                "user_id": admin["id"],
+                "type": "approval_request",
+                "title": "Batch Removal Request",
+                "message": f"{current_user.name} requested to remove {lead.get('name') if lead else 'a student'} from batch {batch.get('name') if batch else batch_id}",
+                "data": {"request_id": request_id},
+                "read": False,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.notifications.insert_one(notification)
+        
+        return {"message": "Removal request sent to Branch Admin for approval", "request_id": request_id}
+    
+    # Branch Admin or Super Admin can remove directly
     result = await db.student_batch_assignments.delete_one({
         "batch_id": batch_id,
         "enrollment_id": enrollment_id
@@ -6425,6 +6479,102 @@ async def remove_student_from_batch(batch_id: str, enrollment_id: str, current_u
         raise HTTPException(status_code=404, detail="Assignment not found")
     
     return {"message": "Student removed from batch successfully"}
+
+# Approval Requests endpoints
+@api_router.get("/approval-requests")
+async def get_approval_requests(current_user: User = Depends(get_current_user)):
+    """Get pending approval requests for Branch Admin"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Branch Admin can view approval requests")
+    
+    query = {"status": "pending"}
+    if current_user.role == UserRole.BRANCH_ADMIN:
+        query["branch_id"] = current_user.branch_id
+    
+    requests = await db.approval_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return requests
+
+@api_router.post("/approval-requests/{request_id}/approve")
+async def approve_request(request_id: str, current_user: User = Depends(get_current_user)):
+    """Approve a pending request"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Branch Admin can approve requests")
+    
+    request = await db.approval_requests.find_one({"id": request_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    if request["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Request already processed")
+    
+    # Process based on request type
+    if request["type"] == "batch_removal":
+        # Execute the batch removal
+        await db.student_batch_assignments.delete_one({
+            "batch_id": request["batch_id"],
+            "enrollment_id": request["enrollment_id"]
+        })
+    
+    # Update request status
+    await db.approval_requests.update_one(
+        {"id": request_id},
+        {"$set": {
+            "status": "approved",
+            "approved_by": current_user.id,
+            "approved_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify the requester
+    notification = {
+        "id": str(uuid.uuid4()),
+        "user_id": request["requested_by"],
+        "type": "approval_result",
+        "title": "Request Approved",
+        "message": f"Your request to remove {request.get('student_name', 'student')} from batch {request.get('batch_name', '')} has been approved.",
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.notifications.insert_one(notification)
+    
+    return {"message": "Request approved successfully"}
+
+@api_router.post("/approval-requests/{request_id}/reject")
+async def reject_request(request_id: str, current_user: User = Depends(get_current_user)):
+    """Reject a pending request"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
+        raise HTTPException(status_code=403, detail="Only Branch Admin can reject requests")
+    
+    request = await db.approval_requests.find_one({"id": request_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    if request["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Request already processed")
+    
+    # Update request status
+    await db.approval_requests.update_one(
+        {"id": request_id},
+        {"$set": {
+            "status": "rejected",
+            "rejected_by": current_user.id,
+            "rejected_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    # Notify the requester
+    notification = {
+        "id": str(uuid.uuid4()),
+        "user_id": request["requested_by"],
+        "type": "approval_result",
+        "title": "Request Rejected",
+        "message": f"Your request to remove {request.get('student_name', 'student')} from batch {request.get('batch_name', '')} has been rejected.",
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.notifications.insert_one(notification)
+    
+    return {"message": "Request rejected"}
 
 @api_router.get("/batches/{batch_id}/students")
 async def get_batch_students(batch_id: str, current_user: User = Depends(get_current_user)):
@@ -7238,6 +7388,7 @@ async def mark_course_completion(
         {"$set": {
             "status": "Completed", 
             "course_completion_date": completion.completion_date,
+            "course_status": "Completed",
             "batch_id": None  # Remove from batch so they don't appear in attendance
         }}
     )
@@ -7246,6 +7397,27 @@ async def mark_course_completion(
     await db.student_batch_assignments.delete_many({
         "enrollment_id": enrollment_id
     })
+    
+    # Notify FDEs about exam pending for this student
+    lead = await db.leads.find_one({"id": enrollment.get("lead_id")}, {"_id": 0})
+    fdes = await db.users.find({
+        "branch_id": enrollment.get("branch_id"),
+        "role": UserRole.FRONT_DESK.value,
+        "is_active": True
+    }).to_list(10)
+    
+    for fde in fdes:
+        notification = {
+            "id": str(uuid.uuid4()),
+            "user_id": fde["id"],
+            "type": "exam_pending",
+            "title": "Exam Pending",
+            "message": f"Course completed for {lead.get('name') if lead else enrollment.get('student_name', 'Student')}. Please schedule exam.",
+            "data": {"enrollment_id": enrollment_id, "student_name": lead.get('name') if lead else enrollment.get('student_name')},
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.notifications.insert_one(notification)
     
     return {"message": "Course marked as complete", "completion_id": completion.id}
 

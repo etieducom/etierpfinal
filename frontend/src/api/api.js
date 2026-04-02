@@ -69,6 +69,10 @@ export const adminAPI = {
   getSessions: () => api.get('/admin/sessions'),
   createSession: (data) => api.post('/admin/sessions', data),
   deleteSession: (year) => api.delete(`/admin/sessions/${year}`),
+  // Approval requests
+  getApprovalRequests: () => api.get('/approval-requests'),
+  approveRequest: (id) => api.post(`/approval-requests/${id}/approve`),
+  rejectRequest: (id) => api.post(`/approval-requests/${id}/reject`),
 };
 
 export const leadsAPI = {
