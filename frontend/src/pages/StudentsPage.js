@@ -11,6 +11,9 @@ import { toast } from 'sonner';
 import { Search, GraduationCap, User, Phone, Mail, CreditCard, Printer, XCircle, Eye, Wallet, PlusCircle, BookPlus, Edit, Upload, Plus, IndianRupee } from 'lucide-react';
 import { format } from 'date-fns';
 
+// Modular Dialog Components
+import { PaymentDialog, ReceiptDialog, CancelEnrollmentDialog } from '@/components/students';
+
 const PAYMENT_MODES = ['Cash', 'Card', 'UPI', 'Net Banking', 'Cheque'];
 
 const StudentsPage = () => {

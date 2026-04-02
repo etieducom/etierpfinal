@@ -52,13 +52,14 @@ Build a comprehensive institute management system with role-based access, studen
 |------|----------|---------|-----------|
 | `Dashboard.js` | 1,704 | 1,042 | **39%** ✅ |
 | `AdminPanel.js` | 1,869 | 1,656 | **11%** ✅ |
-| `server.py` | 10,225 | 10,235 | Pending |
-| `StudentsPage.js` | 1,965 | 1,965 | Pending |
+| `StudentsPage.js` | 1,965 | 1,968 | Components created |
 | `InsightsPage.js` | 1,452 | 1,452 | Pending |
+| `server.py` | 10,225 | 10,235 | Router structure created |
 
-**Extracted Components (1,064 lines total):**
-- Dashboard: `FDEDashboard.jsx`, `CounsellorDashboard.jsx`, `BranchAdminDashboard.jsx`
-- Admin: `BranchesTab.jsx`, `ProgramsTab.jsx`, `SessionsTab.jsx`, `ExpenseCategoriesTab.jsx`, `LeadSourcesTab.jsx`
+**Extracted Components (1,344 lines total):**
+- Dashboard: `FDEDashboard.jsx`, `CounsellorDashboard.jsx`, `BranchAdminDashboard.jsx` (732 lines)
+- Admin: `BranchesTab.jsx`, `ProgramsTab.jsx`, `SessionsTab.jsx`, `ExpenseCategoriesTab.jsx`, `LeadSourcesTab.jsx` (337 lines)
+- Students: `PaymentDialog.jsx`, `ReceiptDialog.jsx`, `CancelEnrollmentDialog.jsx` (272 lines) - Created, pending integration
 
 ## Architecture
 
