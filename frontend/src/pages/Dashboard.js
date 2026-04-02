@@ -321,7 +321,6 @@ const Dashboard = () => {
         <BranchAdminDashboard
           branchFinancialStats={branchFinancialStats}
           financialData={financialData}
-          admissionData={admissionData}
           sessionComparison={sessionComparison}
           branchIncentiveStats={branchIncentiveStats}
           selectedYear={selectedYear}

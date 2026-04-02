@@ -9,21 +9,21 @@ Build a comprehensive institute management system with role-based access, studen
 - ✅ **AdminPanel.js Final Refactoring** - ExamsTab and SystemSettingsTab components integrated
 - ✅ **WhatsApp Tab Fixed** - Added missing testNumber state and handler functions
 - ✅ **Indian Currency Formatting** - Fixed all dashboards to use proper Indian numbering (L for Lakhs, Cr for Crores instead of just K)
-- ✅ **Branch Admin Monthly Stats Fix** - Fixed "This Month" stats showing all-time data instead of monthly
+- ✅ **Session-Based Stats (Academic Year Filtering)** - All dashboard stats now filtered by academic session (April 1 - March 31)
 - ✅ **Testing Verified** - AdminPanel tabs working (iteration_25.json - 100% pass)
 
-### Branch Admin Monthly Stats Fix Details
-**Problem:** The Branch Admin dashboard was showing all-time stats (628 enquiries, ₹358K expenses) while labeled "This Month"
+### Session-Based Stats Implementation
+**Problem:** Dashboard cards showed "This Month" but displayed all-time data
 
 **Solution:**
-- Backend `/api/branch-admin/financial-stats` now returns both monthly AND all-time stats:
-  - `monthly_leads`, `monthly_revenue`, `monthly_expenses`, `monthly_exam_revenue`, `monthly_net`
-  - Plus existing `total_*` fields for all-time stats
-- Frontend `BranchAdminDashboard.jsx` now uses the monthly fields for "This Month" cards
+- Backend `/api/branch-admin/financial-stats` now filters by academic session (April 1 - March 31)
+- Returns `session_leads`, `session_admissions`, `session_revenue`, `session_expenses`, `session_exam_revenue`, `session_net_revenue`
+- Frontend labels changed from "This Month" to "This Session"
+- Session is determined from the JWT token's academic session header
 
-**Files Modified:**
-- `/app/backend/server.py` - Added monthly filters using current month string matching
-- `/app/frontend/src/components/dashboards/BranchAdminDashboard.jsx` - Updated to use monthly_ fields
+**Session Definition:**
+- Session "2025" = April 1, 2025 → March 31, 2026 (labeled as "2025-2026")
+- Session "2026" = April 1, 2026 → March 31, 2027 (labeled as "2026-2027")
 
 ### Indian Currency Formatting Details
 The `formatIndianCurrency()` function was added to:

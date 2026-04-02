@@ -7267,8 +7267,8 @@ async def get_course_completions(
 
 # ========== BRANCH ADMIN FINANCIAL STATS ==========
 @api_router.get("/branch-admin/financial-stats")
-async def get_branch_financial_stats(current_user: User = Depends(get_current_user)):
-    """Get financial statistics for Branch Admin"""
+async def get_branch_financial_stats(request: Request, current_user: User = Depends(get_current_user)):
+    """Get financial statistics for Branch Admin filtered by academic session"""
     if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
         raise HTTPException(status_code=403, detail="Only Admin or Branch Admin can view financial stats")
     
@@ -7276,56 +7276,62 @@ async def get_branch_financial_stats(current_user: User = Depends(get_current_us
     if current_user.role == UserRole.BRANCH_ADMIN:
         branch_filter["branch_id"] = current_user.branch_id
     
-    # Current month boundaries
-    now = datetime.now(timezone.utc)
-    current_month_start = datetime(now.year, now.month, 1, 0, 0, 0)
-    if now.month == 12:
-        next_month_start = datetime(now.year + 1, 1, 1, 0, 0, 0)
-    else:
-        next_month_start = datetime(now.year, now.month + 1, 1, 0, 0, 0)
-    current_month_str = now.strftime('%Y-%m')
+    # Get academic session from token/header
+    session_val = await get_session_from_request(request)
+    if not session_val or session_val == "all":
+        session_val = get_current_academic_session()
     
-    # Total collections (all payments)
-    payments = await db.payments.find(branch_filter, {"_id": 0, "amount": 1, "payment_date": 1}).to_list(10000)
-    total_collections = sum(p.get('amount', 0) for p in payments)
+    # Get session date range (e.g., "2025" = April 1, 2025 to March 31, 2026)
+    session_start, session_end = get_session_date_range(session_val)
+    session_label = f"{session_val}-{int(session_val)+1}"
     
-    # Monthly revenue (current month)
-    monthly_payments = [p for p in payments if p.get('payment_date', '').startswith(current_month_str)]
-    monthly_revenue = sum(p.get('amount', 0) for p in monthly_payments)
+    # Helper to check if a date string falls within session
+    def is_in_session(date_str):
+        if not date_str or not session_start or not session_end:
+            return True  # If no session filter, include all
+        try:
+            if isinstance(date_str, datetime):
+                return session_start <= date_str <= session_end
+            date_obj = datetime.fromisoformat(date_str.replace('Z', '+00:00').split('+')[0].split('.')[0])
+            return session_start <= date_obj <= session_end
+        except:
+            return False
     
-    # Pending amounts (from enrollments)
-    enrollments = await db.enrollments.find(branch_filter, {"_id": 0, "final_fee": 1, "total_paid": 1}).to_list(10000)
-    pending_amounts = sum((e.get('final_fee', 0) - e.get('total_paid', 0)) for e in enrollments)
+    # SESSION-FILTERED: Payments (by payment_date)
+    all_payments = await db.payments.find(branch_filter, {"_id": 0, "amount": 1, "payment_date": 1}).to_list(10000)
+    session_payments = [p for p in all_payments if is_in_session(p.get('payment_date', ''))]
+    session_revenue = sum(p.get('amount', 0) for p in session_payments)
+    total_collections = sum(p.get('amount', 0) for p in all_payments)
     
-    # Revenue from exams (completed bookings, use exam_price field) - All time
-    exam_bookings = await db.exam_bookings.find(
+    # SESSION-FILTERED: Enrollments (by enrollment_date)
+    all_enrollments = await db.enrollments.find(branch_filter, {"_id": 0, "final_fee": 1, "total_paid": 1, "enrollment_date": 1}).to_list(10000)
+    session_enrollments = [e for e in all_enrollments if is_in_session(e.get('enrollment_date', ''))]
+    session_admissions = len(session_enrollments)
+    pending_amounts = sum((e.get('final_fee', 0) - e.get('total_paid', 0)) for e in all_enrollments)
+    
+    # SESSION-FILTERED: Exam Bookings (by booking_date)
+    all_exam_bookings = await db.exam_bookings.find(
         {**branch_filter, "status": {"$ne": "Cancelled"}}, 
         {"_id": 0, "exam_price": 1, "booking_date": 1}
     ).to_list(10000)
-    exam_revenue = sum(e.get('exam_price', 0) for e in exam_bookings)
+    session_exam_bookings = [e for e in all_exam_bookings if is_in_session(e.get('booking_date', ''))]
+    session_exam_revenue = sum(e.get('exam_price', 0) for e in session_exam_bookings)
+    total_exam_revenue = sum(e.get('exam_price', 0) for e in all_exam_bookings)
     
-    # Monthly exam revenue
-    monthly_exam_revenue = sum(
-        e.get('exam_price', 0) for e in exam_bookings 
-        if e.get('booking_date', '').startswith(current_month_str)
-    )
+    # SESSION-FILTERED: Expenses (by expense_date)
+    all_expenses = await db.expenses.find(branch_filter, {"_id": 0, "amount": 1, "expense_date": 1}).to_list(10000)
+    session_expenses = [e for e in all_expenses if is_in_session(e.get('expense_date', ''))]
+    session_expenses_total = sum(e.get('amount', 0) for e in session_expenses)
+    total_expenses = sum(e.get('amount', 0) for e in all_expenses)
     
-    # Total expenses - All time
-    expenses = await db.expenses.find(branch_filter, {"_id": 0, "amount": 1, "expense_date": 1}).to_list(10000)
-    total_expenses = sum(e.get('amount', 0) for e in expenses)
-    monthly_expenses = sum(e.get('amount', 0) for e in expenses if e.get('expense_date', '').startswith(current_month_str))
+    # SESSION-FILTERED: Leads (by created_at)
+    all_leads = await db.leads.find({**branch_filter, "is_deleted": {"$ne": True}}, {"_id": 0, "created_at": 1}).to_list(10000)
+    session_leads = [l for l in all_leads if is_in_session(l.get('created_at', ''))]
+    session_leads_count = len(session_leads)
+    total_leads = len(all_leads)
     
-    # Monthly leads count - get leads created this month
-    leads = await db.leads.find(branch_filter, {"_id": 0, "created_at": 1}).to_list(10000)
-    total_leads = len(leads)
-    monthly_leads = 0
-    for lead in leads:
-        created_at = lead.get('created_at', '')
-        if isinstance(created_at, str) and created_at.startswith(current_month_str):
-            monthly_leads += 1
-        elif isinstance(created_at, datetime):
-            if created_at >= current_month_start and created_at < next_month_start:
-                monthly_leads += 1
+    # Calculate session net revenue
+    session_net_revenue = session_revenue + session_exam_revenue - session_expenses_total
     
     # Trainer-wise student count
     trainers_query = {"role": UserRole.TRAINER.value}
@@ -7336,7 +7342,6 @@ async def get_branch_financial_stats(current_user: User = Depends(get_current_us
     
     trainer_stats = []
     for trainer in trainers:
-        # Get unique students assigned to this trainer (deduped for multi-course)
         assignments = await db.student_batch_assignments.find(
             {"trainer_id": trainer['id']},
             {"_id": 0, "enrollment_id": 1}
@@ -7350,19 +7355,32 @@ async def get_branch_financial_stats(current_user: User = Depends(get_current_us
         })
     
     return {
+        # Session-filtered stats (for "This Session" display)
+        "session_label": session_label,
+        "session_leads": session_leads_count,
+        "session_admissions": session_admissions,
+        "session_revenue": session_revenue,
+        "session_expenses": session_expenses_total,
+        "session_exam_revenue": session_exam_revenue,
+        "session_net_revenue": session_net_revenue,
+        
+        # All-time stats (for reference)
         "total_collections": total_collections,
-        "monthly_revenue": monthly_revenue,
-        "pending_amounts": pending_amounts,
-        "exam_revenue": exam_revenue,
-        "monthly_exam_revenue": monthly_exam_revenue,
         "total_expenses": total_expenses,
-        "monthly_expenses": monthly_expenses,
-        "net_revenue": total_collections - total_expenses,
-        "monthly_net": monthly_revenue - monthly_expenses - monthly_exam_revenue,
         "total_leads": total_leads,
-        "monthly_leads": monthly_leads,
+        "exam_revenue": total_exam_revenue,
+        "pending_amounts": pending_amounts,
+        "net_revenue": total_collections + total_exam_revenue - total_expenses,
+        
+        # Legacy fields for backward compatibility
+        "monthly_revenue": session_revenue,
+        "monthly_expenses": session_expenses_total,
+        "monthly_exam_revenue": session_exam_revenue,
+        "monthly_net": session_net_revenue,
+        "monthly_leads": session_leads_count,
+        
         "trainer_stats": trainer_stats,
-        "total_students": len(enrollments),
+        "total_students": len(all_enrollments),
         "total_trainers": len(trainers)
     }
 
