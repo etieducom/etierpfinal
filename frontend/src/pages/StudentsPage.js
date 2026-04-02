@@ -696,6 +696,10 @@ const StudentsPage = () => {
       const updateData = {};
       Object.entries(editForm).forEach(([key, value]) => {
         if (value !== '' && value !== null && value !== undefined) {
+          // Skip student_name for FDE - they can't edit it
+          if (key === 'student_name' && !isBranchAdmin && !isSuperAdmin) {
+            return;
+          }
           updateData[key] = value;
         }
       });
