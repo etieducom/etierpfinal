@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { Plus, Building, Users, BookOpen, Wallet, Trash2, Link, MessageSquare, Key, UserX, UserCheck, Globe, Webhook, Copy, RefreshCw } from 'lucide-react';
 
 // Modular Tab Components
-import { BranchesTab, ProgramsTab, SessionsTab, ExpenseCategoriesTab, LeadSourcesTab } from '@/components/admin';
+import { BranchesTab, ProgramsTab, SessionsTab, ExpenseCategoriesTab, LeadSourcesTab, UsersTab, WhatsAppSettingsTab } from '@/components/admin';
 
 // Webhook Card Component for displaying branch webhook info
 const WebhookCard = ({ branch, onRefresh }) => {
