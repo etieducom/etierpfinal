@@ -179,7 +179,8 @@ const EnrollmentsPage = () => {
       setDeletingLead(null);
     } catch (error) {
       console.error('Error deleting lead:', error);
-      toast.error('Failed to delete lead');
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to delete lead';
+      toast.error(errorMessage);
     } finally {
       setDeleteLoading(false);
     }

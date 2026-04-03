@@ -235,7 +235,7 @@ const LeadsPage = () => {
     if (reason === null) return; // User cancelled
 
     try {
-      await leadsAPI.delete(id, { reason });
+      await leadsAPI.delete(id, reason || '');
       toast.success('Lead deleted successfully');
       fetchLeads();
     } catch (error) {
