@@ -172,7 +172,7 @@ const EnrollmentsPage = () => {
     
     setDeleteLoading(true);
     try {
-      await leadsAPI.delete(deletingLead.id, { reason: 'Removed from Ready to Enroll list' });
+      await leadsAPI.delete(deletingLead.id, 'Removed from Ready to Enroll list');
       toast.success(`${deletingLead.name} removed from Ready to Enroll list`);
       setConvertedLeads(convertedLeads.filter(l => l.id !== deletingLead.id));
       setDeleteLeadDialog(false);

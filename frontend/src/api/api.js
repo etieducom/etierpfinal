@@ -86,7 +86,7 @@ export const leadsAPI = {
   getOne: (id) => api.get(`/leads/${id}`),
   create: (data) => api.post('/leads', data),
   update: (id, data) => api.put(`/leads/${id}`, data),
-  delete: (id, data = {}) => api.delete(`/leads/${id}`, { data }),
+  delete: (id, reason = '') => api.delete(`/leads/${id}?reason=${encodeURIComponent(reason)}`),
   getFollowups: (id) => api.get(`/leads/${id}/followups`),
 };
 

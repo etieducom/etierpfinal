@@ -2450,7 +2450,7 @@ class LeadDeleteRequest(BaseModel):
     reason: Optional[str] = None
 
 @api_router.delete("/leads/{lead_id}")
-async def delete_lead(lead_id: str, delete_request: Optional[LeadDeleteRequest] = None, current_user: User = Depends(get_current_user)):
+async def delete_lead(lead_id: str, reason: Optional[str] = None, current_user: User = Depends(get_current_user)):
     """Soft delete a lead - all users can delete leads from their branch"""
     lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
     if not lead:
@@ -2476,7 +2476,7 @@ async def delete_lead(lead_id: str, delete_request: Optional[LeadDeleteRequest] 
             "deleted_at": datetime.now(timezone.utc).isoformat(),
             "deleted_by": current_user.id,
             "deleted_by_name": current_user.name,
-            "deletion_reason": delete_request.reason if delete_request else None
+            "deletion_reason": reason
         }}
     )
     return {"message": "Lead deleted successfully"}
