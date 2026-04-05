@@ -5,12 +5,21 @@ Build a comprehensive institute management system with role-based access, studen
 
 ## Current Status (April 2026)
 
-### Just Completed (This Session)
+### Just Completed (This Session - April 5, 2026)
+- ✅ **View Followups Feature** - Branch Admin and Super Admin can now view all follow-ups added to a lead via Eye icon button
+  - Opens a modal dialog showing lead info and followup timeline
+  - Displays note, added by, date, and status for each followup
+  - Timeline view with blue dots connecting entries
+  - Role-based visibility: Only Admin & Branch Admin see the button
+- ✅ **Session Format Fix** - Fixed session parsing to handle both "2026" and "2026-2027" formats
+
+### Previously Completed (This Week)
 - ✅ **AdminPanel.js Final Refactoring** - ExamsTab and SystemSettingsTab components integrated
 - ✅ **WhatsApp Tab Fixed** - Added missing testNumber state and handler functions
 - ✅ **Indian Currency Formatting** - Fixed all dashboards to use proper Indian numbering (L for Lakhs, Cr for Crores instead of just K)
 - ✅ **Session-Based Stats (Academic Year Filtering)** - All dashboard stats now filtered by academic session (April 1 - March 31)
 - ✅ **Testing Verified** - AdminPanel tabs working (iteration_25.json - 100% pass)
+- ✅ **View Followups Testing** - All tests passed (iteration_26.json - 100% pass)
 
 ### Session-Based Stats Implementation
 **Problem:** Dashboard cards showed "This Month" but displayed all-time data
@@ -153,7 +162,8 @@ Full deployment guide available at: `/app/DEPLOYMENT_QUICKSTART.md`
 - `/app/REFACTORING_GUIDE.md` - Code refactoring plan
 
 ## Test Reports
-- Latest: `/app/test_reports/iteration_25.json` (AdminPanel tabs verified - 100% pass)
+- Latest: `/app/test_reports/iteration_26.json` (View Followups verified - 100% pass)
+- Previous: `/app/test_reports/iteration_25.json` (AdminPanel tabs verified - 100% pass)
 
 ## 3rd Party Integrations
 - MSG91 (WhatsApp API)
