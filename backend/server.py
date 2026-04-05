@@ -781,7 +781,11 @@ def get_session_date_range(session: str) -> tuple:
     """
     if session == "all":
         return None, None
-    year = int(session)
+    # Handle both "2026" and "2026-2027" formats
+    if "-" in str(session):
+        year = int(session.split("-")[0])
+    else:
+        year = int(session)
     start_date = datetime(year, 4, 1, 0, 0, 0)
     end_date = datetime(year + 1, 3, 31, 23, 59, 59)
     return start_date, end_date

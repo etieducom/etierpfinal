@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Search, Edit, Trash2, MessageSquare, Badge } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, MessageSquare, Badge, Eye, Clock, User, Calendar } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -80,6 +80,12 @@ const LeadsPage = () => {
     demo_time: '',
     trainer_name: ''
   });
+  
+  // View Followups dialog state
+  const [viewFollowupsDialog, setViewFollowupsDialog] = useState(false);
+  const [viewFollowupsLead, setViewFollowupsLead] = useState(null);
+  const [followupsList, setFollowupsList] = useState([]);
+  const [loadingFollowups, setLoadingFollowups] = useState(false);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -289,6 +295,35 @@ const LeadsPage = () => {
     } catch (error) {
       toast.error('Failed to book demo');
     }
+  };
+
+  const handleViewFollowups = async (lead) => {
+    setViewFollowupsLead(lead);
+    setViewFollowupsDialog(true);
+    setLoadingFollowups(true);
+    
+    try {
+      const response = await leadsAPI.getFollowups(lead.id);
+      setFollowupsList(response.data || []);
+    } catch (error) {
+      console.error('Error fetching followups:', error);
+      toast.error('Failed to fetch follow-ups');
+      setFollowupsList([]);
+    } finally {
+      setLoadingFollowups(false);
+    }
+  };
+
+  const formatFollowupDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const handleAddFollowup = async () => {
@@ -501,6 +536,18 @@ const LeadsPage = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
+                      {/* View Followups button - visible to Branch Admin and Super Admin */}
+                      {(user.role === 'Admin' || user.role === 'Branch Admin') && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewFollowups(lead)}
+                          title="View follow-ups"
+                          data-testid={`view-followups-button-${lead.id}`}
+                        >
+                          <Eye className="w-4 h-4 text-blue-500" />
+                        </Button>
+                      )}
                       {/* Followup button - disabled for converted leads */}
                       <Button
                         variant="ghost"
@@ -804,6 +851,112 @@ const LeadsPage = () => {
                 Book Demo
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Followups Dialog */}
+      <Dialog open={viewFollowupsDialog} onOpenChange={setViewFollowupsDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-blue-500" />
+              Follow-ups for {viewFollowupsLead?.name || 'Lead'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {/* Lead Info Summary */}
+          {viewFollowupsLead && (
+            <div className="bg-slate-50 rounded-lg p-3 mb-4">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-slate-500">Phone:</span>{' '}
+                  <span className="font-medium">{viewFollowupsLead.number}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Status:</span>{' '}
+                  <span 
+                    className="font-medium px-2 py-0.5 rounded text-xs"
+                    style={{
+                      backgroundColor: `${STATUS_COLORS[viewFollowupsLead.status]}15`,
+                      color: STATUS_COLORS[viewFollowupsLead.status],
+                    }}
+                  >
+                    {viewFollowupsLead.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Followups Timeline */}
+          <div className="space-y-4">
+            {loadingFollowups ? (
+              <div className="text-center py-8 text-slate-500">
+                Loading follow-ups...
+              </div>
+            ) : followupsList.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <MessageSquare className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+                <p>No follow-ups recorded for this lead yet.</p>
+              </div>
+            ) : (
+              <div className="relative">
+                {/* Timeline line */}
+                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+                
+                {followupsList.map((followup, index) => (
+                  <div key={followup.id || index} className="relative pl-10 pb-4" data-testid={`followup-item-${index}`}>
+                    {/* Timeline dot */}
+                    <div className="absolute left-2.5 top-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow"></div>
+                    
+                    <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+                      {/* Note */}
+                      <p className="text-slate-800 mb-2">{followup.note || followup.notes || 'No note provided'}</p>
+                      
+                      {/* Meta info */}
+                      <div className="flex flex-wrap gap-3 text-xs text-slate-500">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatFollowupDate(followup.followup_date)}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {followup.added_by_name || followup.created_by_name || 'Unknown'}
+                        </div>
+                        {followup.created_at && (
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            Added: {formatFollowupDate(followup.created_at)}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Status badge if available */}
+                      {followup.status && (
+                        <div className="mt-2">
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            followup.status === 'completed' 
+                              ? 'bg-green-100 text-green-700' 
+                              : followup.status === 'pending'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {followup.status}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end pt-4 border-t">
+            <Button variant="outline" onClick={() => setViewFollowupsDialog(false)}>
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
