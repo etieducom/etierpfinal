@@ -304,7 +304,26 @@ const LeadsPage = () => {
     
     try {
       const response = await leadsAPI.getFollowups(lead.id);
-      setFollowupsList(response.data || []);
+      let followups = response.data || [];
+      
+      // For Counsellors, filter to show only their own follow-ups
+      if (user.role === 'Counsellor') {
+        const userName = user.full_name || user.email?.split('@')[0] || '';
+        const userId = user.id || '';
+        
+        followups = followups.filter(fu => {
+          // Match by name (case-insensitive partial match)
+          const addedByName = (fu.added_by_name || fu.created_by_name || '').toLowerCase();
+          const matchByName = userName && addedByName.includes(userName.toLowerCase());
+          
+          // Match by ID
+          const matchById = userId && (fu.added_by === userId || fu.created_by === userId);
+          
+          return matchByName || matchById;
+        });
+      }
+      
+      setFollowupsList(followups);
     } catch (error) {
       console.error('Error fetching followups:', error);
       toast.error('Failed to fetch follow-ups');
@@ -536,13 +555,13 @@ const LeadsPage = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      {/* View Followups button - visible to Branch Admin and Super Admin */}
-                      {(user.role === 'Admin' || user.role === 'Branch Admin') && (
+                      {/* View Followups button - visible to Admin, Branch Admin, and Counsellor */}
+                      {(user.role === 'Admin' || user.role === 'Branch Admin' || user.role === 'Counsellor') && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleViewFollowups(lead)}
-                          title="View follow-ups"
+                          title={user.role === 'Counsellor' ? 'View your follow-ups' : 'View all follow-ups'}
                           data-testid={`view-followups-button-${lead.id}`}
                         >
                           <Eye className="w-4 h-4 text-blue-500" />
@@ -861,8 +880,11 @@ const LeadsPage = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="w-5 h-5 text-blue-500" />
-              Follow-ups for {viewFollowupsLead?.name || 'Lead'}
+              {user.role === 'Counsellor' ? 'Your Follow-ups' : 'Follow-ups'} for {viewFollowupsLead?.name || 'Lead'}
             </DialogTitle>
+            {user.role === 'Counsellor' && (
+              <p className="text-xs text-slate-500 mt-1">Showing only follow-ups added by you</p>
+            )}
           </DialogHeader>
           
           {/* Lead Info Summary */}
@@ -898,7 +920,7 @@ const LeadsPage = () => {
             ) : followupsList.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 <MessageSquare className="w-12 h-12 mx-auto mb-2 text-slate-300" />
-                <p>No follow-ups recorded for this lead yet.</p>
+                <p>{user.role === 'Counsellor' ? "You haven't added any follow-ups for this lead yet." : "No follow-ups recorded for this lead yet."}</p>
               </div>
             ) : (
               <div className="relative">

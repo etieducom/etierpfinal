@@ -10,7 +10,8 @@ Build a comprehensive institute management system with role-based access, studen
   - Opens a modal dialog showing lead info and followup timeline
   - Displays note, added by, date, and status for each followup
   - Timeline view with blue dots connecting entries
-  - Role-based visibility: Only Admin & Branch Admin see the button
+  - Role-based visibility: Admin, Branch Admin see ALL followups; Counsellor sees ONLY their own
+- ✅ **Counsellor Followup Filtering** - Counsellors can view their own follow-ups, filtered by name/ID
 - ✅ **Session Format Fix** - Fixed session parsing to handle both "2026" and "2026-2027" formats
 
 ### Previously Completed (This Week)
