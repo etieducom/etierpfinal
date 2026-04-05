@@ -13,6 +13,14 @@ Build a comprehensive institute management system with role-based access, studen
   - Role-based visibility: Admin, Branch Admin see ALL followups; Counsellor sees ONLY their own
 - ✅ **Counsellor Followup Filtering** - Counsellors can view their own follow-ups, filtered by name/ID
 - ✅ **Session Format Fix** - Fixed session parsing to handle both "2026" and "2026-2027" formats
+- ✅ **Multi-Course Certificate Request** - Complete overhaul of the certificate request flow:
+  - Student enters enrollment number → System finds ALL their courses
+  - Shows student details (name, branch) and pre-fills contact info
+  - Displays all courses with checkboxes (shows pending fee warnings, existing certificate status)
+  - Disabled selection for courses with pending fees or existing certificate requests
+  - Each selected course expands to show date inputs (start, end, training mode, hours)
+  - Submits separate certificate requests for each selected course
+  - Shows detailed success/failure results for each certificate
 
 ### Previously Completed (This Week)
 - ✅ **AdminPanel.js Final Refactoring** - ExamsTab and SystemSettingsTab components integrated

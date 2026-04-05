@@ -8959,7 +8959,8 @@ async def generate_verification_id():
 
 @api_router.get("/public/enrollment/{enrollment_number}")
 async def get_enrollment_for_certificate(enrollment_number: str):
-    """Public endpoint to fetch enrollment details for certificate request"""
+    """Public endpoint to fetch enrollment details and all courses for certificate request"""
+    # Find the enrollment by enrollment number
     enrollment = await db.enrollments.find_one(
         {"enrollment_id": enrollment_number},
         {"_id": 0}
@@ -8968,20 +8969,55 @@ async def get_enrollment_for_certificate(enrollment_number: str):
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")
     
+    # Get student name to find all their enrollments/courses
+    student_name = enrollment['student_name']
+    
+    # Find all enrollments for this student
+    all_enrollments = await db.enrollments.find(
+        {"student_name": student_name},
+        {"_id": 0}
+    ).to_list(100)
+    
     # Get branch details
     branch = await db.branches.find_one({"id": enrollment['branch_id']}, {"_id": 0, "name": 1})
     
-    # Get program details
-    program = await db.programs.find_one({"id": enrollment['program_id']}, {"_id": 0, "name": 1, "duration": 1})
+    # Build courses list from all enrollments
+    courses = []
+    for enroll in all_enrollments:
+        program = await db.programs.find_one({"id": enroll['program_id']}, {"_id": 0, "name": 1, "duration": 1})
+        
+        # Check fee status for this enrollment
+        final_fee = enroll.get('final_fee', 0)
+        total_paid = enroll.get('total_paid', 0)
+        pending_fee = final_fee - total_paid
+        fee_cleared = pending_fee <= 0
+        
+        # Check if certificate already requested for this enrollment
+        existing_cert = await db.certificate_requests.find_one({
+            "enrollment_number": enroll['enrollment_id'],
+            "status": {"$in": ["Pending", "Approved", "Ready"]}
+        })
+        
+        courses.append({
+            "enrollment_id": enroll['enrollment_id'],
+            "enrollment_db_id": enroll['id'],
+            "program_id": enroll['program_id'],
+            "program_name": program['name'] if program else enroll.get('program_name', ''),
+            "program_duration": program['duration'] if program else '',
+            "enrollment_date": enroll.get('enrollment_date', enroll.get('created_at', '')),
+            "fee_cleared": fee_cleared,
+            "pending_fee": pending_fee if pending_fee > 0 else 0,
+            "certificate_requested": existing_cert is not None,
+            "certificate_status": existing_cert['status'] if existing_cert else None
+        })
     
     return {
         "student_name": enrollment['student_name'],
-        "program_name": program['name'] if program else enrollment.get('program_name', ''),
-        "program_duration": program['duration'] if program else '',
+        "phone": enrollment.get('phone', ''),
+        "email": enrollment.get('email', ''),
         "branch_name": branch['name'] if branch else '',
         "branch_id": enrollment['branch_id'],
-        "enrollment_id": enrollment['id'],
-        "enrollment_number": enrollment['enrollment_id']
+        "courses": courses
     }
 
 @api_router.post("/public/certificate-requests")
