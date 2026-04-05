@@ -3738,14 +3738,15 @@ async def generate_report(
             query.update(get_date_query("created_at"))
         
         leads = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
-        writer.writerow(['Lead ID', 'Name', 'Email', 'Phone', 'Program', 'Source', 'Status', 'City', 'State', 'Fee Quoted', 'Discount', 'Lead Date', 'Created At'])
+        # Columns: Lead ID, Name, Phone Number, Course, Source
+        writer.writerow(['Lead ID', 'Name', 'Phone Number', 'Course', 'Source'])
         for lead in leads:
             writer.writerow([
-                lead.get('lead_id', ''), lead.get('name', ''), lead.get('email', ''), lead.get('number', ''),
-                lead.get('program_name', ''), lead.get('lead_source', ''), lead.get('status', ''),
-                lead.get('city', ''), lead.get('state', ''), lead.get('fee_quoted', ''),
-                lead.get('discount_amount') or f"{lead.get('discount_percent', 0)}%",
-                lead.get('lead_date', ''), lead.get('created_at', '')
+                lead.get('lead_id', lead.get('id', '')[:8] if lead.get('id') else ''),
+                lead.get('name', ''),
+                lead.get('number', ''),
+                lead.get('program_name', ''),
+                lead.get('lead_source', '')
             ])
         filename = "leads_report.csv"
     
@@ -3772,14 +3773,18 @@ async def generate_report(
             query.update(get_date_query("payment_date"))
         
         payments = await db.payments.find(query, {"_id": 0}).sort("payment_date", -1).to_list(10000)
-        writer.writerow(['Receipt #', 'Student Name', 'Program', 'Amount', 'Payment Mode', 'Payment Date', 'Installment #'])
+        # Columns: Receipt No, Student Name, Number, Amount, Mode, Payment Date
+        writer.writerow(['Receipt No', 'Student Name', 'Number', 'Amount', 'Mode', 'Payment Date'])
         for p in payments:
             writer.writerow([
-                p.get('receipt_number', ''), p.get('student_name', ''), p.get('program_name', ''),
-                p.get('amount', ''), p.get('payment_mode', ''), p.get('payment_date', ''),
-                p.get('installment_number', '')
+                p.get('receipt_number', ''),
+                p.get('student_name', ''),
+                p.get('student_phone', p.get('phone', '')),
+                p.get('amount', ''),
+                p.get('payment_mode', ''),
+                p.get('payment_date', '')
             ])
-        filename = "income_report.csv"
+        filename = "monthly_collection_report.csv"
     
     elif report_type == "expenses":
         query = {**branch_filter}
@@ -3787,50 +3792,51 @@ async def generate_report(
             query.update(get_date_query("expense_date"))
         
         expenses = await db.expenses.find(query, {"_id": 0}).sort("expense_date", -1).to_list(10000)
-        writer.writerow(['Date', 'Category', 'Name', 'Amount', 'Payment Mode', 'Remarks'])
+        # Columns: Name, Date, Amount, Description
+        writer.writerow(['Name', 'Date', 'Amount', 'Description'])
         for e in expenses:
             writer.writerow([
-                e.get('expense_date', ''), e.get('category_name', ''), e.get('name', ''),
-                e.get('amount', ''), e.get('payment_mode', ''), e.get('remarks', '')
+                e.get('name', ''),
+                e.get('expense_date', ''),
+                e.get('amount', ''),
+                e.get('remarks', e.get('description', ''))
             ])
         filename = "expenses_report.csv"
     
     elif report_type == "pending_payments":
-        # Get payment plans with pending installments
-        pipeline = [
-            {"$match": {**branch_filter}},
-            {"$lookup": {
-                "from": "enrollments",
-                "localField": "enrollment_id",
-                "foreignField": "id",
-                "as": "enrollment"
-            }},
-            {"$unwind": "$enrollment"},
-            {"$addFields": {
-                "total_amount_safe": {"$ifNull": ["$total_amount", 0]},
-                "paid_amount_safe": {"$ifNull": ["$paid_amount", 0]}
-            }},
-            {"$project": {
-                "_id": 0,
-                "student_name": "$enrollment.student_name",
-                "student_phone": {"$ifNull": ["$enrollment.phone", "$enrollment.student_phone"]},
-                "program_name": "$enrollment.program_name",
-                "total_amount": "$total_amount_safe",
-                "paid_amount": "$paid_amount_safe",
-                "remaining": {"$subtract": ["$total_amount_safe", "$paid_amount_safe"]},
-                "payment_type": "$plan_type",
-                "installment_count": "$installments_count"
-            }}
-        ]
-        payment_plans = await db.payment_plans.aggregate(pipeline).to_list(10000)
-        pending = [p for p in payment_plans if (p.get('remaining') or 0) > 0]
+        # Get enrollments with pending fees
+        query = {**branch_filter}
+        if start_date or end_date:
+            query.update(get_date_query("enrollment_date"))
         
-        writer.writerow(['Student Name', 'Phone', 'Program', 'Total Amount', 'Paid Amount', 'Remaining', 'Payment Type'])
+        enrollments = await db.enrollments.find(query, {"_id": 0}).to_list(10000)
+        
+        # Filter for pending payments (final_fee > total_paid)
+        pending = []
+        for e in enrollments:
+            final_fee = e.get('final_fee') or e.get('fee_quoted', 0) or 0
+            total_paid = e.get('total_paid', 0) or 0
+            pending_fee = final_fee - total_paid
+            if pending_fee > 0:
+                pending.append({
+                    'name': e.get('student_name', ''),
+                    'course': e.get('program_name', ''),
+                    'number': e.get('phone', e.get('student_phone', '')),
+                    'final_fee': final_fee,
+                    'paid_fee': total_paid,
+                    'pending_fee': pending_fee
+                })
+        
+        # Columns: Name, Course, Number, Final Fee, Paid Fee, Pending Fee
+        writer.writerow(['Name', 'Course', 'Number', 'Final Fee', 'Paid Fee', 'Pending Fee'])
         for p in pending:
             writer.writerow([
-                p.get('student_name', ''), p.get('student_phone', ''), p.get('program_name', ''),
-                p.get('total_amount', ''), p.get('paid_amount', ''), p.get('remaining', ''),
-                p.get('payment_type', '')
+                p['name'],
+                p['course'],
+                p['number'],
+                p['final_fee'],
+                p['paid_fee'],
+                p['pending_fee']
             ])
         filename = "pending_payments_report.csv"
     

@@ -21,6 +21,12 @@ Build a comprehensive institute management system with role-based access, studen
   - Each selected course expands to show date inputs (start, end, training mode, hours)
   - Submits separate certificate requests for each selected course
   - Shows detailed success/failure results for each certificate
+- ✅ **Reports Standardization** - Updated all report CSV formats with specific columns:
+  - **Leads Report**: Lead ID, Name, Phone Number, Course, Source
+  - **Monthly Collection Report**: Receipt No, Student Name, Number, Amount, Mode, Payment Date
+  - **Pending Payment Report**: Name, Course, Number, Final Fee, Paid Fee, Pending Fee
+  - **Expense Report**: Name, Date, Amount, Description
+  - All reports filter by date and export as properly formatted CSV
 
 ### Previously Completed (This Week)
 - ✅ **AdminPanel.js Final Refactoring** - ExamsTab and SystemSettingsTab components integrated

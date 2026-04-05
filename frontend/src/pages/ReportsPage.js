@@ -35,11 +35,11 @@ const ReportsPage = () => {
 
   // Define all report types
   const allReportTypes = [
-    { id: 'leads', label: 'Leads Report', icon: Users, description: 'All leads with status and details', roles: ['Admin', 'Branch Admin', 'Counsellor', 'Front Desk Executive'] },
+    { id: 'leads', label: 'Leads Report', icon: Users, description: 'Lead ID, Name, Phone, Course, Source', roles: ['Admin', 'Branch Admin', 'Counsellor', 'Front Desk Executive'] },
     { id: 'enrollments', label: 'Enrollments Report', icon: FileText, description: 'Student enrollments and program details', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
-    { id: 'income', label: 'Income Report', icon: DollarSign, description: 'Payment records and revenue', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
-    { id: 'expenses', label: 'Expenses Report', icon: CreditCard, description: 'Expense records by category', roles: ['Admin', 'Branch Admin'] },
-    { id: 'pending_payments', label: 'Pending Payments', icon: Clock, description: 'Outstanding installments', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
+    { id: 'income', label: 'Monthly Collection Report', icon: DollarSign, description: 'Receipt No, Name, Number, Amount, Mode, Date', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
+    { id: 'expenses', label: 'Expense Report', icon: CreditCard, description: 'Name, Date, Amount, Description', roles: ['Admin', 'Branch Admin'] },
+    { id: 'pending_payments', label: 'Pending Payment Report', icon: Clock, description: 'Name, Course, Number, Final/Paid/Pending Fee', roles: ['Admin', 'Branch Admin', 'Front Desk Executive'] },
     { id: 'fee_collection', label: 'Monthly Fee Collection', icon: Calendar, description: 'Installments due in selected month', roles: ['Admin', 'Branch Admin'] },
     { id: 'deleted_leads', label: 'Deleted Leads', icon: Trash2, description: 'View and restore deleted leads', roles: ['Admin', 'Branch Admin'] },
   ];
