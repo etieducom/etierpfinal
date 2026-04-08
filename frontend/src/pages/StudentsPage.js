@@ -633,6 +633,7 @@ const StudentsPage = () => {
       student_photo_url: student.student_photo_url || '',
       aadhar_photo_url: student.aadhar_photo_url || '',
       aadhar_documents: student.aadhar_documents || [],
+      enrollment_date: student.enrollment_date || '',
     });
     setSelectedStudent(student);
     setEditDialog(true);
@@ -698,6 +699,10 @@ const StudentsPage = () => {
         if (value !== '' && value !== null && value !== undefined) {
           // Skip student_name for FDE - they can't edit it
           if (key === 'student_name' && !isBranchAdmin && !isSuperAdmin) {
+            return;
+          }
+          // Skip enrollment_date for FDE - only Branch Admin can edit
+          if (key === 'enrollment_date' && !isBranchAdmin && !isSuperAdmin) {
             return;
           }
           updateData[key] = value;
@@ -1708,6 +1713,19 @@ const StudentsPage = () => {
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Admission Date - Branch Admin only */}
+              {(isBranchAdmin || isSuperAdmin) && (
+                <div className="space-y-2">
+                  <Label>Admission Date</Label>
+                  <Input
+                    type="date"
+                    value={editForm.enrollment_date}
+                    onChange={(e) => handleEditFormChange('enrollment_date', e.target.value)}
+                    data-testid="enrollment-date-input"
+                  />
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label>Parent/Guardian Name</Label>

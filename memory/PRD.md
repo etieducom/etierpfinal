@@ -27,6 +27,17 @@ Build a comprehensive institute management system with role-based access, studen
   - **Pending Payment Report**: Name, Course, Number, Final Fee, Paid Fee, Pending Fee
   - **Expense Report**: Name, Date, Amount, Description
   - All reports filter by date and export as properly formatted CSV
+- ✅ **Dashboard Performance Optimization** - Fixed slow loading (10 min → 0.15 sec):
+  - Replaced Python-side filtering with MongoDB aggregation pipelines
+  - Optimized all financial stats queries with proper indexes
+  - Batch fetched trainer assignments instead of sequential queries
+- ✅ **Branch Admin Edit Admission Date** - Added enrollment_date field to student edit dialog
+  - Only visible to Branch Admin and Super Admin (not FDE)
+  - FDE sees error message if they try to edit admission date
+- ✅ **Auto Course Complete on Certificate Approval** - When certificate is approved:
+  - Enrollment status automatically changes to "Completed"
+  - Completion date is recorded
+  - No manual status update needed
 
 ### Previously Completed (This Week)
 - ✅ **AdminPanel.js Final Refactoring** - ExamsTab and SystemSettingsTab components integrated

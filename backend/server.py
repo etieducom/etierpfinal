@@ -6012,6 +6012,8 @@ class StudentUpdateModel(BaseModel):
     # Program change
     program_id: Optional[str] = None
     program_name: Optional[str] = None
+    # Admission date - editable by Branch Admin only
+    enrollment_date: Optional[str] = None
 
 @api_router.put("/students/{enrollment_id}/update")
 async def update_student_details(enrollment_id: str, data: StudentUpdateModel, current_user: User = Depends(get_current_user)):
@@ -6030,16 +6032,19 @@ async def update_student_details(enrollment_id: str, data: StudentUpdateModel, c
     # Build update data (only include non-None values)
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
     
-    # FDE can edit photo, aadhar, contact details, but NOT student name
-    # Only block if name is actually being changed to something different
+    # FDE restrictions
     if current_user.role == UserRole.FRONT_DESK:
+        # FDE cannot edit student name
         if 'student_name' in update_data:
             current_name = enrollment.get('student_name', '')
             new_name = update_data.get('student_name', '')
             if new_name != current_name:
                 raise HTTPException(status_code=403, detail="Front Desk cannot edit student name")
-            # Always remove student_name from FDE updates to avoid issues
             del update_data['student_name']
+        
+        # FDE cannot edit enrollment_date (admission date)
+        if 'enrollment_date' in update_data:
+            raise HTTPException(status_code=403, detail="Front Desk cannot edit admission date. Please contact Branch Admin.")
     
     # If program_id is being updated, also update program_name
     if 'program_id' in update_data:
@@ -7453,7 +7458,7 @@ async def get_course_completions(
 # ========== BRANCH ADMIN FINANCIAL STATS ==========
 @api_router.get("/branch-admin/financial-stats")
 async def get_branch_financial_stats(request: Request, current_user: User = Depends(get_current_user)):
-    """Get financial statistics for Branch Admin filtered by academic session"""
+    """Get financial statistics for Branch Admin filtered by academic session - OPTIMIZED"""
     if current_user.role not in [UserRole.ADMIN, UserRole.BRANCH_ADMIN]:
         raise HTTPException(status_code=403, detail="Only Admin or Branch Admin can view financial stats")
     
@@ -7468,112 +7473,157 @@ async def get_branch_financial_stats(request: Request, current_user: User = Depe
     
     # Get session date range (e.g., "2025" = April 1, 2025 to March 31, 2026)
     session_start, session_end = get_session_date_range(session_val)
-    session_label = f"{session_val}-{int(session_val)+1}"
+    session_label = f"{session_val}-{int(str(session_val).split('-')[0])+1}" if session_val else ""
     
-    # Current month boundaries for "This Month" stats
+    # Current month boundaries
     now = datetime.now(timezone.utc)
-    month_start = datetime(now.year, now.month, 1, 0, 0, 0)
-    if now.month == 12:
-        month_end = datetime(now.year + 1, 1, 1, 0, 0, 0)
-    else:
-        month_end = datetime(now.year, now.month + 1, 1, 0, 0, 0)
-    current_month_str = now.strftime('%Y-%m')
+    current_month_prefix = now.strftime('%Y-%m')
     
-    # Helper to check if a date string falls within session
-    def is_in_session(date_str):
-        if not date_str or not session_start or not session_end:
-            return True  # If no session filter, include all
-        try:
-            if isinstance(date_str, datetime):
-                return session_start <= date_str <= session_end
-            date_obj = datetime.fromisoformat(date_str.replace('Z', '+00:00').split('+')[0].split('.')[0])
-            return session_start <= date_obj <= session_end
-        except:
-            return False
+    # Session date strings for MongoDB queries
+    session_start_str = session_start.strftime('%Y-%m-%d') if session_start else None
+    session_end_str = session_end.strftime('%Y-%m-%d') if session_end else None
     
-    # Helper to check if a date falls within current month
-    def is_in_current_month(date_str):
-        if not date_str:
-            return False
-        try:
-            if isinstance(date_str, str):
-                return date_str.startswith(current_month_str)
-            elif isinstance(date_str, datetime):
-                return month_start <= date_str < month_end
-            return False
-        except:
-            return False
+    # Helper to build date range query
+    def date_range_query(field, start_str, end_str):
+        if start_str and end_str:
+            return {field: {"$gte": start_str, "$lte": end_str}}
+        return {}
     
-    # SESSION-FILTERED: Payments (by payment_date)
-    all_payments = await db.payments.find(branch_filter, {"_id": 0, "amount": 1, "payment_date": 1}).to_list(10000)
-    session_payments = [p for p in all_payments if is_in_session(p.get('payment_date', ''))]
-    session_revenue = sum(p.get('amount', 0) for p in session_payments)
-    monthly_payments = [p for p in all_payments if is_in_current_month(p.get('payment_date', ''))]
-    monthly_revenue = sum(p.get('amount', 0) for p in monthly_payments)
-    total_collections = sum(p.get('amount', 0) for p in all_payments)
+    # Use parallel aggregations for better performance
+    # SESSION-FILTERED: Payments
+    payment_pipeline = [
+        {"$match": {**branch_filter, **(date_range_query("payment_date", session_start_str, session_end_str) if session_start_str else {})}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}, "count": {"$sum": 1}}}
+    ]
+    session_payment_result = await db.payments.aggregate(payment_pipeline).to_list(1)
+    session_revenue = session_payment_result[0]['total'] if session_payment_result else 0
     
-    # SESSION-FILTERED: Enrollments (by enrollment_date)
-    all_enrollments = await db.enrollments.find(branch_filter, {"_id": 0, "final_fee": 1, "total_paid": 1, "enrollment_date": 1}).to_list(10000)
-    session_enrollments = [e for e in all_enrollments if is_in_session(e.get('enrollment_date', ''))]
-    session_admissions = len(session_enrollments)
-    monthly_enrollments = [e for e in all_enrollments if is_in_current_month(e.get('enrollment_date', ''))]
-    monthly_admissions = len(monthly_enrollments)
-    pending_amounts = sum((e.get('final_fee', 0) - e.get('total_paid', 0)) for e in all_enrollments)
+    # Monthly payments
+    monthly_payment_pipeline = [
+        {"$match": {**branch_filter, "payment_date": {"$regex": f"^{current_month_prefix}"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    monthly_payment_result = await db.payments.aggregate(monthly_payment_pipeline).to_list(1)
+    monthly_revenue = monthly_payment_result[0]['total'] if monthly_payment_result else 0
     
-    # SESSION-FILTERED: Exam Bookings (by booking_date)
-    all_exam_bookings = await db.exam_bookings.find(
-        {**branch_filter, "status": {"$ne": "Cancelled"}}, 
-        {"_id": 0, "exam_price": 1, "booking_date": 1}
-    ).to_list(10000)
-    session_exam_bookings = [e for e in all_exam_bookings if is_in_session(e.get('booking_date', ''))]
-    session_exam_revenue = sum(e.get('exam_price', 0) for e in session_exam_bookings)
-    total_exam_revenue = sum(e.get('exam_price', 0) for e in all_exam_bookings)
+    # Total collections (all time)
+    total_payment_pipeline = [
+        {"$match": branch_filter},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    total_payment_result = await db.payments.aggregate(total_payment_pipeline).to_list(1)
+    total_collections = total_payment_result[0]['total'] if total_payment_result else 0
     
-    # SESSION-FILTERED: Expenses (by expense_date)
-    all_expenses = await db.expenses.find(branch_filter, {"_id": 0, "amount": 1, "expense_date": 1}).to_list(10000)
-    session_expenses = [e for e in all_expenses if is_in_session(e.get('expense_date', ''))]
-    session_expenses_total = sum(e.get('amount', 0) for e in session_expenses)
-    total_expenses = sum(e.get('amount', 0) for e in all_expenses)
+    # SESSION-FILTERED: Enrollments
+    enrollment_query = {**branch_filter}
+    if session_start_str and session_end_str:
+        enrollment_query["enrollment_date"] = {"$gte": session_start_str, "$lte": session_end_str}
+    session_admissions = await db.enrollments.count_documents(enrollment_query)
     
-    # SESSION-FILTERED: Leads (by created_at)
-    all_leads = await db.leads.find({**branch_filter, "is_deleted": {"$ne": True}}, {"_id": 0, "created_at": 1}).to_list(10000)
-    session_leads = [l for l in all_leads if is_in_session(l.get('created_at', ''))]
-    session_leads_count = len(session_leads)
-    monthly_leads = [l for l in all_leads if is_in_current_month(l.get('created_at', ''))]
-    monthly_leads_count = len(monthly_leads)
-    total_leads = len(all_leads)
+    # Monthly admissions
+    monthly_enrollment_query = {**branch_filter, "enrollment_date": {"$regex": f"^{current_month_prefix}"}}
+    monthly_admissions = await db.enrollments.count_documents(monthly_enrollment_query)
+    
+    # Pending amounts
+    pending_pipeline = [
+        {"$match": branch_filter},
+        {"$project": {"pending": {"$subtract": [{"$ifNull": ["$final_fee", 0]}, {"$ifNull": ["$total_paid", 0]}]}}},
+        {"$group": {"_id": None, "total": {"$sum": "$pending"}}}
+    ]
+    pending_result = await db.enrollments.aggregate(pending_pipeline).to_list(1)
+    pending_amounts = pending_result[0]['total'] if pending_result else 0
+    
+    # SESSION-FILTERED: Exam Bookings
+    exam_query = {**branch_filter, "status": {"$ne": "Cancelled"}}
+    if session_start_str and session_end_str:
+        exam_query["booking_date"] = {"$gte": session_start_str, "$lte": session_end_str}
+    exam_pipeline = [
+        {"$match": exam_query},
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$exam_price", 0]}}}}
+    ]
+    session_exam_result = await db.exam_bookings.aggregate(exam_pipeline).to_list(1)
+    session_exam_revenue = session_exam_result[0]['total'] if session_exam_result else 0
+    
+    # Total exam revenue
+    total_exam_pipeline = [
+        {"$match": {**branch_filter, "status": {"$ne": "Cancelled"}}},
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$exam_price", 0]}}}}
+    ]
+    total_exam_result = await db.exam_bookings.aggregate(total_exam_pipeline).to_list(1)
+    total_exam_revenue = total_exam_result[0]['total'] if total_exam_result else 0
+    
+    # SESSION-FILTERED: Expenses
+    expense_query = {**branch_filter}
+    if session_start_str and session_end_str:
+        expense_query["expense_date"] = {"$gte": session_start_str, "$lte": session_end_str}
+    expense_pipeline = [
+        {"$match": expense_query},
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$amount", 0]}}}}
+    ]
+    session_expense_result = await db.expenses.aggregate(expense_pipeline).to_list(1)
+    session_expenses_total = session_expense_result[0]['total'] if session_expense_result else 0
+    
+    # Total expenses
+    total_expense_pipeline = [
+        {"$match": branch_filter},
+        {"$group": {"_id": None, "total": {"$sum": {"$ifNull": ["$amount", 0]}}}}
+    ]
+    total_expense_result = await db.expenses.aggregate(total_expense_pipeline).to_list(1)
+    total_expenses = total_expense_result[0]['total'] if total_expense_result else 0
+    
+    # SESSION-FILTERED: Leads
+    lead_query = {**branch_filter, "is_deleted": {"$ne": True}}
+    if session_start_str and session_end_str:
+        lead_query["created_at"] = {"$gte": session_start_str, "$lte": session_end_str}
+    session_leads_count = await db.leads.count_documents(lead_query)
+    
+    # Monthly leads
+    monthly_lead_query = {**branch_filter, "is_deleted": {"$ne": True}, "created_at": {"$regex": f"^{current_month_prefix}"}}
+    monthly_leads_count = await db.leads.count_documents(monthly_lead_query)
+    
+    # Total leads
+    total_leads = await db.leads.count_documents({**branch_filter, "is_deleted": {"$ne": True}})
     
     # Calculate session net revenue
     session_net_revenue = session_revenue + session_exam_revenue - session_expenses_total
     
-    # ACTIVE UNIQUE STUDENTS - students whose course is not yet completed
-    # Count each student (lead_id) only once, even if enrolled in multiple courses
-    active_enrollments = await db.enrollments.find(
-        {**branch_filter, "status": {"$nin": ["Completed", "Cancelled", "Dropped"]}},
-        {"_id": 0, "lead_id": 1}
-    ).to_list(10000)
-    # Get unique lead_ids (unique students)
-    active_unique_students = len(set(e.get('lead_id') for e in active_enrollments if e.get('lead_id')))
+    # ACTIVE UNIQUE STUDENTS - count distinct lead_ids
+    active_pipeline = [
+        {"$match": {**branch_filter, "status": {"$nin": ["Completed", "Cancelled", "Dropped"]}}},
+        {"$group": {"_id": "$lead_id"}},
+        {"$count": "count"}
+    ]
+    active_result = await db.enrollments.aggregate(active_pipeline).to_list(1)
+    active_unique_students = active_result[0]['count'] if active_result else 0
     
-    # Trainer-wise student count
+    # Trainer-wise student count (simplified - only get counts)
     trainers_query = {"role": UserRole.TRAINER.value}
     if current_user.role == UserRole.BRANCH_ADMIN:
         trainers_query["branch_id"] = current_user.branch_id
     
     trainers = await db.users.find(trainers_query, {"_id": 0, "id": 1, "name": 1}).to_list(100)
     
+    # Batch get all assignments at once
+    trainer_ids = [t['id'] for t in trainers]
+    all_assignments = await db.student_batch_assignments.find(
+        {"trainer_id": {"$in": trainer_ids}},
+        {"_id": 0, "trainer_id": 1, "enrollment_id": 1}
+    ).to_list(10000)
+    
+    # Group by trainer
+    trainer_student_map = {}
+    for a in all_assignments:
+        tid = a.get('trainer_id')
+        if tid not in trainer_student_map:
+            trainer_student_map[tid] = set()
+        trainer_student_map[tid].add(a.get('enrollment_id'))
+    
     trainer_stats = []
     for trainer in trainers:
-        assignments = await db.student_batch_assignments.find(
-            {"trainer_id": trainer['id']},
-            {"_id": 0, "enrollment_id": 1}
-        ).to_list(1000)
-        unique_students = len(set(a['enrollment_id'] for a in assignments))
-        
         trainer_stats.append({
             "trainer_id": trainer['id'],
-            "trainer_name": trainer['name'],
-            "unique_student_count": unique_students
+            "trainer_name": trainer.get('name', ''),
+            "unique_student_count": len(trainer_student_map.get(trainer['id'], set()))
         })
     
     return {
@@ -7603,7 +7653,7 @@ async def get_branch_financial_stats(request: Request, current_user: User = Depe
         "net_revenue": total_collections + total_exam_revenue - total_expenses,
         
         "trainer_stats": trainer_stats,
-        "total_students": len(all_enrollments),
+        "total_students": await db.enrollments.count_documents(branch_filter),
         "total_trainers": len(trainers)
     }
 
@@ -9160,10 +9210,19 @@ async def update_certificate_request(
 
 @api_router.post("/certificate-requests/{request_id}/approve")
 async def approve_certificate_request(request_id: str, current_user: User = Depends(get_current_user)):
-    """Approve a certificate request"""
+    """Approve a certificate request and mark student's course as complete"""
     if current_user.role not in [UserRole.ADMIN, UserRole.CERTIFICATE_MANAGER]:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Get the certificate request first
+    cert_request = await db.certificate_requests.find_one({"id": request_id}, {"_id": 0})
+    if not cert_request:
+        raise HTTPException(status_code=404, detail="Certificate request not found")
+    
+    if cert_request.get('status') != CertificateStatus.PENDING.value:
+        raise HTTPException(status_code=400, detail="Certificate request is not pending")
+    
+    # Update certificate request status
     result = await db.certificate_requests.update_one(
         {"id": request_id, "status": CertificateStatus.PENDING.value},
         {"$set": {
@@ -9177,7 +9236,19 @@ async def approve_certificate_request(request_id: str, current_user: User = Depe
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Certificate request not found or not pending")
     
-    return {"message": "Certificate request approved"}
+    # Auto-mark the student's enrollment as "Completed"
+    enrollment_number = cert_request.get('enrollment_number')
+    if enrollment_number:
+        await db.enrollments.update_one(
+            {"enrollment_id": enrollment_number},
+            {"$set": {
+                "status": "Completed",
+                "completion_date": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+    
+    return {"message": "Certificate request approved and student marked as course complete"}
 
 @api_router.post("/certificate-requests/{request_id}/reject")
 async def reject_certificate_request(
