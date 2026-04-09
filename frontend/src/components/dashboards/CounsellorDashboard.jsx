@@ -95,6 +95,77 @@ const CounsellorDashboard = ({ counsellorDashboardEnhanced }) => {
         </div>
       )}
 
+      {/* LOW CONVERSION RATE ALERT - Shows when < 40% */}
+      {counsellorDashboardEnhanced?.lead_stats && 
+       counsellorDashboardEnhanced.lead_stats.conversion_rate < 40 && 
+       counsellorDashboardEnhanced.lead_stats.total_leads >= 5 && (
+        <Card className="border-2 border-orange-300 bg-gradient-to-r from-orange-50 via-amber-50 to-yellow-50 shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-bold text-orange-800 flex items-center gap-3">
+              <div className="p-2 bg-orange-500 rounded-lg animate-pulse">
+                <AlertTriangle className="w-5 h-5 text-white" />
+              </div>
+              Conversion Rate Alert - {counsellorDashboardEnhanced.lead_stats.conversion_rate}%
+              <Badge className="bg-orange-200 text-orange-800 ml-auto text-sm">Below 40% Target</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-orange-700 mb-4">
+              Your conversion rate is below the target of 40%. Here are some tips to improve your conversion:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white/80 rounded-xl p-4 border border-orange-200">
+                <h4 className="font-semibold text-orange-900 flex items-center gap-2 mb-2">
+                  <Phone className="w-4 h-4" /> Follow-up Strategy
+                </h4>
+                <ul className="text-sm text-orange-800 space-y-1">
+                  <li>• Call leads within 24 hours of inquiry</li>
+                  <li>• Schedule follow-ups at optimal times (10-11 AM, 4-5 PM)</li>
+                  <li>• Don't give up - make at least 5 follow-up attempts</li>
+                </ul>
+              </div>
+              <div className="bg-white/80 rounded-xl p-4 border border-orange-200">
+                <h4 className="font-semibold text-orange-900 flex items-center gap-2 mb-2">
+                  <MessageSquare className="w-4 h-4" /> Communication Tips
+                </h4>
+                <ul className="text-sm text-orange-800 space-y-1">
+                  <li>• Understand student's goals before pitching</li>
+                  <li>• Highlight placement success stories</li>
+                  <li>• Offer demo sessions to undecided leads</li>
+                </ul>
+              </div>
+              <div className="bg-white/80 rounded-xl p-4 border border-orange-200">
+                <h4 className="font-semibold text-orange-900 flex items-center gap-2 mb-2">
+                  <Gift className="w-4 h-4" /> Incentive Offers
+                </h4>
+                <ul className="text-sm text-orange-800 space-y-1">
+                  <li>• Mention early-bird discounts if available</li>
+                  <li>• Offer flexible payment options</li>
+                  <li>• Highlight scholarship opportunities</li>
+                </ul>
+              </div>
+              <div className="bg-white/80 rounded-xl p-4 border border-orange-200">
+                <h4 className="font-semibold text-orange-900 flex items-center gap-2 mb-2">
+                  <Clock className="w-4 h-4" /> Timing Matters
+                </h4>
+                <ul className="text-sm text-orange-800 space-y-1">
+                  <li>• Create urgency with batch start dates</li>
+                  <li>• Follow up on lost leads after 2-3 weeks</li>
+                  <li>• Re-engage cold leads with new offers</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-800">
+                <strong>Quick Win:</strong> Review your missed follow-ups below and make those calls today. 
+                Converting just {Math.max(1, Math.ceil((0.4 * counsellorDashboardEnhanced.lead_stats.total_leads) - counsellorDashboardEnhanced.lead_stats.total_converted))} more leads 
+                will bring you to the 40% target!
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 2. Alerts Row - Missed Follow-ups, Pending Feedbacks, Missed Tasks */}
       {counsellorDashboardEnhanced && (counsellorDashboardEnhanced.missed_followups?.length > 0 || counsellorDashboardEnhanced.pending_feedbacks?.length > 0 || counsellorDashboardEnhanced.missed_tasks?.length > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
