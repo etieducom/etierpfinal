@@ -138,19 +138,16 @@ const AllPaymentsPage = () => {
     
     const termsAndConditions = [
       'Fee once paid is non-refundable and non-transferable.',
-      'This receipt is valid only if accompanied by official payment confirmation.',
-      'Students must maintain 75% attendance to be eligible for certification.',
-      'Course duration and schedule are subject to change with prior notice.',
-      'ETI Educom reserves the right to modify course content as per industry requirements.',
-      'In case of cheque bounce, a penalty of ₹500 will be applicable.',
-      'For any queries, please contact our support team within 7 days of payment.'
+      'Students must maintain 75% attendance for certification.',
+      'Course schedule subject to change with prior notice.',
+      'Cheque bounce penalty: ₹500.'
     ];
     
     const receiptHTML = `
       <div class="receipt-copy">
         <div class="copy-label">COPY_TYPE</div>
         
-        <!-- Header -->
+        <!-- Header with Logo -->
         <div class="header">
           <div class="logo-section">
             <img src="${logoUrl}" alt="ETI Educom" class="logo" onerror="this.style.display='none'"/>
@@ -159,88 +156,72 @@ const AllPaymentsPage = () => {
             <h1>ETI EDUCOM</h1>
             <p class="tagline">Professional Training & Skill Development</p>
             <p class="address">${receiptData?.branch_name || 'ETI Educom'}</p>
-            ${receiptData?.branch_address ? `<p class="address">${receiptData.branch_address}</p>` : ''}
+          </div>
+          <div class="receipt-no-section">
+            <p class="receipt-label">RECEIPT</p>
+            <p class="receipt-num">${receiptData?.receipt_number || 'N/A'}</p>
+            <p class="receipt-date">${paymentDateStr}</p>
           </div>
         </div>
         
-        <!-- Receipt Title -->
-        <div class="receipt-title">
-          <h2>FEE RECEIPT</h2>
-        </div>
-        
-        <!-- Receipt Meta -->
-        <div class="receipt-meta">
-          <div class="meta-left">
-            <p><strong>Receipt No:</strong> ${receiptData?.receipt_number || 'N/A'}</p>
-            <p><strong>Enrollment ID:</strong> ${receiptData?.enrollment_id || 'N/A'}</p>
+        <!-- Student & Fee Details Side by Side -->
+        <div class="main-content">
+          <div class="left-section">
+            <table class="info-table">
+              <tr>
+                <td class="label">Enrollment ID</td>
+                <td class="value">${receiptData?.enrollment_id || 'N/A'}</td>
+              </tr>
+              <tr>
+                <td class="label">Student Name</td>
+                <td class="value">${receiptData?.student_name || ''}</td>
+              </tr>
+              <tr>
+                <td class="label">Phone</td>
+                <td class="value">${receiptData?.phone || ''}</td>
+              </tr>
+              <tr>
+                <td class="label">Course</td>
+                <td class="value">${receiptData?.program_name || ''}</td>
+              </tr>
+              <tr>
+                <td class="label">Payment Mode</td>
+                <td class="value">${receiptData?.payment_mode || ''}</td>
+              </tr>
+            </table>
           </div>
-          <div class="meta-right">
-            <p><strong>Date:</strong> ${paymentDateStr}</p>
+          
+          <div class="right-section">
+            <table class="fee-table">
+              <tr>
+                <td class="label">Total Course Fee</td>
+                <td class="amount">₹${(receiptData?.total_fee || 0).toLocaleString('en-IN')}/-</td>
+              </tr>
+              <tr class="highlight-row">
+                <td class="label"><strong>Amount Paid</strong></td>
+                <td class="amount highlight">₹${(receiptData?.amount || 0).toLocaleString('en-IN')}/-</td>
+              </tr>
+              <tr>
+                <td class="label">Total Paid (Till Date)</td>
+                <td class="amount">₹${(receiptData?.total_paid || 0).toLocaleString('en-IN')}/-</td>
+              </tr>
+              <tr class="${pendingAmount > 0 ? 'pending-row' : 'paid-row'}">
+                <td class="label">Balance</td>
+                <td class="amount">${pendingAmount > 0 ? '₹' + pendingAmount.toLocaleString('en-IN') + '/-' : 'NIL'}</td>
+              </tr>
+              ${pendingAmount > 0 ? `
+              <tr>
+                <td class="label">Next Due Date</td>
+                <td class="amount">${dueDateStr}</td>
+              </tr>
+              ` : ''}
+            </table>
           </div>
         </div>
         
-        <!-- Student Details -->
-        <div class="section">
-          <h3>Student Information</h3>
-          <table class="info-table">
-            <tr>
-              <td class="label">Student Name</td>
-              <td class="value" colspan="3">${receiptData?.student_name || ''}</td>
-            </tr>
-            <tr>
-              <td class="label">Phone</td>
-              <td class="value">${receiptData?.phone || ''}</td>
-              <td class="label">Email</td>
-              <td class="value">${receiptData?.student_email || ''}</td>
-            </tr>
-            <tr>
-              <td class="label">Course</td>
-              <td class="value" colspan="3">${receiptData?.program_name || ''}</td>
-            </tr>
-          </table>
-        </div>
-        
-        <!-- Fee Details -->
-        <div class="section fee-section">
-          <h3>Fee Details</h3>
-          <table class="fee-table">
-            <tr>
-              <td class="label">Total Course Fee</td>
-              <td class="amount">₹${(receiptData?.total_fee || 0).toLocaleString('en-IN')}/-</td>
-            </tr>
-            <tr class="highlight-row">
-              <td class="label">Amount Paid (This Receipt)</td>
-              <td class="amount highlight">₹${(receiptData?.amount || 0).toLocaleString('en-IN')}/-</td>
-            </tr>
-            <tr>
-              <td class="label">Total Amount Paid (Till Date)</td>
-              <td class="amount">₹${(receiptData?.total_paid || 0).toLocaleString('en-IN')}/-</td>
-            </tr>
-            <tr class="${pendingAmount > 0 ? 'pending-row' : 'paid-row'}">
-              <td class="label">Balance Amount</td>
-              <td class="amount">${pendingAmount > 0 ? '₹' + pendingAmount.toLocaleString('en-IN') + '/-' : 'NIL'}</td>
-            </tr>
-            ${pendingAmount > 0 ? `
-            <tr>
-              <td class="label">Next Due Date</td>
-              <td class="amount">${dueDateStr}</td>
-            </tr>
-            ` : ''}
-          </table>
-        </div>
-        
-        <!-- Payment Info -->
-        <div class="payment-info">
-          <p><strong>Payment Mode:</strong> ${receiptData?.payment_mode || ''}</p>
-          ${receiptData?.remarks ? `<p><strong>Remarks:</strong> ${receiptData.remarks}</p>` : ''}
-        </div>
-        
-        <!-- Terms & Conditions -->
+        <!-- Terms -->
         <div class="terms-section">
-          <h4>Terms & Conditions</h4>
-          <ol>
-            ${termsAndConditions.map(term => `<li>${term}</li>`).join('')}
-          </ol>
+          <strong>Terms:</strong> ${termsAndConditions.join(' | ')}
         </div>
         
         <!-- Signatures -->
@@ -252,14 +233,11 @@ const AllPaymentsPage = () => {
           <div class="signature authorized">
             <div class="sign-line"></div>
             <p>Authorized Signatory</p>
-            <small>ETI Educom</small>
           </div>
         </div>
         
-        <!-- Footer -->
         <div class="footer">
-          <p>Thank you for choosing ETI Educom!</p>
-          <p class="small">This is a computer generated receipt.</p>
+          <p>Thank you for choosing ETI Educom! | Computer Generated Receipt</p>
         </div>
       </div>
     `;
@@ -267,7 +245,7 @@ const AllPaymentsPage = () => {
     const cssStyles = `
       @page { 
         size: A4; 
-        margin: 10mm; 
+        margin: 8mm; 
       }
       * { 
         box-sizing: border-box; 
@@ -275,30 +253,31 @@ const AllPaymentsPage = () => {
         padding: 0; 
       }
       body { 
-        font-family: 'Segoe UI', 'Arial', sans-serif; 
-        font-size: 11px; 
-        line-height: 1.5; 
+        font-family: 'Segoe UI', Arial, sans-serif; 
+        font-size: 10px; 
+        line-height: 1.3; 
         color: #1a202c;
-        background: #f7fafc;
+        background: white;
       }
       .receipt-copy { 
         border: 2px solid #1a365d; 
-        padding: 20px; 
-        margin-bottom: 15px; 
+        padding: 12px 15px; 
+        margin-bottom: 8px; 
         position: relative; 
         background: white;
         page-break-inside: avoid;
+        height: 48%;
       }
       .copy-label { 
         position: absolute; 
         top: -1px; 
-        right: 20px; 
-        background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); 
+        right: 15px; 
+        background: #1a365d; 
         color: white; 
-        padding: 5px 20px; 
-        font-size: 10px; 
+        padding: 3px 15px; 
+        font-size: 9px; 
         font-weight: bold; 
-        border-radius: 0 0 8px 8px;
+        border-radius: 0 0 5px 5px;
         letter-spacing: 1px;
       }
       
@@ -307,79 +286,71 @@ const AllPaymentsPage = () => {
         display: flex; 
         align-items: center; 
         border-bottom: 2px solid #1a365d; 
-        padding-bottom: 15px; 
-        margin-bottom: 15px; 
+        padding-bottom: 8px; 
+        margin-bottom: 10px; 
       }
       .logo-section { 
-        width: 80px; 
-        margin-right: 15px; 
+        width: 60px; 
+        margin-right: 10px; 
       }
       .logo { 
-        width: 70px; 
+        width: 55px; 
         height: auto; 
       }
       .institute-info { 
         flex: 1; 
       }
       .institute-info h1 { 
-        font-size: 24px; 
+        font-size: 18px; 
         color: #1a365d; 
-        letter-spacing: 3px; 
-        margin-bottom: 3px; 
+        letter-spacing: 2px; 
+        margin-bottom: 1px; 
       }
       .institute-info .tagline { 
-        font-size: 11px; 
+        font-size: 9px; 
         color: #4a5568; 
         font-style: italic; 
       }
       .institute-info .address { 
-        font-size: 10px; 
+        font-size: 9px; 
         color: #718096; 
-        margin-top: 3px; 
       }
-      
-      /* Receipt Title */
-      .receipt-title { 
-        text-align: center; 
-        background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); 
-        color: white; 
-        padding: 10px 20px; 
-        margin-bottom: 15px; 
-        border-radius: 5px; 
+      .receipt-no-section {
+        text-align: right;
+        border: 1px solid #1a365d;
+        padding: 5px 10px;
+        border-radius: 5px;
+        background: #f7fafc;
       }
-      .receipt-title h2 { 
-        font-size: 16px; 
-        letter-spacing: 3px; 
-        font-weight: 600; 
-      }
-      
-      /* Receipt Meta */
-      .receipt-meta { 
-        display: flex; 
-        justify-content: space-between; 
-        background: #f7fafc; 
-        padding: 10px 15px; 
-        border-radius: 5px; 
-        margin-bottom: 15px;
-        border: 1px solid #e2e8f0;
-      }
-      .receipt-meta p { 
-        font-size: 11px; 
-        margin: 2px 0; 
-      }
-      
-      /* Sections */
-      .section { 
-        margin-bottom: 15px; 
-      }
-      .section h3 { 
-        font-size: 12px; 
-        color: #1a365d; 
-        border-bottom: 1px solid #e2e8f0; 
-        padding-bottom: 5px; 
-        margin-bottom: 10px; 
-        text-transform: uppercase;
+      .receipt-label {
+        font-size: 8px;
+        color: #718096;
         letter-spacing: 1px;
+      }
+      .receipt-num {
+        font-size: 12px;
+        font-weight: bold;
+        color: #1a365d;
+      }
+      .receipt-date {
+        font-size: 9px;
+        color: #4a5568;
+      }
+      
+      /* Main Content - Side by Side */
+      .main-content {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 8px;
+      }
+      .left-section {
+        flex: 1;
+      }
+      .right-section {
+        flex: 1;
+        border: 1px solid #1a365d;
+        border-radius: 5px;
+        overflow: hidden;
       }
       
       /* Info Table */
@@ -388,14 +359,14 @@ const AllPaymentsPage = () => {
         border-collapse: collapse; 
       }
       .info-table td { 
-        padding: 8px 10px; 
+        padding: 4px 6px; 
         border: 1px solid #e2e8f0; 
+        font-size: 9px;
       }
       .info-table .label { 
         background: #f7fafc; 
         color: #4a5568; 
-        font-size: 10px; 
-        width: 20%; 
+        width: 35%; 
         font-weight: 500;
       }
       .info-table .value { 
@@ -404,41 +375,30 @@ const AllPaymentsPage = () => {
       }
       
       /* Fee Table */
-      .fee-section { 
-        border: 2px solid #1a365d; 
-        border-radius: 5px; 
-        overflow: hidden; 
-      }
-      .fee-section h3 { 
-        background: #1a365d; 
-        color: white; 
-        padding: 8px 15px; 
-        margin: 0; 
-        border: none; 
-      }
       .fee-table { 
         width: 100%; 
         border-collapse: collapse; 
       }
       .fee-table td { 
-        padding: 10px 15px; 
+        padding: 5px 8px; 
         border-bottom: 1px solid #e2e8f0; 
+        font-size: 9px;
       }
       .fee-table .label { 
         color: #4a5568; 
-        width: 60%; 
+        width: 55%; 
       }
       .fee-table .amount { 
         text-align: right; 
         font-weight: 600; 
-        font-size: 12px; 
+        font-size: 10px; 
       }
       .fee-table .highlight-row { 
         background: #c6f6d5; 
       }
       .fee-table .highlight { 
         color: #22543d; 
-        font-size: 14px; 
+        font-size: 11px; 
       }
       .fee-table .pending-row { 
         background: #fed7d7; 
@@ -453,51 +413,22 @@ const AllPaymentsPage = () => {
         color: #22543d; 
       }
       
-      /* Payment Info */
-      .payment-info { 
-        background: #f7fafc; 
-        padding: 10px 15px; 
-        border-radius: 5px; 
-        margin: 15px 0;
-        border: 1px solid #e2e8f0;
-      }
-      .payment-info p { 
-        margin: 3px 0; 
-        font-size: 11px; 
-      }
-      
-      /* Terms & Conditions */
+      /* Terms */
       .terms-section { 
-        margin: 15px 0; 
-        padding: 10px 15px;
+        font-size: 7px; 
+        color: #744210; 
         background: #fffaf0;
+        padding: 4px 8px;
         border: 1px solid #fbd38d;
-        border-radius: 5px;
-      }
-      .terms-section h4 { 
-        font-size: 10px; 
-        color: #744210; 
-        margin-bottom: 8px; 
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-      .terms-section ol { 
-        margin: 0; 
-        padding-left: 15px; 
-      }
-      .terms-section li { 
-        font-size: 8px; 
-        color: #744210; 
-        margin-bottom: 3px;
-        line-height: 1.4;
+        border-radius: 3px;
+        margin-bottom: 8px;
       }
       
       /* Signatures */
       .signatures { 
         display: flex; 
         justify-content: space-between; 
-        margin-top: 30px; 
-        padding-top: 20px; 
+        margin-top: 15px;
       }
       .signature { 
         text-align: center; 
@@ -505,50 +436,43 @@ const AllPaymentsPage = () => {
       }
       .sign-line { 
         border-top: 1px solid #2d3748; 
-        margin-bottom: 5px; 
+        margin-bottom: 3px; 
         width: 100%;
       }
       .signature p { 
-        font-size: 10px; 
-        color: #4a5568; 
-      }
-      .signature small { 
         font-size: 8px; 
-        color: #718096; 
+        color: #4a5568; 
       }
       
       /* Footer */
       .footer { 
         text-align: center; 
-        margin-top: 15px; 
-        padding-top: 10px; 
+        margin-top: 5px; 
+        padding-top: 5px; 
         border-top: 1px dashed #cbd5e0; 
       }
       .footer p { 
-        font-size: 10px; 
-        color: #4a5568; 
-      }
-      .footer .small { 
         font-size: 8px; 
-        color: #a0aec0; 
-        margin-top: 3px; 
+        color: #718096; 
       }
       
-      /* Divider between copies */
+      /* Divider */
       .divider { 
         border-top: 2px dashed #a0aec0; 
-        margin: 15px 0; 
+        margin: 5px 0; 
         position: relative;
       }
       .divider::after {
-        content: '✂';
+        content: '✂ CUT HERE';
         position: absolute;
         left: 50%;
-        top: -8px;
+        top: -6px;
         transform: translateX(-50%);
-        background: #f7fafc;
+        background: white;
         padding: 0 10px;
         color: #a0aec0;
+        font-size: 8px;
+        letter-spacing: 1px;
       }
       
       @media print {
