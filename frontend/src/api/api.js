@@ -377,7 +377,13 @@ export const aiAnalyticsAPI = {
 // Cash Handling API
 export const cashHandlingAPI = {
   getToday: () => api.get('/cash-handling/today'),
-  submit: (data) => api.post('/cash-handling/submit', null, { params: data }),
+  submit: (data) => {
+    const params = new URLSearchParams();
+    if (data.deposit_receipt_url) params.append('deposit_receipt_url', data.deposit_receipt_url);
+    if (data.remarks) params.append('remarks', data.remarks);
+    if (data.manual_total) params.append('manual_total', data.manual_total);
+    return api.post(`/cash-handling/submit?${params.toString()}`);
+  },
   getHistory: (params) => api.get('/cash-handling/history', { params }),
 };
 

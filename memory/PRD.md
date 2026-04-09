@@ -7,37 +7,18 @@ Build a comprehensive institute management system with role-based access, studen
 
 ### Just Completed (This Session - April 5, 2026)
 - ✅ **View Followups Feature** - Branch Admin and Super Admin can now view all follow-ups added to a lead via Eye icon button
-  - Opens a modal dialog showing lead info and followup timeline
-  - Displays note, added by, date, and status for each followup
-  - Timeline view with blue dots connecting entries
-  - Role-based visibility: Admin, Branch Admin see ALL followups; Counsellor sees ONLY their own
-- ✅ **Counsellor Followup Filtering** - Counsellors can view their own follow-ups, filtered by name/ID
-- ✅ **Session Format Fix** - Fixed session parsing to handle both "2026" and "2026-2027" formats
-- ✅ **Multi-Course Certificate Request** - Complete overhaul of the certificate request flow:
-  - Student enters enrollment number → System finds ALL their courses
-  - Shows student details (name, branch) and pre-fills contact info
-  - Displays all courses with checkboxes (shows pending fee warnings, existing certificate status)
-  - Disabled selection for courses with pending fees or existing certificate requests
-  - Each selected course expands to show date inputs (start, end, training mode, hours)
-  - Submits separate certificate requests for each selected course
-  - Shows detailed success/failure results for each certificate
-- ✅ **Reports Standardization** - Updated all report CSV formats with specific columns:
-  - **Leads Report**: Lead ID, Name, Phone Number, Course, Source
-  - **Monthly Collection Report**: Receipt No, Student Name, Number, Amount, Mode, Payment Date
-  - **Pending Payment Report**: Name, Course, Number, Final Fee, Paid Fee, Pending Fee
-  - **Expense Report**: Name, Date, Amount, Description
-  - All reports filter by date and export as properly formatted CSV
-- ✅ **Dashboard Performance Optimization** - Fixed slow loading (10 min → 0.15 sec):
-  - Replaced Python-side filtering with MongoDB aggregation pipelines
-  - Optimized all financial stats queries with proper indexes
-  - Batch fetched trainer assignments instead of sequential queries
+- ✅ **Multi-Course Certificate Request** - Complete overhaul of the certificate request flow
+- ✅ **Reports Standardization** - Updated all report CSV formats with specific columns
+- ✅ **Dashboard Performance Optimization** - Fixed slow loading (10 min → 0.15 sec)
 - ✅ **Branch Admin Edit Admission Date** - Added enrollment_date field to student edit dialog
-  - Only visible to Branch Admin and Super Admin (not FDE)
-  - FDE sees error message if they try to edit admission date
-- ✅ **Auto Course Complete on Certificate Approval** - When certificate is approved:
-  - Enrollment status automatically changes to "Completed"
-  - Completion date is recorded
-  - No manual status update needed
+- ✅ **Auto Course Complete on Certificate Approval** - Enrollment status changes to "Completed" automatically
+- ✅ **Fee Receipt A4 Layout** - Both Student & Center copies fit on single A4 sheet with ETI Educom logo
+- ✅ **Cash Handling Photo Fix** - Fixed API to properly save deposit receipt URL
+- ✅ **Fee Validation for Course Completion** - Teacher cannot mark course complete if student has pending fees
+- ✅ **Fee Validation for Exam Booking** - Cannot book exam if student has pending fees
+- ✅ **Max 6 Installments** - Payment plan limited to maximum 6 installments
+- ✅ **Branch Admin Fee Adjustment** - Can edit final_fee, discount_percent, discount_amount after enrollment
+- ✅ **Course Completion Lock** - Once status is "Completed", it cannot be changed back
 
 ### Previously Completed (This Week)
 - ✅ **AdminPanel.js Final Refactoring** - ExamsTab and SystemSettingsTab components integrated

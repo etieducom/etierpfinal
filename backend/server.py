@@ -4168,6 +4168,13 @@ async def create_payment_plan(plan: PaymentPlanCreate, current_user: User = Depe
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")
     
+    # Validate max 6 installments
+    if plan.plan_type == PaymentPlanType.INSTALLMENTS:
+        if plan.installments_count and plan.installments_count > 6:
+            raise HTTPException(status_code=400, detail="Maximum 6 installments allowed")
+        if plan.installments and len(plan.installments) > 6:
+            raise HTTPException(status_code=400, detail="Maximum 6 installments allowed")
+    
     # Check if payment plan already exists
     existing_plan = await db.payment_plans.find_one({"enrollment_id": plan.enrollment_id}, {"_id": 0})
     if existing_plan:
@@ -6093,6 +6100,10 @@ async def update_enrollment_status(enrollment_id: str, status: str, reason: str 
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")
     
+    # Prevent changing status if already Completed
+    if enrollment.get('status') == 'Completed':
+        raise HTTPException(status_code=400, detail="Cannot change status of a completed course. Course completion is final.")
+    
     # Branch Admin can only update their branch's enrollments
     if current_user.role == UserRole.BRANCH_ADMIN and enrollment.get('branch_id') != current_user.branch_id:
         raise HTTPException(status_code=403, detail="You can only update enrollments from your branch")
@@ -7379,6 +7390,16 @@ async def mark_course_completion(
     if not enrollment:
         raise HTTPException(status_code=404, detail="Enrollment not found")
     
+    # Check if fee is cleared before allowing course completion
+    final_fee = enrollment.get('final_fee', 0) or 0
+    total_paid = enrollment.get('total_paid', 0) or 0
+    pending_fee = final_fee - total_paid
+    if pending_fee > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot mark course complete. Student has pending fee of ₹{pending_fee:,.0f}. Fee must be cleared first."
+        )
+    
     # Check if already completed
     existing = await db.course_completions.find_one({"enrollment_id": enrollment_id}, {"_id": 0})
     if existing:
@@ -8140,6 +8161,20 @@ async def create_exam_booking(booking_data: dict, current_user: User = Depends(g
         raise HTTPException(status_code=404, detail="Exam not found")
     
     branch_id = current_user.branch_id
+    
+    # Check if student has pending fees (if enrollment_id provided)
+    enrollment_id = booking_data.get('enrollment_id')
+    if enrollment_id:
+        enrollment = await db.enrollments.find_one({"id": enrollment_id}, {"_id": 0})
+        if enrollment:
+            final_fee = enrollment.get('final_fee', 0) or 0
+            total_paid = enrollment.get('total_paid', 0) or 0
+            pending_fee = final_fee - total_paid
+            if pending_fee > 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot book exam. Student has pending fee of ₹{pending_fee:,.0f}. Fee must be cleared first."
+                )
     
     # Generate custom booking ID
     custom_booking_id = await generate_custom_id(branch_id, "X")

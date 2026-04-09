@@ -634,6 +634,10 @@ const StudentsPage = () => {
       aadhar_photo_url: student.aadhar_photo_url || '',
       aadhar_documents: student.aadhar_documents || [],
       enrollment_date: student.enrollment_date || '',
+      // Fee fields for Branch Admin
+      discount_percent: student.discount_percent || 0,
+      discount_amount: student.discount_amount || 0,
+      final_fee: student.final_fee || 0,
     });
     setSelectedStudent(student);
     setEditDialog(true);
@@ -703,6 +707,10 @@ const StudentsPage = () => {
           }
           // Skip enrollment_date for FDE - only Branch Admin can edit
           if (key === 'enrollment_date' && !isBranchAdmin && !isSuperAdmin) {
+            return;
+          }
+          // Skip fee fields for FDE - only Branch Admin can edit
+          if (['discount_percent', 'discount_amount', 'final_fee'].includes(key) && !isBranchAdmin && !isSuperAdmin) {
             return;
           }
           updateData[key] = value;
@@ -1724,6 +1732,48 @@ const StudentsPage = () => {
                     onChange={(e) => handleEditFormChange('enrollment_date', e.target.value)}
                     data-testid="enrollment-date-input"
                   />
+                </div>
+              )}
+              
+              {/* Fee Adjustment - Branch Admin only */}
+              {(isBranchAdmin || isSuperAdmin) && (
+                <div className="col-span-2 p-3 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-3">Fee Adjustment (Branch Admin Only)</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Discount Amount (₹)</Label>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 500"
+                        value={editForm.discount_amount || ''}
+                        onChange={(e) => handleEditFormChange('discount_amount', parseFloat(e.target.value) || 0)}
+                        data-testid="discount-amount-input"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">OR Discount %</Label>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 10"
+                        value={editForm.discount_percent || ''}
+                        onChange={(e) => handleEditFormChange('discount_percent', parseFloat(e.target.value) || 0)}
+                        data-testid="discount-percent-input"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Final Fee (₹)</Label>
+                      <Input
+                        type="number"
+                        placeholder="Final fee after discount"
+                        value={editForm.final_fee || ''}
+                        onChange={(e) => handleEditFormChange('final_fee', parseFloat(e.target.value) || 0)}
+                        data-testid="final-fee-input"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-2">
+                    Tip: Either enter a discount OR directly edit the final fee
+                  </p>
                 </div>
               )}
               
