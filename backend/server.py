@@ -5948,12 +5948,16 @@ async def get_student_details(enrollment_id: str, current_user: User = Depends(g
         for oa in other_addons:
             grand_total_fee += oa.get('final_fee', 0)
     
+    # Current enrollment total = base fee + addon fees
+    current_enrollment_total_fee = enrollment.get('final_fee', 0) + addon_total_fee
+    
     return {
         "enrollment": enrollment,
         "payment_plan": payment_plan,
         "payments": payments,
         "total_paid": total_paid,
-        "pending_amount": max(0, enrollment.get('final_fee', 0) - total_paid),
+        "pending_amount": max(0, current_enrollment_total_fee - total_paid),
+        "current_enrollment_total_fee": current_enrollment_total_fee,
         "branch": branch,
         "addon_courses": addon_courses,
         "addon_total_fee": addon_total_fee,
